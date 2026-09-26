@@ -5,6 +5,7 @@ import {
 } from './billing.js';
 
 export type ProofProductSlug = 'invoice-proof' | 'audit-proof' | 'verify-api';
+export type ProofCheckoutMode = 'payment' | 'subscription';
 export interface ProofBillingPlanConfig {
   slug: string;
   name: string;
