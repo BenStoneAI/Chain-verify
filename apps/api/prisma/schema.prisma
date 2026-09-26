@@ -39,6 +39,7 @@ model Organization {
   orgVendorBaselines OrgVendorBaseline[]
   scanFindingApprovals ScanFindingApproval[]
   vendorPortalTokens VendorPortalToken[]
+  apiIdentities ApiIdentity[]
 }
 
 model ProofProductEntitlement {
@@ -336,4 +337,18 @@ model VendorPortalToken {
   createdAt DateTime @default(now())
   @@index([organizationId, vendorName])
   @@map("vendor_portal_tokens")
+}
+
+model ApiIdentity {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  label String?
+  apiKeyHash String @unique
+  active Boolean @default(true)
+  lastUsedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, active])
+  @@map("api_identities")
 }
