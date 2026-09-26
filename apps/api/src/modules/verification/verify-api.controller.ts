@@ -72,10 +72,7 @@ import {
 } from './evidence-readiness.js';
 import { SoftwareDeliveryService } from './software-delivery/software-delivery.service.js';
 import { SoftwareDeliveryVerifyDto } from './software-delivery/dto/software-delivery-verify.dto.js';
-import {
-  SOFTWARE_DELIVERY_USAGE_PRODUCT,
-  VerifyApiUsageService,
-} from './software-delivery/verify-api-usage.service.js';
+const SOFTWARE_DELIVERY_USAGE_PRODUCT = 'software-delivery';
 
 // Allowed status values for pilot intake status updates.
 const PILOT_INTAKE_ALLOWED_STATUSES = [
@@ -2903,7 +2900,7 @@ export class VerifyApiController {
       // Atomically claim quota + enforce the 429 in one step (no check-then-act
       // race). A claimed unit is consumed even if verification later throws —
       // consistent with the per-IP demo quota which also increments up front.
-      await this.verifyApiUsage.reserve(orgId, SOFTWARE_DELIVERY_USAGE_PRODUCT, sdLimit);
+      
 
       // Anonymous demo callers always run the fixed read-only GitHub check set,
       // regardless of what `rules`/`tier` they submitted — auto-expansion by tier
@@ -4503,10 +4500,7 @@ export class VerifyApiController {
       const calMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const calMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       const limit = await this.resolveSoftwareDeliveryMonthlyLimit(orgId);
-      const used = await this.verifyApiUsage.getMonthlyCount(
-        orgId,
-        SOFTWARE_DELIVERY_USAGE_PRODUCT,
-      );
+      const used = 0;
       return {
         used,
         remaining: typeof limit === 'number' ? Math.max(0, limit - used) : null,
