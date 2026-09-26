@@ -3709,7 +3709,7 @@ export class VerifyApiController {
       doc
         .fontSize(18)
         .font('Helvetica-Bold')
-        .text('SwarmSync Proof — Public Summary', { align: 'center' });
+        .text('Chain Verify Proof — Public Summary', { align: 'center' });
       doc.moveDown(0.5);
       doc
         .fontSize(9)
