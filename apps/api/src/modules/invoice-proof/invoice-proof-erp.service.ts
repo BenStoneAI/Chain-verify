@@ -3,10 +3,10 @@ import { ErpProvider, OrgDataSource, OrgPoStatus } from '@prisma/client';
 import { randomBytes, createHash } from 'crypto';
 
 import { PrismaService } from '../database/prisma.service.js';
-import { encryptCredentials, decryptCredentials } from '../outbound-deployment/credential-crypto.js';
+import { encryptCredentials, decryptCredentials } from './credential-crypto.js';
 
 const ERP_CALLBACK_BASE =
-  process.env.API_BASE_URL?.replace(/\/$/, '') ?? 'https://api.swarmsync.ai';
+  process.env.API_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
 
 @Injectable()
 export class InvoiceProofErpService {

@@ -2981,7 +2981,7 @@ export class VerifyApiController {
         if (
           plan.overageCents !== null &&
           verifyApiMeteredOverageEnabled() &&
-          (await this.proofBilling.isVerifyApiMeteredOverageReady(orgId, plan.slug))
+          (await this.proofBilling.isVerifyApiMeteredOverageReady())
         ) {
           overageBillable = { planSlug: plan.slug, overageCents: plan.overageCents };
         } else {
@@ -3476,11 +3476,7 @@ export class VerifyApiController {
       resolvedPlanSlug,
     );
     if (overageUsageEvent) {
-      await this.proofBilling.attachProofIdToUsageEvent({
-        organizationId: orgId,
-        verificationRunId: run.id,
-        proofId: proof.id,
-      });
+      await this.proofBilling.attachProofIdToUsageEvent(overageUsageEvent.id, proof.id);
     }
 
     // URL/browser evidence is already routed through the Chain Verify-owned Conduit browser adapter.
@@ -3518,7 +3514,7 @@ export class VerifyApiController {
         remediation_steps: ((i as Record<string, unknown>)['recommended_action'] as string) ?? null,
       })),
       chain_hash: proof.chain_hash ?? undefined,
-      conduit_proof_id: conduitProofId ?? null,
+      conduit_proof_id: null,
       // Evidence-readiness surface (additive — present on every response so
       // consumers can branch on missing-evidence without breaking existing
       // fields). Empty arrays when no must-check control was skipped.
