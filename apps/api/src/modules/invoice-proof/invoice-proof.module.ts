@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../database/database.module.js';
-import { AuthModule } from '../auth/auth.module.js';
-import { BillingModule } from '../billing/billing.module.js';
-import { EmailModule } from '../email/email.module.js';
-import { ConduitModule } from '../conduit/conduit.module.js';
+import { ChainVerifyAdaptersModule } from '../adapters/adapters.module.js';
 import { VerificationModule } from '../verification/verification.module.js';
 import { InvoiceProofController } from './invoice-proof.controller.js';
 import { InvoiceProofService } from './invoice-proof.service.js';
@@ -22,7 +19,7 @@ import { InvoicePdfService } from './invoice-pdf.service.js';
   // ProofService — the same chain-hashed ProofRecord infrastructure VerifyAPI
   // uses — so every InvoiceProof scan mints a real, independently re-verifiable
   // proof artifact instead of only the lightweight OrgInvoiceScanRun audit row.
-  imports: [DatabaseModule, AuthModule, BillingModule, EmailModule, ConduitModule, VerificationModule],
+  imports: [DatabaseModule, ChainVerifyAdaptersModule, VerificationModule],
   controllers: [InvoiceProofController],
   providers: [
     InvoiceProofService,
