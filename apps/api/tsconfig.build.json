@@ -7,13 +7,13 @@
     "moduleResolution": "NodeNext",
     "strict": false,
     "paths": {
-      "@swarmsync/proof-core": [
+      "@chain-verify/proof-core": [
         "../../packages/proof-core/src"
       ],
-      "@swarmsync/proof-core/*": [
+      "@chain-verify/proof-core/*": [
         "../../packages/proof-core/src/*"
       ],
-      "@agent-market/config": [
+      "@chain-verify/config": [
         "../../packages/config/src"
       ]
     },
