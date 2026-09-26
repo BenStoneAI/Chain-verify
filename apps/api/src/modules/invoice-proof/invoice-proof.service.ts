@@ -51,9 +51,9 @@ import {
 } from './invoice-url-intake.js';
 
 const FREE_SCAN_PRODUCT = 'invoice-proof';
-const UPGRADE_URL = process.env.INVOICEPROOF_UPGRADE_URL ?? 'https://swarmsync.ai/invoice-proof#pricing';
+const UPGRADE_URL = process.env.INVOICEPROOF_UPGRADE_URL ?? 'https://chain-verify-api.onrender.com';
 const REGISTER_URL =
-  process.env.SWARMSYNC_REGISTER_URL ?? 'https://swarmsync.ai/register?callbackUrl=/invoice-proof';
+  process.env.CHAIN_VERIFY_REGISTER_URL ?? 'https://chain-verify-api.onrender.com';
 
 // Sentinel org used for un-authenticated scans, matching the convention
 // already used by VerifyAPI's anonymous/demo runs (see ANONYMOUS_ORG_ID in
@@ -109,8 +109,8 @@ export class InvoiceProofService {
     // rather than crashing the scan.
     private readonly verification?: VerificationService,
     private readonly proof?: ProofService,
-    // Optional (trailing, same backward-compatibility rationale): the real
-    // Conduit browser engine (Patchright/Playwright), reused as-is for URL
+    // Optional (trailing, same backward-compatibility rationale): the configured
+    // browser-intake adapter, with Conduit MCP preferred when CONDUIT_MCP_URL is configured for URL
     // intake (Work Item 2) — see scanUrl() below. Not ConduitSessionService:
     // that layer is the agent-to-agent marketplace billing/escrow wrapper
     // (requires a real Agent row, AP2 hiring/executing-agent semantics) and
