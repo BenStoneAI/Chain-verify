@@ -1,0 +1,20 @@
+{
+  "name": "chain-verify",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Independent verification products: AuditProof, InvoiceProof, and VerifyAPI",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:proof-core": "npm run build --workspace @swarmsync/proof-core",
+    "typecheck:proof-core": "npm run typecheck --workspace @swarmsync/proof-core",
+    "test:proof-core": "npm run test --workspace @swarmsync/proof-core"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.35",
+    "typescript": "^5.9.2"
+  }
+}
