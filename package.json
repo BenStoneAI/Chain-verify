@@ -11,7 +11,11 @@
   "scripts": {
     "build:proof-core": "npm run build --workspace @swarmsync/proof-core",
     "typecheck:proof-core": "npm run typecheck --workspace @swarmsync/proof-core",
-    "test:proof-core": "npm run test --workspace @swarmsync/proof-core"
+    "test:proof-core": "npm run test --workspace @swarmsync/proof-core",
+    "api:validate-schema": "npm run prisma:validate --workspace @chain-verify/api",
+    "api:test": "npm test --workspace @chain-verify/api",
+    "api:typecheck": "npm run typecheck --workspace @chain-verify/api",
+    "api:build": "npm run build --workspace @chain-verify/api"
   },
   "devDependencies": {
     "@types/node": "^20.19.35",
