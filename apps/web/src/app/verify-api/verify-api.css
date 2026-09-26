@@ -1,0 +1,899 @@
+/* ============================================================
+   SwarmSync tokens — VerifyAPI (developer surface, code-forward)
+   All selectors scoped with .va-scope
+   ============================================================ */
+
+.va-scope {
+  --bg-base:        #05060F;
+  --bg-tier:        #090B18;
+  --surface-base:   #0B0E1C;
+  --surface-raised: #111524;
+  --text-primary:   #EDEFF7;
+  --text-secondary: #C5CCE0;
+  --text-muted:     #8C95AE;
+  --text-faint:     #6A7290;
+  --accent:         #7C5CFF;
+  --accent-strong:  #9D85FF;
+  --accent-soft:    #B4BEFF;
+  --accent-dim:     rgba(124, 92, 255, 0.16);
+  --accent-wire:    rgba(124, 92, 255, 0.32);
+  --cyan:           #4FE0F0;
+  --cyan-dim:       rgba(79, 224, 240, 0.12);
+  --cyan-wire:      rgba(79, 224, 240, 0.35);
+
+  --ok:             #3FD18B;
+  --ok-dim:         rgba(63, 209, 139, 0.14);
+  --ok-wire:        rgba(63, 209, 139, 0.38);
+  --hold:           #F6B955;
+  --hold-dim:       rgba(246, 185, 85, 0.12);
+  --hold-wire:      rgba(246, 185, 85, 0.38);
+  --err:            #F05252;
+  --err-dim:        rgba(240, 82, 82, 0.12);
+  --err-wire:       rgba(240, 82, 82, 0.38);
+
+  --border-base:    rgba(180, 190, 255, 0.10);
+  --border-hover:   rgba(180, 190, 255, 0.18);
+  --border-soft:    rgba(255, 255, 255, 0.05);
+
+  --font-display: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    ui-monospace, 'SFMono-Regular', monospace;
+
+  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
+  --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --shadow-glow-purple: 0 0 50px rgba(124, 92, 255, 0.18);
+
+  --code-bg: #07080F;
+  --syn-key:  #B4BEFF;
+  --syn-str:  #6EE7B7;
+  --syn-num:  #F6B955;
+  --syn-bool: #F0A8F0;
+  --syn-com:  #4F5778;
+  --syn-pun:  #6A7290;
+
+  font-family: var(--font-display);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.va-scope a { color: inherit; text-decoration: none; }
+.va-scope button { font: inherit; }
+.va-scope img { display: block; max-width: 100%; }
+
+/* ============================================================
+   Page background
+   ============================================================ */
+.va-scope .page-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 82% -8%, rgba(124, 92, 255, 0.09), transparent 60%),
+    radial-gradient(800px 500px at -8% 22%, rgba(79, 224, 240, 0.05), transparent 60%),
+    var(--bg-base);
+}
+.va-scope .page-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(124, 92, 255, 0.040) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 92, 255, 0.040) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
+  opacity: 0.55;
+}
+.va-scope .page { position: relative; z-index: 1; }
+
+.va-scope .wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+@media (max-width: 640px) {
+  .va-scope .wrap { padding: 0 18px; }
+}
+
+/* ============================================================
+   Type scale
+   ============================================================ */
+.va-scope .eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent-soft);
+}
+.va-scope .eyebrow::before {
+  content: ""; width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent); box-shadow: 0 0 10px var(--accent);
+}
+.va-scope h1, .va-scope h2, .va-scope h3 {
+  margin: 0; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.08;
+}
+.va-scope h1 {
+  font-size: clamp(40px, 5.2vw, 62px); font-weight: 600; letter-spacing: -0.03em;
+}
+.va-scope h2 {
+  font-size: clamp(28px, 3.6vw, 42px); font-weight: 600; line-height: 1.1;
+}
+.va-scope h3 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.va-scope .lede {
+  color: var(--text-secondary);
+  font-size: clamp(16px, 1.55vw, 18.5px);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+.va-scope .mono { font-family: var(--font-mono); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.va-scope .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 22px;
+  font-size: 15px; font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s, border-color .15s, color .15s;
+  min-height: 48px;
+  white-space: nowrap;
+}
+.va-scope .btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 12px 32px rgba(124, 92, 255, 0.28);
+}
+.va-scope .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px rgba(124, 92, 255, 0.38);
+}
+.va-scope .btn-secondary {
+  background: rgba(255,255,255,0.03);
+  color: var(--text-primary);
+  border-color: var(--border-base);
+}
+.va-scope .btn-secondary:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--border-hover);
+}
+.va-scope .btn-arrow svg { width: 14px; height: 14px; transition: transform .15s; }
+.va-scope .btn-arrow:hover svg { transform: translateX(2px); }
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.va-scope .hero { padding: 64px 0 80px; }
+.va-scope .hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 56px;
+  align-items: center;
+}
+@media (max-width: 980px) {
+  .va-scope .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+  .va-scope .hero { padding: 40px 0 56px; }
+}
+.va-scope .hero-text .eyebrow { margin-bottom: 22px; }
+.va-scope .hero h1 .accent { color: var(--accent-soft); }
+.va-scope .hero-text p.lede { margin: 22px 0 32px; max-width: 56ch; }
+.va-scope .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.va-scope .hero-trust {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 28px;
+}
+.va-scope .trust-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: rgba(124, 92, 255, 0.05);
+  border: 1px solid var(--accent-wire);
+  border-radius: 100px;
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.va-scope .trust-pill .dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: var(--ok); box-shadow: 0 0 8px var(--ok);
+}
+
+/* ============================================================
+   Code panel — base
+   ============================================================ */
+.va-scope .code-panel {
+  background: linear-gradient(180deg, #0C0F1C 0%, #08090F 100%);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+  font-family: var(--font-mono);
+  position: relative;
+}
+.va-scope .code-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 11.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+}
+.va-scope .code-head .dots {
+  display: inline-flex; gap: 5px;
+}
+.va-scope .code-head .dots i {
+  width: 9px; height: 9px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); display: inline-block;
+}
+.va-scope .code-head .dots i:nth-child(1) { background: #F05252; opacity: 0.75; }
+.va-scope .code-head .dots i:nth-child(2) { background: #F6B955; opacity: 0.75; }
+.va-scope .code-head .dots i:nth-child(3) { background: #3FD18B; opacity: 0.75; }
+.va-scope .code-head .path {
+  margin-left: 6px;
+  color: var(--text-muted);
+}
+.va-scope .code-head .right {
+  margin-left: auto;
+  display: inline-flex; gap: 6px; align-items: center;
+}
+.va-scope .code-body {
+  padding: 18px 20px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  overflow-x: auto;
+}
+.va-scope .code-body pre {
+  margin: 0; font-family: inherit;
+  white-space: pre;
+}
+
+/* Method badges */
+.va-scope .method {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.va-scope .method.post {
+  background: rgba(63,209,139,0.14); color: var(--ok);
+  border: 1px solid var(--ok-wire);
+}
+.va-scope .method.get {
+  background: rgba(124,92,255,0.14); color: var(--accent-soft);
+  border: 1px solid var(--accent-wire);
+}
+.va-scope .method.del {
+  background: rgba(240,82,82,0.14); color: var(--err);
+  border: 1px solid var(--err-wire);
+}
+
+/* Verification status pills */
+.va-scope .v-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  border: 1px solid var(--ok-wire);
+  background: var(--ok-dim);
+  color: var(--ok);
+}
+.va-scope .v-pill .swatch {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ok); box-shadow: 0 0 8px var(--ok);
+}
+.va-scope .v-pill.review {
+  color: var(--hold); border-color: var(--hold-wire); background: var(--hold-dim);
+}
+.va-scope .v-pill.review .swatch {
+  background: var(--hold); box-shadow: 0 0 8px var(--hold);
+}
+.va-scope .v-pill.fail {
+  color: var(--err); border-color: var(--err-wire); background: var(--err-dim);
+}
+.va-scope .v-pill.fail .swatch {
+  background: var(--err); box-shadow: 0 0 8px var(--err);
+}
+
+/* ============================================================
+   Hero stacked panels (req / res)
+   ============================================================ */
+.va-scope .hero-stack { display: flex; flex-direction: column; gap: 16px; position: relative; }
+.va-scope .hero-stack .req .code-head .right,
+.va-scope .hero-stack .res .code-head .right { font-size: 10.5px; color: var(--text-muted); }
+.va-scope .hero-stack .arrow {
+  align-self: center;
+  width: 24px; height: 24px;
+  border-radius: 999px;
+  background: var(--bg-base);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin: -28px 0 -28px;
+  z-index: 2;
+  box-shadow: 0 0 0 4px var(--bg-base);
+}
+.va-scope .hero-stack .arrow svg { width: 12px; height: 12px; }
+
+/* ============================================================
+   Section primitives
+   ============================================================ */
+.va-scope .section { padding: 88px 0; }
+@media (max-width: 880px) { .va-scope .section { padding: 64px 0; } }
+.va-scope .section-head { max-width: 740px; margin-bottom: 48px; }
+.va-scope .section-head .eyebrow { margin-bottom: 16px; }
+.va-scope .section-head p {
+  color: var(--text-secondary); font-size: 17px; margin: 16px 0 0;
+}
+.va-scope .section-divider {
+  height: 1px; background: var(--border-base); width: 100%;
+  max-width: 1200px; margin: 0 auto;
+}
+
+.va-scope .why-callout {
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 760px;
+}
+.va-scope .why-callout b { color: var(--text-primary); font-weight: 600; }
+
+/* ============================================================
+   Problem — three-column
+   ============================================================ */
+.va-scope .problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 980px) {
+  .va-scope .problem-grid { grid-template-columns: 1fr; }
+}
+.va-scope .problem-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 16px;
+  padding: 28px;
+  position: relative;
+}
+.va-scope .problem-card .tag {
+  display: inline-flex;
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+}
+.va-scope .problem-card h3 {
+  font-size: 19px; font-weight: 600; letter-spacing: -0.015em;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.va-scope .problem-card p {
+  color: var(--text-secondary); margin: 0; font-size: 14.5px; line-height: 1.55;
+}
+.va-scope .problem-card.accent {
+  background: linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.015));
+  border-color: var(--accent-wire);
+  box-shadow: var(--shadow-glow-purple);
+}
+.va-scope .problem-card.accent .tag { color: var(--accent-soft); }
+
+/* ============================================================
+   How it works — 5-step horizontal flow
+   ============================================================ */
+.va-scope .flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  position: relative;
+}
+@media (max-width: 1080px) {
+  .va-scope .flow { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+@media (max-width: 540px) {
+  .va-scope .flow { grid-template-columns: 1fr; }
+}
+.va-scope .flow-step {
+  position: relative;
+  padding: 22px 18px 20px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  min-height: 220px;
+  display: flex; flex-direction: column;
+}
+.va-scope .flow-step .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 600;
+  margin-bottom: 12px;
+}
+.va-scope .flow-step h3 {
+  font-size: 15px; font-weight: 600; line-height: 1.3;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.va-scope .flow-step p {
+  margin: 0;
+  font-size: 13px; line-height: 1.55;
+  color: var(--text-muted);
+}
+.va-scope .flow-step .stub {
+  margin-top: auto;
+  padding-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  word-break: break-all;
+}
+.va-scope .flow-step .stub b { color: var(--accent-soft); font-weight: 500; }
+@media (min-width: 1081px) {
+  .va-scope .flow-step:not(:last-child)::after {
+    content: ""; position: absolute;
+    top: 33px; right: -10px; width: 12px; height: 1px;
+    border-top: 1px dashed var(--accent-wire);
+    z-index: 1;
+  }
+}
+
+/* ============================================================
+   Use cases grid
+   ============================================================ */
+.va-scope .uses-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1080px) {
+  .va-scope .uses-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 680px) {
+  .va-scope .uses-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 420px) {
+  .va-scope .uses-grid { grid-template-columns: 1fr; }
+}
+.va-scope .use-tile {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  padding: 18px 16px 16px;
+  transition: border-color .15s, transform .15s, background .15s;
+  min-height: 150px;
+  display: flex; flex-direction: column;
+}
+.va-scope .use-tile:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,0.035);
+  transform: translateY(-2px);
+}
+.va-scope .use-tile .ic {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.va-scope .use-tile .ic svg { width: 16px; height: 16px; }
+.va-scope .use-tile h4 {
+  margin: 0 0 4px;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+.va-scope .use-tile p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   API preview section
+   ============================================================ */
+.va-scope .api-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .va-scope .api-preview { grid-template-columns: 1fr; }
+}
+.va-scope .api-preview .res .code-body {
+  background:
+    radial-gradient(400px 200px at 100% 0%, rgba(124,92,255,0.08), transparent 60%);
+}
+.va-scope .api-preview .badge-strip {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255,255,255,0.02);
+}
+.va-scope .api-preview .badge-strip .label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+/* CodeToggle badge-strip outside api-preview */
+.va-scope .badge-strip {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255,255,255,0.02);
+}
+.va-scope .badge-strip .label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   Language tabs (CodeToggle)
+   ============================================================ */
+.va-scope .va-lang-tabs {
+  display: inline-flex; gap: 4px;
+  padding: 4px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.va-scope .va-lang-tab {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color .15s, background .15s, border-color .15s;
+  letter-spacing: 0.02em;
+}
+.va-scope .va-lang-tab:hover { color: var(--text-primary); }
+.va-scope .va-lang-tab.active,
+.va-scope .va-lang-tab[aria-selected="true"] {
+  color: var(--text-primary);
+  background: rgba(124,92,255,0.14);
+  box-shadow: inset 0 0 0 1px var(--accent-wire);
+}
+
+/* ============================================================
+   Endpoint reference grid
+   ============================================================ */
+.va-scope .endpoints {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .va-scope .endpoints { grid-template-columns: 1fr; }
+}
+.va-scope .endpoint {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  padding: 18px 18px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px 14px;
+  align-items: start;
+}
+.va-scope .endpoint .meth { grid-row: 1; }
+.va-scope .endpoint .path {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  word-break: break-all;
+}
+.va-scope .endpoint .desc {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.va-scope .endpoints-group {
+  margin-top: 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.va-scope .endpoints.optional .endpoint {
+  opacity: 0.78; background: rgba(255,255,255,0.012);
+}
+
+/* ============================================================
+   Pricing tiers
+   ============================================================ */
+.va-scope .tiers {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1080px) {
+  .va-scope .tiers { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 540px) {
+  .va-scope .tiers { grid-template-columns: 1fr; }
+}
+.va-scope .tier {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  padding: 24px 22px 22px;
+  display: flex; flex-direction: column;
+  min-height: 380px;
+}
+.va-scope .tier.featured {
+  background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+  border-color: var(--accent-wire);
+  box-shadow: var(--shadow-glow-purple);
+  position: relative;
+}
+.va-scope .tier.featured::before {
+  content: "Most popular";
+  position: absolute;
+  top: -10px; right: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 100px;
+  font-weight: 600;
+}
+.va-scope .tier .tname {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+.va-scope .tier.featured .tname { color: var(--accent-soft); }
+.va-scope .tier .price {
+  font-family: var(--font-mono);
+  font-size: 30px; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.va-scope .tier .price .per { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+.va-scope .tier .summary {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.va-scope .tier ul {
+  list-style: none; margin: 18px 0 0; padding: 0;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+  padding-top: 14px;
+  flex: 1;
+}
+.va-scope .tier ul li {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+.va-scope .tier ul li .ck {
+  flex-shrink: 0;
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  background: var(--ok-dim);
+  border: 1px solid var(--ok-wire);
+  color: var(--ok);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+}
+.va-scope .tier ul li .ck svg { width: 9px; height: 9px; }
+.va-scope .tier .tcta {
+  margin-top: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 11px 14px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  font-size: 14px; font-weight: 500;
+}
+.va-scope .tier.featured .tcta {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.va-scope .overage {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.va-scope .overage .o-amount {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.va-scope .overage .o-tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  padding: 3px 8px;
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   Pillars (Why SwarmSync)
+   ============================================================ */
+.va-scope .pillars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 36px;
+}
+@media (max-width: 1100px) {
+  .va-scope .pillars { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .va-scope .pillars { grid-template-columns: repeat(2, 1fr); }
+}
+.va-scope .pillar {
+  padding: 22px 18px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+}
+.va-scope .pillar .ic {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(124, 92, 255, 0.10);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.va-scope .pillar .ic svg { width: 14px; height: 14px; }
+.va-scope .pillar h4 {
+  margin: 0 0 4px;
+  font-size: 14.5px; font-weight: 600;
+  color: var(--text-primary);
+}
+.va-scope .pillar p {
+  margin: 0;
+  font-size: 12.5px; line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Related products section
+   ============================================================ */
+.va-scope .related { padding: 24px 0 64px; }
+.va-scope .related .section-head { margin-bottom: 32px; }
+.va-scope .related-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+@media (max-width: 760px) {
+  .va-scope .related-grid { grid-template-columns: 1fr; }
+}
+.va-scope .related-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex; flex-direction: column;
+  transition: border-color .15s, transform .15s, background .15s;
+}
+.va-scope .related-card:hover {
+  border-color: var(--accent-wire);
+  background: rgba(124,92,255,0.04);
+  transform: translateY(-2px);
+}
+.va-scope .related-card .label {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+}
+.va-scope .related-card .label .ic {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--accent-dim); border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 600;
+}
+.va-scope .related-card h3 {
+  font-size: 22px; font-weight: 600; letter-spacing: -0.015em;
+  margin-bottom: 10px; line-height: 1.25;
+}
+.va-scope .related-card h3 .pname { color: var(--accent-soft); }
+.va-scope .related-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.va-scope .related-card .go {
+  margin-top: 18px;
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--accent-soft);
+  font-size: 13.5px; font-weight: 500;
+}
+.va-scope .related-card .go svg { width: 12px; height: 12px; transition: transform .15s; }
+.va-scope .related-card:hover .go svg { transform: translateX(3px); }
+
+/* ============================================================
+   Final CTA
+   ============================================================ */
+.va-scope .final {
+  text-align: center;
+  padding: 96px 0 120px;
+  position: relative;
+}
+.va-scope .final::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.14), transparent 60%);
+  pointer-events: none;
+}
+.va-scope .final > * { position: relative; }
+.va-scope .final h2 { font-size: clamp(36px, 4.4vw, 54px); margin-bottom: 18px; }
+.va-scope .final p {
+  color: var(--text-secondary); font-size: 18px; max-width: 60ch; margin: 0 auto 32px;
+}
+.va-scope .final-ctas {
+  display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+
+/* Utility */
+.va-scope .text-soft { color: var(--text-secondary); }
+.va-scope .text-muted { color: var(--text-muted); }
+.va-scope .accent { color: var(--accent-soft); }

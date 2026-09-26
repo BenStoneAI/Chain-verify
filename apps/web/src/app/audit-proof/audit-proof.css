@@ -1,0 +1,1244 @@
+/*
+  AuditProof page styles — all selectors scoped under .ap-scope
+  to prevent global collision.
+*/
+
+/* ============================================================
+   SwarmSync tokens — AuditProof (slightly cooler, more enterprise)
+   ============================================================ */
+.ap-scope {
+  --bg-base:        #05060F;
+  --bg-tier:        #090B18;
+  --surface-base:   #0B0E1C;
+  --surface-raised: #111524;
+  --text-primary:   #EDEFF7;
+  --text-secondary: #C5CCE0;
+  --text-muted:     #8C95AE;
+  --text-faint:     #6A7290;
+  --accent:         #7C5CFF;
+  --accent-strong:  #9D85FF;
+  --accent-soft:    #B4BEFF;
+  --accent-dim:     rgba(124, 92, 255, 0.16);
+  --accent-wire:    rgba(124, 92, 255, 0.32);
+  --steel:          #6C7AA6;
+  --steel-dim:      rgba(108, 122, 166, 0.12);
+  --steel-wire:     rgba(180, 200, 255, 0.18);
+
+  --ok:             #3FD18B;
+  --ok-dim:         rgba(63, 209, 139, 0.14);
+  --ok-wire:        rgba(63, 209, 139, 0.38);
+  --hold:           #F6B955;
+  --hold-dim:       rgba(246, 185, 85, 0.12);
+  --hold-wire:      rgba(246, 185, 85, 0.38);
+  --err:            #F05252;
+  --err-dim:        rgba(240, 82, 82, 0.12);
+  --err-wire:       rgba(240, 82, 82, 0.38);
+
+  --border-base:    rgba(180, 190, 255, 0.10);
+  --border-hover:   rgba(180, 190, 255, 0.18);
+  --border-soft:    rgba(255, 255, 255, 0.05);
+
+  --font-display: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    ui-monospace, 'SFMono-Regular', monospace;
+
+  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
+  --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --shadow-glow-purple: 0 0 50px rgba(124, 92, 255, 0.18);
+
+  font-family: var(--font-display);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.ap-scope *, .ap-scope *::before, .ap-scope *::after {
+  box-sizing: border-box;
+}
+
+.ap-scope a { color: inherit; text-decoration: none; }
+.ap-scope button { font: inherit; }
+.ap-scope img { display: block; max-width: 100%; }
+
+/* ============================================================
+   Page background — deep, near-black with restrained wash
+   ============================================================ */
+.ap-scope .page-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 82% -8%, rgba(124, 92, 255, 0.09), transparent 60%),
+    radial-gradient(800px 500px at -8% 22%, rgba(60, 110, 200, 0.05), transparent 60%),
+    var(--bg-base);
+}
+.ap-scope .page-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(124, 92, 255, 0.040) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 92, 255, 0.040) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
+  opacity: 0.55;
+}
+.ap-scope .page { position: relative; z-index: 1; }
+
+.ap-scope .wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+@media (max-width: 640px) { .ap-scope .wrap { padding: 0 18px; } }
+
+/* ============================================================
+   Type scale
+   ============================================================ */
+.ap-scope .eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent-soft);
+}
+.ap-scope .eyebrow::before {
+  content: ""; width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent); box-shadow: 0 0 10px var(--accent);
+}
+.ap-scope h1, .ap-scope h2, .ap-scope h3 {
+  margin: 0; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.08;
+}
+.ap-scope h1 { font-size: clamp(40px, 5.2vw, 62px); font-weight: 600; letter-spacing: -0.03em; }
+.ap-scope h2 { font-size: clamp(28px, 3.6vw, 42px); font-weight: 600; line-height: 1.1; }
+.ap-scope h3 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.ap-scope .lede {
+  color: var(--text-secondary);
+  font-size: clamp(16px, 1.55vw, 18.5px);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+.ap-scope .mono { font-family: var(--font-mono); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.ap-scope .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 22px;
+  font-size: 15px; font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s, border-color .15s, color .15s;
+  min-height: 48px;
+  white-space: nowrap;
+}
+.ap-scope .btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 12px 32px rgba(124, 92, 255, 0.28);
+}
+.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124, 92, 255, 0.38); }
+.ap-scope .btn-secondary {
+  background: rgba(255,255,255,0.03);
+  color: var(--text-primary);
+  border-color: var(--border-base);
+}
+.ap-scope .btn-secondary:hover { background: rgba(255,255,255,0.06); border-color: var(--border-hover); }
+.ap-scope .btn-arrow svg { width: 14px; height: 14px; transition: transform .15s; }
+.ap-scope .btn-arrow:hover svg { transform: translateX(2px); }
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.ap-scope .hero {
+  padding: 64px 0 80px;
+}
+.ap-scope .hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: center;
+}
+@media (max-width: 980px) {
+  .ap-scope .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+  .ap-scope .hero { padding: 40px 0 56px; }
+}
+.ap-scope .hero-text .eyebrow { margin-bottom: 22px; }
+.ap-scope .hero h1 .accent { color: var(--accent-soft); }
+.ap-scope .hero-text p.lede { margin: 22px 0 32px; max-width: 56ch; }
+.ap-scope .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.ap-scope .hero-trust {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 28px;
+}
+.ap-scope .trust-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: rgba(124, 92, 255, 0.05);
+  border: 1px solid var(--accent-wire);
+  border-radius: 100px;
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ap-scope .trust-pill .dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: var(--ok); box-shadow: 0 0 8px var(--ok);
+}
+
+/* ============================================================
+   Audit card — the hero centerpiece + sample report
+   ============================================================ */
+.ap-scope .audit-card {
+  background: linear-gradient(180deg, #0E1224 0%, #0A0D1B 100%);
+  border: 1px solid var(--border-base);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: var(--shadow-lift);
+  position: relative;
+  overflow: hidden;
+}
+.ap-scope .audit-card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(500px 220px at 100% 0%, rgba(124, 92, 255, 0.08), transparent 60%);
+}
+.ap-scope .audit-card > * { position: relative; }
+.ap-scope .audit-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.ap-scope .audit-head-l .label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex; align-items: center; gap: 8px;
+}
+.ap-scope .audit-head-l .label .id {
+  color: var(--accent-soft);
+  padding: 2px 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-wire);
+  border-radius: 4px;
+  font-size: 11px;
+}
+.ap-scope .audit-head-l .vendor {
+  font-size: 19px; font-weight: 600;
+  margin-top: 8px;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.ap-scope .audit-head-l .meta {
+  font-family: var(--font-mono);
+  font-size: 12px; color: var(--text-muted);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.ap-scope .audit-head-l .meta b { color: var(--text-secondary); font-weight: 500; }
+.ap-scope .audit-head-r {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;
+}
+.ap-scope .score {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.ap-scope .score .lbl {
+  font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.14em;
+  margin-right: 6px;
+}
+.ap-scope .risk-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  border: 1px solid var(--ok-wire);
+  background: var(--ok-dim);
+  color: var(--ok);
+}
+.ap-scope .risk-badge .swatch {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ok); box-shadow: 0 0 8px var(--ok);
+}
+.ap-scope .risk-badge.med {
+  color: var(--hold); border-color: var(--hold-wire); background: var(--hold-dim);
+}
+.ap-scope .risk-badge.med .swatch { background: var(--hold); box-shadow: 0 0 8px var(--hold); }
+.ap-scope .risk-badge.high { color: var(--err); border-color: var(--err-wire); background: var(--err-dim); }
+.ap-scope .risk-badge.high .swatch { background: var(--err); box-shadow: 0 0 8px var(--err); }
+
+/* Section labels inside audit card */
+.ap-scope .sec-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex; align-items: center; gap: 10px;
+  margin: 18px 0 12px;
+}
+.ap-scope .sec-label::after {
+  content: ""; flex: 1; height: 1px; background: var(--border-soft);
+}
+
+/* Record / key-value rows */
+.ap-scope .kv-row {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.04);
+  font-size: 13.5px;
+}
+.ap-scope .kv-row:last-of-type { border-bottom: none; }
+.ap-scope .kv-row .k {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+.ap-scope .kv-row .v {
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: left;
+}
+.ap-scope .kv-row .v .sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+.ap-scope .kv-row .t {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.ap-scope .kv-row .pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--ok-wire);
+  background: var(--ok-dim);
+  color: var(--ok);
+}
+.ap-scope .kv-row .pill.med { color: var(--hold); border-color: var(--hold-wire); background: var(--hold-dim); }
+.ap-scope .kv-row .pill.muted { color: var(--text-muted); border-color: var(--border-base); background: rgba(255,255,255,0.02); }
+
+/* Proof trail rows */
+.ap-scope .trail-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.04);
+  font-size: 13.5px;
+}
+.ap-scope .trail-row:last-of-type { border-bottom: none; }
+.ap-scope .trail-icon {
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 600;
+}
+.ap-scope .trail-icon.ok   { color: var(--ok);   background: var(--ok-dim);   border: 1px solid var(--ok-wire); }
+.ap-scope .trail-icon.warn { color: var(--hold); background: var(--hold-dim); border: 1px solid var(--hold-wire); }
+.ap-scope .trail-icon.err  { color: var(--err);  background: var(--err-dim);  border: 1px solid var(--err-wire); }
+.ap-scope .trail-text { color: var(--text-secondary); }
+.ap-scope .trail-text b { color: var(--text-primary); font-weight: 500; }
+.ap-scope .trail-time {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Recommendation block */
+.ap-scope .reco {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--ok-dim);
+  border: 1px solid var(--ok-wire);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.ap-scope .reco-icon {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: rgba(63, 209, 139, 0.18);
+  color: var(--ok);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-weight: 600;
+}
+.ap-scope .reco .reco-title {
+  font-size: 11px; font-family: var(--font-mono);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ok); font-weight: 600;
+  margin-bottom: 3px;
+}
+.ap-scope .reco .reco-body {
+  font-size: 14px; color: var(--text-primary); font-weight: 500;
+}
+.ap-scope .reco.med { background: var(--hold-dim); border-color: var(--hold-wire); }
+.ap-scope .reco.med .reco-icon { background: rgba(246,185,85,0.18); color: var(--hold); }
+.ap-scope .reco.med .reco-title { color: var(--hold); }
+
+/* Audit footer actions */
+.ap-scope .audit-actions {
+  margin-top: 16px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.ap-scope .chip-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-base);
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.ap-scope .chip-btn.primary {
+  background: var(--accent-dim); border-color: var(--accent-wire); color: var(--accent-soft);
+}
+.ap-scope .chip-btn .k {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint);
+  padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border-base); margin-left: 4px;
+}
+
+/* Audit card — small "live" header strip */
+.ap-scope .live-strip {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+}
+.ap-scope .live-strip .dots { display: inline-flex; gap: 4px; }
+.ap-scope .live-strip .dots i {
+  width: 9px; height: 9px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); display: inline-block;
+}
+.ap-scope .live-strip .dots i:nth-child(1) { background: #F05252; opacity: 0.75; }
+.ap-scope .live-strip .dots i:nth-child(2) { background: #F6B955; opacity: 0.75; }
+.ap-scope .live-strip .dots i:nth-child(3) { background: #3FD18B; opacity: 0.75; }
+.ap-scope .live-strip .pulse {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: auto;
+  color: var(--ok);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.ap-scope .live-strip .pulse::before {
+  content: ""; width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ok); box-shadow: 0 0 8px var(--ok);
+  animation: ap-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ap-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* ============================================================
+   Section primitives
+   ============================================================ */
+.ap-scope .section { padding: 88px 0; }
+@media (max-width: 880px) { .ap-scope .section { padding: 64px 0; } }
+.ap-scope .section-head { max-width: 740px; margin-bottom: 48px; }
+.ap-scope .section-head .eyebrow { margin-bottom: 16px; }
+.ap-scope .section-head p { color: var(--text-secondary); font-size: 17px; margin: 16px 0 0; }
+.ap-scope .section-divider {
+  height: 1px; background: var(--border-base); width: 100%;
+  max-width: 1200px; margin: 0 auto;
+}
+
+/* ============================================================
+   Problem — three-column
+   ============================================================ */
+.ap-scope .problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 980px) { .ap-scope .problem-grid { grid-template-columns: 1fr; } }
+.ap-scope .problem-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 16px;
+  padding: 28px;
+  position: relative;
+}
+.ap-scope .problem-card .tag {
+  display: inline-flex;
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+}
+.ap-scope .problem-card h3 {
+  font-size: 19px; font-weight: 600; letter-spacing: -0.015em;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.ap-scope .problem-card p { color: var(--text-secondary); margin: 0; font-size: 14.5px; line-height: 1.55; }
+.ap-scope .problem-card.accent {
+  background: linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.015));
+  border-color: var(--accent-wire);
+  box-shadow: var(--shadow-glow-purple);
+}
+.ap-scope .problem-card.accent .tag { color: var(--accent-soft); }
+.ap-scope .problem-card .stat {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ap-scope .problem-card .stat .n {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.ap-scope .problem-card .stat .t {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   How it works — 5-step horizontal flow
+   ============================================================ */
+.ap-scope .flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  position: relative;
+}
+@media (max-width: 1080px) { .ap-scope .flow { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+@media (max-width: 540px)  { .ap-scope .flow { grid-template-columns: 1fr; } }
+.ap-scope .flow-step {
+  position: relative;
+  padding: 22px 18px 20px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  min-height: 210px;
+  display: flex; flex-direction: column;
+}
+.ap-scope .flow-step .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 600;
+  margin-bottom: 12px;
+}
+.ap-scope .flow-step h3 {
+  font-size: 15px; font-weight: 600; line-height: 1.3;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.ap-scope .flow-step p {
+  margin: 0;
+  font-size: 13px; line-height: 1.55;
+  color: var(--text-muted);
+}
+.ap-scope .flow-step .glyph {
+  margin-top: auto;
+  padding-top: 14px;
+  color: var(--accent-soft);
+  opacity: 0.55;
+}
+.ap-scope .flow-step .glyph svg { width: 22px; height: 22px; }
+@media (min-width: 1081px) {
+  .ap-scope .flow-step:not(:last-child)::after {
+    content: ""; position: absolute;
+    top: 33px; right: -10px; width: 12px; height: 1px;
+    border-top: 1px dashed var(--accent-wire);
+    z-index: 1;
+  }
+}
+
+/* ============================================================
+   Recorded fields grid — 10 cards
+   ============================================================ */
+.ap-scope .checks-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1080px) { .ap-scope .checks-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 680px)  { .ap-scope .checks-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px)  { .ap-scope .checks-grid { grid-template-columns: 1fr; } }
+.ap-scope .check-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  padding: 18px 16px 16px;
+  transition: border-color .15s, transform .15s, background .15s;
+  min-height: 144px;
+  display: flex; flex-direction: column;
+}
+.ap-scope .check-card:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,0.035);
+  transform: translateY(-2px);
+}
+.ap-scope .check-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.ap-scope .check-icon svg { width: 16px; height: 16px; }
+.ap-scope .check-card h4 {
+  margin: 0 0 4px;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+.ap-scope .check-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.ap-scope .check-card .field-key {
+  margin-top: auto; padding-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   Sample report — big audit card
+   ============================================================ */
+.ap-scope .report-wrap {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 980px) { .ap-scope .report-wrap { grid-template-columns: 1fr; gap: 24px; } }
+.ap-scope .report-aside {
+  position: sticky; top: 96px;
+}
+@media (max-width: 980px) { .ap-scope .report-aside { position: static; } }
+.ap-scope .report-aside h2 { font-size: 36px; }
+.ap-scope .report-aside .lede { margin-top: 20px; }
+.ap-scope .stat-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-top: 28px;
+}
+.ap-scope .stat {
+  padding: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+}
+.ap-scope .stat .v {
+  font-family: var(--font-mono);
+  font-size: 22px; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.ap-scope .stat .v .unit { font-size: 13px; color: var(--text-muted); margin-left: 2px; }
+.ap-scope .stat .l {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Compliance use cases — persona cards
+   ============================================================ */
+.ap-scope .uses-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 980px) { .ap-scope .uses-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .ap-scope .uses-grid { grid-template-columns: 1fr; } }
+.ap-scope .use-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  padding: 22px 22px 20px;
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.ap-scope .use-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+.ap-scope .use-card .role {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  margin-bottom: 14px;
+  display: inline-block;
+}
+.ap-scope .use-card h4 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.ap-scope .use-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.ap-scope .use-card .deliverable {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+  display: flex; gap: 8px; align-items: center;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.ap-scope .use-card .deliverable .glyph {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--ok-dim);
+  border: 1px solid var(--ok-wire);
+  color: var(--ok);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ap-scope .use-card .deliverable .glyph svg { width: 12px; height: 12px; }
+.ap-scope .use-card .deliverable b { color: var(--text-primary); font-weight: 500; }
+
+/* Framework strip */
+.ap-scope .frameworks {
+  margin-top: 36px;
+  padding: 22px 24px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  align-items: center;
+}
+@media (max-width: 760px) { .ap-scope .frameworks { grid-template-columns: 1fr; gap: 16px; } }
+.ap-scope .frameworks .fw-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+.ap-scope .frameworks .fw-label b { display: block; color: var(--text-secondary); font-size: 13px; letter-spacing: 0.04em; margin-top: 4px; }
+.ap-scope .fw-list {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.ap-scope .fw {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ap-scope .fw .fw-code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-base);
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Pilot offer
+   ============================================================ */
+.ap-scope .pilot {
+  position: relative;
+  border-radius: 20px;
+  padding: 56px;
+  background:
+    radial-gradient(700px 360px at 100% 0%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(500px 300px at 0% 100%, rgba(63, 209, 139, 0.06), transparent 60%),
+    linear-gradient(180deg, #0E1124 0%, #0A0D1B 100%);
+  border: 1px solid var(--accent-wire);
+  box-shadow: var(--shadow-lift), 0 0 80px rgba(124, 92, 255, 0.10);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+@media (max-width: 880px) { .ap-scope .pilot { padding: 36px 28px; grid-template-columns: 1fr; gap: 28px; } }
+.ap-scope .pilot::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(124, 92, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 92, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
+  opacity: 0.65;
+}
+.ap-scope .pilot > * { position: relative; }
+.ap-scope .pilot h2 { font-size: clamp(28px, 3.4vw, 38px); }
+.ap-scope .pilot .lede { margin-top: 18px; font-size: 16px; }
+.ap-scope .pilot-price {
+  margin-top: 26px;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+}
+.ap-scope .pilot-price .amt {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.ap-scope .pilot-price .lbl {
+  font-size: 13px; color: var(--text-muted);
+}
+.ap-scope .pilot-price .lbl b { color: var(--text-secondary); font-weight: 500; }
+.ap-scope .pilot-ctas { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+.ap-scope .pilot ul {
+  margin: 0; padding: 0; list-style: none;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  padding: 10px 6px;
+}
+.ap-scope .pilot ul li {
+  display: grid; grid-template-columns: 28px 1fr auto;
+  align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px dashed rgba(255,255,255,0.05);
+  font-size: 14.5px;
+  color: var(--text-primary);
+}
+.ap-scope .pilot ul li:last-child { border-bottom: none; }
+.ap-scope .pilot ul li .ck {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--ok-dim);
+  border: 1px solid var(--ok-wire);
+  color: var(--ok);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.ap-scope .pilot ul li .ck svg { width: 12px; height: 12px; }
+.ap-scope .pilot ul li .qty {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--text-faint);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-base);
+  background: rgba(255,255,255,0.02);
+}
+
+/* ============================================================
+   Final CTA
+   ============================================================ */
+.ap-scope .final {
+  text-align: center;
+  padding: 96px 0 120px;
+  position: relative;
+}
+.ap-scope .final::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.14), transparent 60%);
+  pointer-events: none;
+}
+.ap-scope .final > * { position: relative; }
+.ap-scope .final h2 { font-size: clamp(36px, 4.4vw, 54px); margin-bottom: 18px; }
+.ap-scope .final p { color: var(--text-secondary); font-size: 18px; max-width: 60ch; margin: 0 auto 32px; }
+.ap-scope .final-ctas { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ============================================================
+   Trust-passport pill (agent identity)
+   ============================================================ */
+.ap-scope .passport {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-radius: 10px;
+  margin-top: 4px;
+}
+.ap-scope .passport .avatar {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #7C5CFF 0%, #4B3CBB 100%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(124,92,255,0.35);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-family: var(--font-mono); font-weight: 600; font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.ap-scope .passport .who .name {
+  font-size: 14.5px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.005em;
+}
+.ap-scope .passport .who .id {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+  margin-top: 2px;
+}
+.ap-scope .passport .score-block {
+  text-align: right;
+}
+.ap-scope .passport .score-block .num {
+  font-family: var(--font-mono); font-size: 16px; font-weight: 600;
+  color: var(--ok); font-variant-numeric: tabular-nums;
+}
+.ap-scope .passport .score-block .lbl {
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--text-faint);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+
+/* Hero callout */
+.ap-scope .why-callout {
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-base);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 760px;
+}
+.ap-scope .why-callout b { color: var(--text-primary); font-weight: 600; }
+
+/* ============================================================
+   Why SwarmSync — pillar row
+   ============================================================ */
+.ap-scope .pillars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 36px;
+}
+@media (max-width: 1100px) { .ap-scope .pillars { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .ap-scope .pillars { grid-template-columns: repeat(2, 1fr); } }
+.ap-scope .pillar {
+  padding: 22px 18px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+}
+.ap-scope .pillar .ic {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(124, 92, 255, 0.10);
+  border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.ap-scope .pillar .ic svg { width: 14px; height: 14px; }
+.ap-scope .pillar h4 {
+  margin: 0 0 4px;
+  font-size: 14.5px; font-weight: 600;
+  color: var(--text-primary);
+}
+.ap-scope .pillar p {
+  margin: 0;
+  font-size: 12.5px; line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Recorded events timeline (sample report)
+   ============================================================ */
+.ap-scope .events {
+  margin: 6px 0 2px;
+  padding: 4px 0;
+  position: relative;
+}
+.ap-scope .events::before {
+  content: ""; position: absolute;
+  left: 13px; top: 18px; bottom: 18px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--accent-wire), rgba(124,92,255,0.06));
+}
+.ap-scope .event-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 0;
+  font-size: 13.5px;
+  position: relative;
+}
+.ap-scope .event-row .dot {
+  width: 26px; height: 26px;
+  border-radius: 999px;
+  background: var(--bg-base);
+  border: 1px solid var(--accent-wire);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  color: var(--accent-soft);
+  position: relative; z-index: 1;
+}
+.ap-scope .event-row.done .dot {
+  background: var(--ok-dim);
+  border-color: var(--ok-wire);
+  color: var(--ok);
+}
+.ap-scope .event-row .label { color: var(--text-primary); font-weight: 500; }
+.ap-scope .event-row .label .sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+.ap-scope .event-row .t {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Pricing tiers (post-pilot recurring)
+   ============================================================ */
+.ap-scope .tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 32px;
+}
+@media (max-width: 880px) { .ap-scope .tiers { grid-template-columns: 1fr; } }
+.ap-scope .tier {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  padding: 24px 22px 22px;
+  display: flex; flex-direction: column;
+}
+.ap-scope .tier.featured {
+  background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+  border-color: var(--accent-wire);
+  box-shadow: var(--shadow-glow-purple);
+}
+.ap-scope .tier .tname {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+.ap-scope .tier.featured .tname { color: var(--accent-soft); }
+.ap-scope .tier .price {
+  font-family: var(--font-mono);
+  font-size: 28px; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.ap-scope .tier .price .per { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+.ap-scope .tier .summary {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ap-scope .tier ul {
+  list-style: none; margin: 18px 0 0; padding: 0;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+  padding-top: 14px;
+  flex: 1;
+}
+.ap-scope .tier ul li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.ap-scope .tier ul li::before {
+  content: ""; width: 5px; height: 5px; border-radius: 999px;
+  background: var(--accent-soft); display: inline-block;
+  flex-shrink: 0;
+}
+.ap-scope .tier .tcta {
+  margin-top: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  font-size: 13.5px; font-weight: 500;
+}
+.ap-scope .tier.featured .tcta {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+
+/* Pricing note */
+.ap-scope .tiers-note {
+  margin-top: 20px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   Related products section
+   ============================================================ */
+.ap-scope .related { padding: 24px 0 64px; }
+.ap-scope .related .section-head { margin-bottom: 32px; }
+.ap-scope .related-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+@media (max-width: 760px) { .ap-scope .related-grid { grid-template-columns: 1fr; } }
+.ap-scope .related-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-base);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex; flex-direction: column;
+  transition: border-color .15s, transform .15s, background .15s;
+}
+.ap-scope .related-card:hover {
+  border-color: var(--accent-wire);
+  background: rgba(124,92,255,0.04);
+  transform: translateY(-2px);
+}
+.ap-scope .related-card .label {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+}
+.ap-scope .related-card .label .ic {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--accent-dim); border: 1px solid var(--accent-wire);
+  color: var(--accent-soft);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 600;
+}
+.ap-scope .related-card h3 {
+  font-size: 22px; font-weight: 600; letter-spacing: -0.015em;
+  margin-bottom: 10px; line-height: 1.25;
+}
+.ap-scope .related-card h3 .pname { color: var(--accent-soft); }
+.ap-scope .related-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.ap-scope .related-card .go {
+  margin-top: 18px;
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--accent-soft);
+  font-size: 13.5px; font-weight: 500;
+}
+.ap-scope .related-card .go svg { width: 12px; height: 12px; transition: transform .15s; }
+.ap-scope .related-card:hover .go svg { transform: translateX(3px); }
+
+/* Utility */
+.ap-scope .text-soft { color: var(--text-secondary); }
+.ap-scope .text-muted { color: var(--text-muted); }
+.ap-scope .accent { color: var(--accent-soft); }
+
+/* ============================================================
+   S2 capture grid — 3 cards, stacks on mobile
+   ============================================================ */
+.ap-scope .capture-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 860px) {
+  .ap-scope .capture-grid { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ============================================================
+   S3 how-it-works — 3-step ol, stacks on mobile
+   ============================================================ */
+@media (max-width: 860px) {
+  .ap-scope #how-it-works ol { grid-template-columns: 1fr !important; }
+}
+
+/* ============================================================
+   S6 pricing — compact 2-col, stacks on mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  .ap-scope #pricing > div[role="list"] { grid-template-columns: 1fr !important; }
+}
+
+/* ============================================================
+   Hero visual — stack below copy on narrow viewports
+   ============================================================ */
+@media (max-width: 860px) {
+  .ap-scope .hero-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Screen-reader-only utility */
+.ap-scope .sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
