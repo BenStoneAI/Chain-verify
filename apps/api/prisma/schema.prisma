@@ -1,0 +1,339 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProofProductType { INVOICE_PROOF AUDIT_PROOF VERIFY_API }
+enum ProofEntitlementStatus { ACTIVE EXPIRED CANCELLED }
+enum ProofProduct { INVOICE_AUDIT IDENTITY_CHECK DOCUMENT_VERIFY COMPLIANCE_SCAN }
+enum ProofSubject { INVOICE IDENTITY DOCUMENT COMPLIANCE }
+enum ProofFinalDecision { APPROVED REJECTED ESCALATED INCONCLUSIVE }
+enum ProofStatus { CREATED EXPORTED ARCHIVED }
+enum ProofSourceType { UPLOAD URL API_PUSH WEBHOOK }
+enum ProofRunStatus { QUEUED PROCESSING PASSED FAILED NEEDS_REVIEW ERROR }
+enum ProofRiskLevel { UNKNOWN LOW MEDIUM HIGH }
+enum OrgDataSource { MANUAL QUICKBOOKS XERO NETSUITE SAGE BILLDOTCOM VENDOR_PORTAL_VERIFIED ERP }
+enum InvoiceScanRiskLevel { LOW MEDIUM HIGH CRITICAL }
+enum OrgVendorStatus { ACTIVE INACTIVE REVIEW }
+enum OrgPoStatus { OPEN CLOSED CANCELLED }
+enum ErpProvider { QUICKBOOKS XERO NETSUITE SAGE BILLDOTCOM }
+enum ScanApprovalStatus { PENDING_REVIEW APPROVED BLOCKED }
+
+model Organization {
+  id String @id @default(uuid())
+  name String
+  slug String @unique
+  stripeCustomerId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  proofProductEntitlements ProofProductEntitlement[]
+  orgVendorMaster OrgVendorMaster[]
+  orgPoRegister OrgPoRegister[]
+  orgInvoiceHistory OrgInvoiceHistory[]
+  orgInvoiceScanRuns OrgInvoiceScanRun[]
+  orgErpConnections OrgErpConnection[]
+  orgVendorBaselines OrgVendorBaseline[]
+  scanFindingApprovals ScanFindingApproval[]
+  vendorPortalTokens VendorPortalToken[]
+}
+
+model ProofProductEntitlement {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  product ProofProductType
+  planSlug String
+  status ProofEntitlementStatus @default(ACTIVE)
+  monthlyLimit Int?
+  periodStart DateTime @default(now())
+  periodEnd DateTime?
+  stripeSubscriptionId String?
+  stripeSessionId String?
+  stripeSubscriptionItemId String?
+  meteredBillingEnabled Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, product, status])
+  @@index([stripeSessionId])
+}
+
+model ProofPilotIntake {
+  id String @id @default(cuid())
+  product String
+  planSlug String?
+  companyName String
+  contactName String?
+  contactEmail String
+  workflowName String?
+  agentCount Int?
+  invoiceCount Int?
+  notes String?
+  stripeSessionId String?
+  organizationId String?
+  status String @default("NEW")
+  sourcePath String?
+  rawPayload Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([product])
+  @@index([contactEmail])
+  @@index([organizationId])
+  @@index([stripeSessionId])
+  @@index([status])
+  @@map("proof_pilot_intakes")
+}
+
+model ProofFreeScan {
+  id String @id @default(cuid())
+  userId String?
+  emailHash String?
+  ipHash String?
+  product String @default("invoice-proof")
+  usedAt DateTime @default(now())
+  @@index([userId, product])
+  @@index([emailHash, product])
+  @@index([ipHash, product])
+  @@map("proof_free_scans")
+}
+
+model VerificationRun {
+  id String @id @default(cuid()) @map("id")
+  orgId String @map("org_id")
+  product ProofProduct @map("product")
+  sourceType ProofSourceType @map("source_type")
+  status ProofRunStatus @default(QUEUED) @map("status")
+  riskLevel ProofRiskLevel @default(UNKNOWN) @map("risk_level")
+  inputSummary String @map("input_summary") @db.Text
+  outputSummary String? @map("output_summary") @db.Text
+  confidence Int? @map("confidence")
+  checksPerformed Json @default("[]") @map("checks_performed")
+  issuesFound Json @default("[]") @map("issues_found")
+  claimToken String? @unique @map("claim_token")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  proofs ProofRecord[]
+  @@index([orgId])
+  @@index([claimToken])
+  @@index([orgId, product])
+  @@index([orgId, status])
+  @@index([orgId, createdAt(sort: Desc)])
+  @@map("verification_runs")
+}
+
+model ProofRecord {
+  id String @id @default(cuid()) @map("id")
+  orgId String @map("org_id")
+  verificationRunId String @map("verification_run_id")
+  product ProofProduct @map("product")
+  subject ProofSubject @map("subject")
+  summary String @map("summary") @db.Text
+  evidence Json @default("[]") @map("evidence")
+  finalDecision ProofFinalDecision @map("final_decision")
+  proofStatus ProofStatus @default(CREATED) @map("proof_status")
+  timeline Json @default("[]") @map("timeline")
+  exportUrls Json @default("[]") @map("export_urls")
+  chain_hash String? @map("chain_hash") @db.Text
+  prev_chain_hash String? @map("prev_chain_hash") @db.Text
+  chainSeq Int @unique @default(autoincrement()) @map("chain_seq")
+  conduit_proof_id String? @map("conduit_proof_id") @db.Text
+  proof_signature String? @map("proof_signature") @db.Text
+  retentionExpiresAt DateTime? @map("retention_expires_at")
+  archivedAt DateTime? @map("archived_at")
+  retentionPolicyDays Int? @map("retention_policy_days")
+  retentionStatus String @default("ACTIVE") @map("retention_status")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  verificationRun VerificationRun @relation(fields: [verificationRunId], references: [id], onDelete: Restrict)
+  @@index([orgId])
+  @@index([orgId, product])
+  @@index([orgId, proofStatus])
+  @@index([orgId, finalDecision])
+  @@index([orgId, createdAt(sort: Desc)])
+  @@index([orgId, chainSeq(sort: Desc)])
+  @@index([verificationRunId])
+  @@index([retentionStatus, retentionExpiresAt])
+  @@map("proof_records")
+}
+
+model VerifyApiUsage {
+  id String @id @default(cuid())
+  orgId String
+  product String
+  periodKey String
+  count Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([orgId, product, periodKey])
+  @@index([orgId, product])
+}
+
+model ProofUsageEvent {
+  id String @id @default(cuid())
+  organizationId String
+  product String
+  proofId String?
+  verificationRunId String?
+  planSlug String
+  isOverage Boolean @default(false)
+  quantity Int @default(1)
+  overageCents Float?
+  stripeReported Boolean @default(false)
+  stripeUsageRecordId String?
+  stripeReportAttempts Int @default(0)
+  nextStripeReportAt DateTime?
+  lastStripeReportError String?
+  createdAt DateTime @default(now())
+  @@index([organizationId, product, createdAt])
+  @@index([stripeReported])
+  @@index([nextStripeReportAt])
+  @@index([verificationRunId, isOverage])
+  @@map("proof_usage_events")
+}
+
+model OrgInvoiceHistory {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoiceNo String
+  vendor String
+  amount Float
+  poNumber String?
+  paidAt DateTime?
+  source OrgDataSource @default(MANUAL)
+  createdAt DateTime @default(now())
+  @@index([organizationId, invoiceNo])
+  @@index([organizationId, vendor])
+  @@index([organizationId, paidAt])
+  @@map("org_invoice_history")
+}
+
+model OrgInvoiceScanRun {
+  id String @id @default(cuid())
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  userId String?
+  ipHash String?
+  invoiceCount Int
+  findingCount Int @default(0)
+  criticalCount Int @default(0)
+  riskLevel InvoiceScanRiskLevel @default(LOW)
+  findings Json @default("[]")
+  coverageSummary Json?
+  createdAt DateTime @default(now())
+  proofRecordId String?
+  scanFindingApprovals ScanFindingApproval[]
+  @@index([organizationId, createdAt])
+  @@index([ipHash, createdAt])
+  @@map("org_invoice_scan_runs")
+}
+
+model OrgVendorMaster {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendorName String
+  city String?
+  state String?
+  expectedEmailDomain String?
+  bankRoutingNumber String?
+  bankAccountLast4 String?
+  remitAddress String?
+  status OrgVendorStatus @default(ACTIVE)
+  source OrgDataSource @default(MANUAL)
+  contactEmail String?
+  externalId String?
+  bankDetailChangedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, vendorName])
+  @@index([organizationId, status])
+  @@map("org_vendor_master")
+}
+
+model OrgPoRegister {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  poNumber String
+  vendorName String
+  authorizedAmount Float
+  status OrgPoStatus @default(OPEN)
+  issuedAt DateTime?
+  expiresAt DateTime?
+  source OrgDataSource @default(MANUAL)
+  externalId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([organizationId, poNumber])
+  @@index([organizationId, status])
+  @@map("org_po_register")
+}
+
+model OrgErpConnection {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider ErpProvider
+  encryptedTokens String @db.Text
+  realmId String?
+  lastSyncAt DateTime?
+  lastSyncStatus String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([organizationId, provider])
+  @@map("org_erp_connections")
+}
+
+model OrgVendorBaseline {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendorName String
+  avgAmount Float?
+  amountStdDev Float?
+  typicalFrequencyDays Float?
+  typicalPoNumbers String[] @default([])
+  lastInvoiceAt DateTime?
+  sampleCount Int @default(0)
+  computedAt DateTime @default(now())
+  @@unique([organizationId, vendorName])
+  @@map("org_vendor_baselines")
+}
+
+model ScanFindingApproval {
+  id String @id @default(cuid())
+  scanRunId String
+  scanRun OrgInvoiceScanRun @relation(fields: [scanRunId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  findingPattern String
+  findingDetail String
+  invoiceNo String?
+  vendor String?
+  status ScanApprovalStatus @default(PENDING_REVIEW)
+  approverUserId String?
+  decisionNote String?
+  signatureHmac String?
+  decidedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([organizationId, status])
+  @@index([scanRunId])
+  @@map("scan_finding_approvals")
+}
+
+model VendorPortalToken {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendorName String
+  token String @unique
+  verifiedEmail String?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([organizationId, vendorName])
+  @@map("vendor_portal_tokens")
+}

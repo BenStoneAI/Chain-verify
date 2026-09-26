@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "baseUrl": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": false,
+    "paths": {
+      "@swarmsync/proof-core": [
+        "../../packages/proof-core/src"
+      ],
+      "@swarmsync/proof-core/*": [
+        "../../packages/proof-core/src/*"
+      ],
+      "@agent-market/config": [
+        "../../packages/config/src"
+      ]
+    },
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}

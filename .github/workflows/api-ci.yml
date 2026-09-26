@@ -1,0 +1,12 @@
+name: Chain Verify API
+
+# CI intentionally disabled. Run validation/build locally or only when explicitly requested.
+on:
+  workflow_dispatch:
+
+jobs:
+  api:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI disabled by repository owner"
