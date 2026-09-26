@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 import { ensureAuthToken } from '@/lib/auth';
@@ -29,7 +28,6 @@ export function ProofCheckoutButton({
   cancelUrl,
   isSandbox,
 }: Props) {
-  const { status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,16 +45,12 @@ export function ProofCheckoutButton({
     }
     const checkoutReturnTo = `/proof/checkout?${checkoutParams.toString()}`;
 
-    if (status === 'loading') {
-      return;
-    }
-
     const localJwt = ensureAuthToken();
 
     // C-5 fix: require authentication before creating a Stripe checkout session.
     // Unauthenticated users are redirected to register with a returnTo so they
     // land back on the exact proof checkout page after account creation.
-    if (status === 'unauthenticated' && !localJwt) {
+    if (!localJwt) {
       const registerParams = new URLSearchParams({
         type: 'human',
         product,
@@ -84,15 +78,15 @@ export function ProofCheckoutButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={loading || status === 'loading'}
+        disabled={loading}
         className={className}
         style={
           className
             ? undefined
-            : { all: 'unset', cursor: loading || status === 'loading' ? 'wait' : 'pointer' }
+            : { all: 'unset', cursor: loading ? 'wait' : 'pointer' }
         }
       >
-        {loading ? 'Redirecting…' : status === 'loading' ? 'Loading…' : children}
+        {loading ? 'Redirecting…' : children}
       </button>
       {error ? (
         <span
