@@ -1,4 +1,8 @@
-export async function ensureAuthTokenAsync(): Promise<string | null> {
+export function ensureAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
   return window.localStorage.getItem('agent-market-token');
+}
+
+export async function ensureAuthTokenAsync(): Promise<string | null> {
+  return ensureAuthToken();
 }
