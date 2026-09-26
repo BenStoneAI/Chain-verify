@@ -374,7 +374,7 @@ export default function VerifyAPIDashboard() {
     let cancelled = false;
 
     async function resolveToken() {
-      const sessionToken = session?.accessToken;
+      const sessionToken = (session as { accessToken?: string } | null)?.accessToken;
       const existingToken = token ?? sessionToken ?? null;
 
       if (existingToken) {
@@ -402,7 +402,7 @@ export default function VerifyAPIDashboard() {
       }
 
       setAuthToken(exchangedToken);
-      const sessionUser = session.user;
+      const sessionUser = session?.user as ({ id?: string; email?: string | null; name?: string | null } | undefined);
       if (sessionUser?.email) {
         setAuth(
           {
