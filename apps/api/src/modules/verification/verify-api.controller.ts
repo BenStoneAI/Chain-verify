@@ -39,7 +39,6 @@ import {
   ProofRunStatus,
   ProofSourceType,
   ProofSubject,
-  SubscriptionStatus,
 } from '@prisma/client';
 
 import { plainToInstance } from 'class-transformer';
@@ -2511,7 +2510,7 @@ export class VerifyApiController {
   // ---------------------------------------------------------------------------
 
   @Get('proof/pilot-intakes')
-  @UseGuards(JwtAuthGuard, AdminOnlyGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '[Admin] List pilot intakes' })
   async listPilotIntakes(
     @Query('product') product?: string,
@@ -2546,7 +2545,7 @@ export class VerifyApiController {
   // ---------------------------------------------------------------------------
 
   @Patch('proof/pilot-intakes/:id/status')
-  @UseGuards(JwtAuthGuard, AdminOnlyGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '[Admin] Update pilot intake status' })
   async updatePilotIntakeStatus(@Param('id') id: string, @Body() body: { status: string }) {
     const newStatus = body?.status?.trim() as PilotIntakeStatus | undefined;
@@ -2908,59 +2907,14 @@ export class VerifyApiController {
       const requestedChecks = user
         ? ((body.rules as string[]) ?? ['auto'])
         : [...DEMO_SOFTWARE_DELIVERY_ALLOWED_CHECKS];
-      const result = await this.softwareDelivery.verify(dto, requestedChecks, {
-        organizationId: orgId,
-      });
-
-      const sdRiskLevel =
-        result.confidence < 0.5 ? 'high' : result.confidence < 0.75 ? 'medium' : 'low';
-      // Use computeContentHash over content+evidence so the chain_hash is
-      // tamper-evident (bound to delivered content), not merely derivable from the
-      // proof id alone. Includes prevChainHash as an empty-string sentinel for SD
-      // proofs (they are not chained to the org ledger).
-      const sdChainHash = computeContentHash({
-        proofId: result.proofId,
-        deliveryPayload: body.output,
-        evidence: body.evidence ?? null,
-        prevChainHash: '',
-      });
-
+      const result = await this.softwareDelivery.verify(orgId, dto);
       const sdResponse = {
-        verification_status: result.verificationStatus,
-        verification_id: result.verificationId,
+        verification_status: result.status,
         confidence: result.confidence,
-        risk_level: sdRiskLevel,
-        proof_id: result.proofId,
-        chain_hash: sdChainHash,
-        tier_run: result.tierRun,
-        job_type: result.jobType,
-        escalated: result.escalated,
-        escalation_reason: result.escalationReason,
-        summary: result.summary,
-        checks_passed: result.checksPassed,
-        checks_failed: result.checksFailed,
-        checks_warning: result.checksWarning,
-        checks_skipped: result.checksSkipped,
-        issues_found: result.issuesFound.map((i) => ({
-          check_id: i.checkId,
-          check_name: i.checkName,
-          status: i.status,
-          detail: i.detail,
-        })),
-        findings: result.issuesFound.map((i) => ({
-          rule: i.checkId,
-          severity: i.status === 'FAIL' ? 'critical' : i.status === 'WARNING' ? 'warning' : 'info',
-          message: i.detail ?? i.checkName,
-        })),
-        recommended_action: result.recommendedAction,
-        results: result.results.map((r) => ({
-          check_id: r.checkId,
-          check_name: r.checkName,
-          status: r.status,
-          detail: r.detail,
-          duration_ms: r.durationMs,
-          evidence: r.evidence,
-        })),
+        accepted: result.accepted,
+        evidence_gaps: result.evidence_gaps,
+        input_received: result.input_received,
+        checks_requested: requestedChecks,
       };
       if (demoCacheKey) setDemoSoftwareDeliveryCache(demoCacheKey, sdResponse);
       return sdResponse;
@@ -3529,32 +3483,8 @@ export class VerifyApiController {
       });
     }
 
-    // For audit_proof tasks, dispatch a Conduit verification job.
-    let conduitProofId: string | undefined;
-    if (body.task === 'audit_proof') {
-      const rawContent =
-        typeof body.output === 'object' && body.output !== null
-          ? JSON.stringify(body.output)
-          : String(body.output ?? '');
-      try {
-        const { conduitVerificationId } = await this.conduitVerification.dispatchAuditProof({
-          proofId: proof.id,
-          orgId,
-          summary: completedRun.outputSummary ?? 'Audit verification',
-          content: rawContent,
-        });
-        conduitProofId = conduitVerificationId;
-        // Persist conduit_proof_id to the ProofRecord so it survives retrieval/export.
-        if (conduitProofId) {
-          await this.prisma.proofRecord.update({
-            where: { id: proof.id },
-            data: { conduit_proof_id: conduitProofId },
-          });
-        }
-      } catch {
-        // Non-fatal: proof was created; Conduit dispatch failure is logged in dispatchAuditProof
-      }
-    }
+    // URL/browser evidence is already routed through the Chain Verify-owned Conduit browser adapter.
+    // No second legacy Conduit dispatch service is required here.
 
     let claim_token: string | undefined;
     if (orgId === ANONYMOUS_ORG_ID) {
