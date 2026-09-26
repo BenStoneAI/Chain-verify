@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 import InvoiceForm from '@/components/proof/InvoiceForm';
-import { InvoiceBatchScan } from '@/components/proof/InvoiceBatchScan';
 import ProductFooter from '@/components/proof/ProductFooter';
 import ProductNav from '@/components/proof/ProductNav';
 import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
@@ -1217,13 +1216,6 @@ export default function InvoiceProofClient() {
               </p>
             </div>
             <InvoiceForm />
-            <div className="mt-10 pt-10 border-t border-white/10">
-              <h3 className="text-lg font-semibold mb-2">Batch scan (server-backed)</h3>
-              <p className="text-sm text-white/50 mb-4">
-                One free batch scan per visitor. Results persist when you create an account.
-              </p>
-              <InvoiceBatchScan />
-            </div>
           </section>
 
           {/* ── S7: FINAL CTA ── */}
