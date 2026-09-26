@@ -16,7 +16,8 @@
     "api:test": "npm test --workspace @chain-verify/api",
     "api:typecheck": "npm run typecheck --workspace @chain-verify/api",
     "api:build": "npm run build --workspace @chain-verify/api",
-    "api:start": "node apps/api/dist/main.js"
+    "api:start": "node apps/api/dist/main.js",
+    "build:config": "npm run build --workspace @chain-verify/config"
   },
   "devDependencies": {
     "@types/node": "^20.19.35",
