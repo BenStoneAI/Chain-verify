@@ -30,7 +30,7 @@ import {
   runProofProduct,
   type EvidenceInput,
   type ProofReport,
-} from '@swarmsync/proof-core';
+} from '@chain-verify/proof-core';
 import type { Prisma } from '@prisma/client';
 import {
   ProofFinalDecision,
