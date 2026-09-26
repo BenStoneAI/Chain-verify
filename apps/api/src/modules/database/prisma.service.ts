@@ -83,6 +83,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // Prisma migrations. Startup ALTER TABLE bypassed the migration system; removed 2026-06-15.
 
     // Chain Verify owns a deliberately small schema; Prisma migrations are the schema gate.
+  }
 
   /** Log where we are connecting without exposing credentials. */
   private logDatabaseTarget(): void {
