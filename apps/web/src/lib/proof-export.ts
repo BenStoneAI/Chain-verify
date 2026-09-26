@@ -20,3 +20,20 @@ export async function downloadProofExport(options: {
   anchor.remove();
   URL.revokeObjectURL(url);
 }
+
+export function downloadJSONBlob(value: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename.endsWith('.json') ? filename : `${filename}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadPDFPrint(_value: unknown, title: string) {
+  if (typeof document !== 'undefined') document.title = title;
+  if (typeof window !== 'undefined') window.print();
+}
