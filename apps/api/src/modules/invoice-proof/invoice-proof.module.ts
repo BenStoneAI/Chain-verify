@@ -8,6 +8,7 @@ import { InvoiceProofService } from './invoice-proof.service.js';
 import { InvoiceProofErpService } from './invoice-proof-erp.service.js';
 import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.service.js';
 import { InvoicePdfService } from './invoice-pdf.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
 @Module({
   // Chain Verify adapters supply narrow external-service boundaries; verification remains local.
@@ -18,6 +19,7 @@ import { InvoicePdfService } from './invoice-pdf.service.js';
     InvoiceProofErpService,
     InvoiceProofIntelligenceService,
     InvoicePdfService,
+    JwtAuthGuard,
   ],
   exports: [InvoiceProofService, InvoiceProofIntelligenceService],
 })
