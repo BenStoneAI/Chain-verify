@@ -1,12 +1,11 @@
 'use client';
 
-import { ChevronDown, Menu, X, LayoutDashboard } from 'lucide-react';
+import { ChevronDown, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth-store';
 import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
 
 export interface ProductNavProps {
@@ -44,14 +43,8 @@ const PRODUCTS = [
   },
 ] as const;
 
-const DASHBOARD_HREFS: Record<ProductNavProps['currentProduct'], string> = {
-  'audit-proof': '/audit-proof/dashboard',
-  'invoice-proof': '/invoice-proof/dashboard',
-  'verify-api': '/verify-api/dashboard',
-};
 
 export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps) {
-  const { token } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productsOpen, setProductsOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
@@ -169,41 +162,6 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
 
           {/* Desktop right side */}
           <div className="hidden items-center gap-4 md:flex">
-            {token && currentProduct === 'invoice-proof' && (
-              <>
-                <Link
-                  href="/invoice-proof/settings/data"
-                  className="rounded-md px-3 py-1.5 text-sm text-white/60 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]"
-                >
-                  Data settings
-                </Link>
-                <Link
-                  href="/invoice-proof/settings/integrations"
-                  className="rounded-md px-3 py-1.5 text-sm text-white/60 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]"
-                >
-                  Integrations
-                </Link>
-              </>
-            )}
-            {/* Dashboard link (authenticated only) */}
-            {token && (
-              <Link
-                href={DASHBOARD_HREFS[currentProduct]}
-                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-white/60 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]"
-              >
-                <LayoutDashboard aria-hidden="true" className="h-3.5 w-3.5" />
-                My Dashboard
-              </Link>
-            )}
-            {token && (
-              <Link
-                href="/console/overview"
-                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-white/60 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]"
-              >
-                <LayoutDashboard aria-hidden="true" className="h-3.5 w-3.5" />
-                Back to Console
-              </Link>
-            )}
             {/* Products dropdown */}
             <div ref={dropdownRef} className="relative">
               <button
@@ -393,28 +351,6 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 </div>
               )}
             </div>
-
-            {/* Mobile dashboard link */}
-            {token && (
-              <div className="border-b border-white/10 pb-3 pt-2">
-                <Link
-                  href={DASHBOARD_HREFS[currentProduct]}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7C5CFF]"
-                >
-                  <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
-                  My Dashboard
-                </Link>
-                <Link
-                  href="/console/overview"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7C5CFF]"
-                >
-                  <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
-                  Back to Console
-                </Link>
-              </div>
-            )}
 
             <div className="pt-3">
               {currentProduct === 'verify-api' ? (

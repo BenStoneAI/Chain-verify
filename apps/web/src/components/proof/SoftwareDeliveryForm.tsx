@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 
 import { DEFAULT_API_BASE, AUTH_TOKEN_KEY } from '@/lib/constants';
 import { PROOF_VERIFY_AUTH_PATH, PROOF_VERIFY_DEMO_PATH, resolveProofApiBase } from '@/lib/proof-api';
-import { useAuthStore } from '@/stores/auth-store';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -191,9 +189,6 @@ function FieldError({ id, message }: { id: string; message: string | undefined }
 // ---------------------------------------------------------------------------
 
 export function SoftwareDeliveryForm() {
-  const { data: session } = useSession();
-  const zustandToken = useAuthStore((state) => state.token);
-
   // Sub-tab: 'git' = existing GitHub SHA form; 'document' = new document delivery form
   const [deliverySubTab, setDeliverySubTab] = useState<'git' | 'document'>('document');
 
@@ -249,12 +244,7 @@ export function SoftwareDeliveryForm() {
 
   // Resolve token client-side — same pattern as console/proof/page.tsx
   function resolveToken(): string | null {
-    const local = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
-    return (
-      zustandToken ??
-      local ??
-      ((session as { accessToken?: string } | null)?.accessToken ?? null)
-    );
+    return typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
   }
 
   // ---------------------------------------------------------------------------
