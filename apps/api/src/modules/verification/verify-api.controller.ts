@@ -2506,7 +2506,7 @@ export class VerifyApiController {
   // ---------------------------------------------------------------------------
   // GET /api/proof/pilot-intakes
   // Operator endpoint — list pilot intakes with optional filters.
-  // Restricted to admin users via JwtAuthGuard + AdminOnlyGuard.
+  // Restricted to authenticated API operators via JwtAuthGuard.
   // ---------------------------------------------------------------------------
 
   @Get('proof/pilot-intakes')
@@ -2541,7 +2541,7 @@ export class VerifyApiController {
   // ---------------------------------------------------------------------------
   // PATCH /api/proof/pilot-intakes/:id/status
   // Operator endpoint — update intake status.
-  // Restricted to admin users via JwtAuthGuard + AdminOnlyGuard.
+  // Restricted to authenticated API operators via JwtAuthGuard.
   // ---------------------------------------------------------------------------
 
   @Patch('proof/pilot-intakes/:id/status')
