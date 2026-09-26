@@ -696,7 +696,7 @@ export default function VerifyAPIDashboard() {
           </p>
           <div className="overflow-x-auto rounded-lg bg-[#070810] p-4">
             <pre className="font-mono text-xs leading-relaxed text-white/80">
-{`curl -X POST https://api.swarmsync.ai/api/verify \\
+{`curl -X POST https://chain-verify-api.onrender.com/api/verify \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
