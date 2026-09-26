@@ -7,21 +7,97 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ProofProductType { INVOICE_PROOF AUDIT_PROOF VERIFY_API }
-enum ProofEntitlementStatus { ACTIVE EXPIRED CANCELLED }
-enum ProofProduct { INVOICE_AUDIT IDENTITY_CHECK DOCUMENT_VERIFY COMPLIANCE_SCAN }
-enum ProofSubject { INVOICE IDENTITY DOCUMENT COMPLIANCE }
-enum ProofFinalDecision { APPROVED REJECTED ESCALATED INCONCLUSIVE }
-enum ProofStatus { CREATED EXPORTED ARCHIVED }
-enum ProofSourceType { UPLOAD URL API_PUSH WEBHOOK }
-enum ProofRunStatus { QUEUED PROCESSING PASSED FAILED NEEDS_REVIEW ERROR }
-enum ProofRiskLevel { UNKNOWN LOW MEDIUM HIGH }
-enum OrgDataSource { MANUAL QUICKBOOKS XERO NETSUITE SAGE BILLDOTCOM VENDOR_PORTAL_VERIFIED ERP }
-enum InvoiceScanRiskLevel { LOW MEDIUM HIGH CRITICAL }
-enum OrgVendorStatus { ACTIVE INACTIVE REVIEW }
-enum OrgPoStatus { OPEN CLOSED CANCELLED }
-enum ErpProvider { QUICKBOOKS XERO NETSUITE SAGE BILLDOTCOM }
-enum ScanApprovalStatus { PENDING_REVIEW APPROVED BLOCKED }
+enum ProofProductType {
+  INVOICE_PROOF
+  AUDIT_PROOF
+  VERIFY_API
+}
+enum ProofEntitlementStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+enum ProofProduct {
+  INVOICE_AUDIT
+  IDENTITY_CHECK
+  DOCUMENT_VERIFY
+  COMPLIANCE_SCAN
+}
+enum ProofSubject {
+  INVOICE
+  IDENTITY
+  DOCUMENT
+  COMPLIANCE
+}
+enum ProofFinalDecision {
+  APPROVED
+  REJECTED
+  ESCALATED
+  INCONCLUSIVE
+}
+enum ProofStatus {
+  CREATED
+  EXPORTED
+  ARCHIVED
+}
+enum ProofSourceType {
+  UPLOAD
+  URL
+  API_PUSH
+  WEBHOOK
+}
+enum ProofRunStatus {
+  QUEUED
+  PROCESSING
+  PASSED
+  FAILED
+  NEEDS_REVIEW
+  ERROR
+}
+enum ProofRiskLevel {
+  UNKNOWN
+  LOW
+  MEDIUM
+  HIGH
+}
+enum OrgDataSource {
+  MANUAL
+  QUICKBOOKS
+  XERO
+  NETSUITE
+  SAGE
+  BILLDOTCOM
+  VENDOR_PORTAL_VERIFIED
+  ERP
+}
+enum InvoiceScanRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+enum OrgVendorStatus {
+  ACTIVE
+  INACTIVE
+  REVIEW
+}
+enum OrgPoStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+enum ErpProvider {
+  QUICKBOOKS
+  XERO
+  NETSUITE
+  SAGE
+  BILLDOTCOM
+}
+enum ScanApprovalStatus {
+  PENDING_REVIEW
+  APPROVED
+  BLOCKED
+}
 
 model Organization {
   id String @id @default(uuid())
