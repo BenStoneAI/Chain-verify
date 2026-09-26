@@ -10,15 +10,7 @@ import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.se
 import { InvoicePdfService } from './invoice-pdf.service.js';
 
 @Module({
-  // ConduitModule: supplies ConduitBrowserService for URL intake (Work Item
-  // 2, scanUrl()) — reuses the real Conduit browser engine, not a second
-  // scraping layer. See InvoiceProofService's constructor doc comment for
-  // why ConduitBrowserService specifically, not ConduitSessionService.
-  //
-  // VerificationModule gives InvoiceProofService access to VerificationService +
-  // ProofService — the same chain-hashed ProofRecord infrastructure VerifyAPI
-  // uses — so every InvoiceProof scan mints a real, independently re-verifiable
-  // proof artifact instead of only the lightweight OrgInvoiceScanRun audit row.
+  // Chain Verify adapters supply narrow external-service boundaries; verification remains local.
   imports: [DatabaseModule, ChainVerifyAdaptersModule, VerificationModule],
   controllers: [InvoiceProofController],
   providers: [
