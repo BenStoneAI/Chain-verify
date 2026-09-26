@@ -24,7 +24,7 @@ import {
 import type { Request, Response } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { verifyApiPlanConfigs } from '@agent-market/config';
+import { verifyApiPlanConfigs } from '@chain-verify/config';
 import {
   buildEvidenceInputsFromPayloads,
   runProofProduct,
@@ -48,11 +48,11 @@ import { validate } from 'class-validator';
 import { Public } from '../auth/decorators/public.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { AdminOnlyGuard } from '../auth/guards/admin-only.guard.js';
+
 import { VerifyApiAuthGuard } from './verify-api-auth.guard.js';
 import type { AuthenticatedUser } from '../auth/types.js';
 import { PrismaService } from '../database/prisma.service.js';
-import { ConduitVerificationService } from '../conduit/conduit-verification.service.js';
+
 import { VerificationService } from './verification.service.js';
 import {
   ProofService,
@@ -2312,12 +2312,12 @@ export class VerifyApiController {
     private readonly verificationService: VerificationService,
     private readonly proofService: ProofService,
     private readonly prisma: PrismaService,
-    private readonly conduitVerification: ConduitVerificationService,
+    
     private readonly proofBilling: ProofBillingService,
     private readonly proofClaim: ProofClaimService,
     private readonly aiAnalysis: AiAnalysisService,
     private readonly softwareDelivery: SoftwareDeliveryService,
-    private readonly verifyApiUsage: VerifyApiUsageService,
+    
   ) {}
 
   // ---------------------------------------------------------------------------
