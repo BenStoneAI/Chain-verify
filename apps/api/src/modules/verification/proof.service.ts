@@ -18,7 +18,7 @@ import {
   VerificationRun,
 } from '@prisma/client';
 
-import { auditProofPlanConfigs, verifyApiPlanConfigs } from '@agent-market/config';
+import { auditProofPlanConfigs, verifyApiPlanConfigs } from '@chain-verify/config';
 
 import { PrismaService } from '../database/prisma.service.js';
 import { VerificationProduct } from './verification.service.js';
