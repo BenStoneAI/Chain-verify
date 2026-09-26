@@ -4,7 +4,7 @@ import {
   extractInvoiceFieldsFromText,
   MIN_CHARS_PER_PAGE,
   type PdfExtractionResult,
-} from '@swarmsync/proof-core/invoice-pdf-extract.js';
+} from '@chain-verify/proof-core/invoice-pdf-extract.js';
 
 import { invoiceProofOcrEnabled, ocrPdfPage } from './invoice-pdf-ocr.js';
 
