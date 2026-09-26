@@ -7,13 +7,13 @@ import {
   type PORegisterEntry,
   type Row,
   type VendorMasterEntry,
-} from '@swarmsync/proof-core/invoice-scan.js';
+} from '@chain-verify/proof-core/invoice-scan.js';
 import {
   normalizeMany,
   parseInput,
   type NormalizedInvoice,
-} from '@swarmsync/proof-core/normalizers/invoice-normalizer.js';
-import type { ApprovalMatrixEntry } from '@swarmsync/proof-core/control-readiness.js';
+} from '@chain-verify/proof-core/normalizers/invoice-normalizer.js';
+import type { ApprovalMatrixEntry } from '@chain-verify/proof-core/control-readiness.js';
 
 const MAX_BYTES = 200_000;
 
