@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { FraudIntelStatus } from '@prisma/client';
-
 import { PrismaService } from '../database/prisma.service.js';
 import type { Row } from '@chain-verify/proof-core/invoice-scan.js';
 
@@ -108,71 +106,14 @@ export class InvoiceProofIntelligenceService {
     });
   }
 
-  async checkConsortiumSignals(rows: Row[]): Promise<Finding[]> {
-    const routingNumbers = [...new Set(rows.map((r) => r.bank).filter(Boolean))];
-    if (routingNumbers.length === 0) return [];
-
-    const signals = await this.prisma.fraudIntelSignal.findMany({
-      where: {
-        routingNumber: { in: routingNumbers },
-        status: FraudIntelStatus.ACTIVE,
-        distinctOrgCount: { gte: 3 },
-      },
-    });
-
-    const findings: Finding[] = [];
-    for (const row of rows) {
-      const signal = signals.find((s) => s.routingNumber === row.bank);
-      if (!signal) continue;
-      findings.push({
-        severity: 'critical',
-        pattern: 'CONSORTIUM_FRAUD_SIGNAL',
-        detail: `Routing number on invoice from ${row.vendor} flagged across ${signal.distinctOrgCount} distinct InvoiceProof organizations (${signal.reportCount} total reports) in the last 30 days. Do not pay.`,
-        rows: [row.invoiceNo],
-        evidence: `routing=${row.bank}, confidence=${signal.confidence}, distinctOrgCount=${signal.distinctOrgCount}, reportCount=${signal.reportCount}`,
-      });
-    }
-    return findings;
+  async checkConsortiumSignals(_rows: Row[]): Promise<Finding[]> {
+    // Consortium fraud intelligence belonged to the shared SwarmSync database.
+    // Chain Verify does not own or query that cross-organization dataset.
+    return [];
   }
 
-  async reportConsortiumSignals(findings: Finding[], organizationId: string): Promise<void> {
-    const bankFlags = findings.filter(
-      (f) => isBankChangePattern(f.pattern) && f.severity === 'critical',
-    );
-    for (const f of bankFlags) {
-      const match = f.evidence?.match(/routing[=:]?\s*(\d+)/i) ?? f.detail.match(/(\d{9})/);
-      const routing = match?.[1];
-      if (!routing) continue;
-
-      // Upsert the per-org report row (idempotent per org per routing number).
-      await this.prisma.fraudIntelOrgReport.upsert({
-        where: { routingNumber_organizationId: { routingNumber: routing, organizationId } },
-        create: { routingNumber: routing, organizationId },
-        update: { lastReportedAt: new Date() },
-      });
-
-      // Count distinct orgs that have ever reported this routing number.
-      const distinctOrgCount = await this.prisma.fraudIntelOrgReport.count({
-        where: { routingNumber: routing },
-      });
-
-      // Upsert the aggregate signal, keeping raw reportCount for auditing.
-      await this.prisma.fraudIntelSignal.upsert({
-        where: { routingNumber: routing },
-        create: {
-          routingNumber: routing,
-          reportCount: 1,
-          distinctOrgCount,
-          confidence: 0.5,
-        },
-        update: {
-          reportCount: { increment: 1 },
-          distinctOrgCount,
-          lastSeenAt: new Date(),
-          confidence: { increment: 0.05 },
-        },
-      });
-    }
+  async reportConsortiumSignals(_findings: Finding[], _organizationId: string): Promise<void> {
+    // No-op in standalone Chain Verify; no cross-customer consortium store is configured.
   }
 
   async recomputeBaselines(organizationId: string): Promise<number> {
@@ -240,20 +181,6 @@ export class InvoiceProofIntelligenceService {
   }
 
   async aggregateFraudIntel(): Promise<number> {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const signals = await this.prisma.fraudIntelSignal.findMany({
-      where: { lastSeenAt: { gte: thirtyDaysAgo }, distinctOrgCount: { gte: 3 } },
-    });
-    for (const s of signals) {
-      await this.prisma.fraudIntelSignal.update({
-        where: { id: s.id },
-        data: {
-          status: FraudIntelStatus.ACTIVE,
-          confidence: Math.min(0.99, 0.5 + s.reportCount * 0.05),
-        },
-      });
-    }
-    return signals.length;
+    return 0;
   }
 }
