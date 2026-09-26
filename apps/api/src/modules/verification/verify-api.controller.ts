@@ -3016,15 +3016,6 @@ export class VerifyApiController {
           if (entitlement?.periodStart) {
             periodStart = entitlement.periodStart;
           }
-        } else {
-          const sub = await this.prisma.organizationSubscription.findUnique({
-            where: { organizationId: orgId },
-          });
-          if (sub && sub.status === SubscriptionStatus.ACTIVE) {
-            plan = resolveVerifyApiPlan(sub.planSlug);
-            limit = plan.monthlyRuns;
-            periodStart = sub.currentPeriodStart;
-          }
         }
       } else {
         limit = 500;
@@ -3630,15 +3621,6 @@ export class VerifyApiController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser | null | undefined,
   ) {
-    // Software-delivery verifications live in their own table keyed by proofId.
-    // Resolve those first so a proof_id returned by POST /api/verify
-    // (source_type: software_delivery) is retrievable here.
-    const sd = await this.prisma.softwareDeliveryVerification.findUnique({
-      where: { proofId: id },
-      include: { results: true },
-    });
-    if (sd) return this.formatSoftwareDeliveryRecord(sd);
-
     const orgId = await this.resolveOrgForUser(user);
     const run = await this.verificationService.getVerificationRun(orgId, id);
 
@@ -4241,29 +4223,6 @@ export class VerifyApiController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser | null | undefined,
   ) {
-    // Software-delivery proof reports live in their own table keyed by proofId.
-    // Per-check `evidence`/`detail` are free-text that can carry repo internals,
-    // so they are only returned to an authenticated member of the owning org;
-    // every other caller gets the redacted tamper-evidence envelope.
-    const sd = await this.prisma.softwareDeliveryVerification.findUnique({
-      where: { proofId: id },
-      include: { results: true },
-    });
-    if (sd) {
-      const sdCallerOrgId = user ? await this.resolveOrgForUser(user) : null;
-      const sdIsOwner =
-        sdCallerOrgId !== null &&
-        sdCallerOrgId !== ANONYMOUS_ORG_ID &&
-        sdCallerOrgId === sd.organizationId;
-      const report = this.formatSoftwareDeliveryRecord(sd, { redacted: !sdIsOwner });
-      // buyer_summary is buyer-supplied free text — owner-only. Non-owners get the
-      // already-redacted report.summary ('' when redacted) so it never leaks.
-      return {
-        ...report,
-        buyer_summary: sdIsOwner ? (sd.buyerSummary ?? report.summary) : (report.summary ?? ''),
-      };
-    }
-
     const { proof, verification } = await this.proofService.getProofWithVerificationRunUnscoped(id);
 
     // Retention gate: if proof is expired/archived, return a minimal notice.
@@ -4548,23 +4507,12 @@ export class VerifyApiController {
       };
     }
 
-    const subscription = await this.prisma.organizationSubscription.findUnique({
-      where: { organizationId: orgId },
-    });
-
-    let periodStart: Date;
-    let periodEnd: Date;
-    let planConfig = freePlan;
-
-    if (subscription && subscription.status === SubscriptionStatus.ACTIVE) {
-      planConfig = resolveVerifyApiPlan(subscription.planSlug);
-      periodStart = subscription.currentPeriodStart;
-      periodEnd = subscription.currentPeriodEnd;
-    } else {
-      periodStart = calMonthStart;
-      periodEnd = calMonthEnd;
-    }
-    const limit = planConfig.monthlyRuns;
+    const quota = await this.proofBilling.resolveProofQuota(orgId, ProofProductType.VERIFY_API);
+    const entitlement = await this.proofBilling.getActiveProofEntitlement(orgId, ProofProductType.VERIFY_API);
+    const periodStart = entitlement?.periodStart ?? calMonthStart;
+    const periodEnd = entitlement?.periodEnd ?? calMonthEnd;
+    const planConfig = resolveVerifyApiPlan(quota.planSlug);
+    const limit = quota.monthlyLimit ?? planConfig.monthlyRuns;
 
     const used = await this.prisma.verificationRun.count({
       where: { orgId, createdAt: { gte: periodStart, lte: periodEnd } },
@@ -4583,72 +4531,19 @@ export class VerifyApiController {
   }
 
   private async resolveSoftwareDeliveryPlanSlug(orgId: string): Promise<string> {
-    const proofQuota = await this.proofBilling.resolveProofQuota(
-      orgId,
-      ProofProductType.VERIFY_API,
-    );
-    if (proofQuota.source === 'entitlement') return proofQuota.planSlug;
-
-    const subscription = await this.prisma.organizationSubscription.findUnique({
-      where: { organizationId: orgId },
-    });
-    if (subscription && subscription.status === SubscriptionStatus.ACTIVE) {
-      return subscription.planSlug;
-    }
-    return 'free';
+    const quota = await this.proofBilling.resolveProofQuota(orgId, ProofProductType.VERIFY_API);
+    return quota.planSlug;
   }
 
-  /**
-   * Resolve the billing organization for an authenticated principal (JWT user or
-   * ssk_live_ API key owner). The JWT does not carry organizationId, so a paid
-   * entitlement (keyed by org) was previously never matched and quota silently
-   * fell back to the free tier. Here we resolve the user's membership org,
-   * preferring one that holds an ACTIVE VerifyAPI entitlement so the paid plan
-   * applies. Falls back to the principal's own id only when there is no
-   * membership at all (anonymous/sandbox callers keep the sentinel org).
-   */
   private async resolveOrgForUser(user: AuthenticatedUser | null | undefined): Promise<string> {
     if (!user) return ANONYMOUS_ORG_ID;
     const explicitOrg = (user as AuthenticatedUser & { organizationId?: string }).organizationId;
-    if (explicitOrg) return explicitOrg;
-
-    const memberships = await this.prisma.organizationMembership.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'asc' },
-      select: { organizationId: true },
-    });
-    if (memberships.length === 0) return user.id;
-
-    // Resolve entitlement status for all memberships in parallel (avoids a
-    // serial N+1 on the request hot path) and prefer the earliest membership
-    // that holds an ACTIVE VerifyAPI entitlement; otherwise the earliest org.
-    const entitlementChecks = await Promise.all(
-      memberships.map((m) =>
-        this.proofBilling
-          .getActiveProofEntitlement(m.organizationId, ProofProductType.VERIFY_API)
-          .then((entitlement) => ({
-            organizationId: m.organizationId,
-            entitled: Boolean(entitlement),
-          })),
-      ),
-    );
-    const preferred = entitlementChecks.find((c) => c.entitled);
-    return preferred?.organizationId ?? memberships[0].organizationId;
+    return explicitOrg ?? user.id;
   }
 
   private async resolveSoftwareDeliveryMonthlyLimit(orgId: string): Promise<number | null> {
-    const proofQuota = await this.proofBilling.resolveProofQuota(
-      orgId,
-      ProofProductType.VERIFY_API,
-    );
-    if (proofQuota.source === 'entitlement') return proofQuota.monthlyLimit;
-
-    const subscription = await this.prisma.organizationSubscription.findUnique({
-      where: { organizationId: orgId },
-    });
-    if (subscription && subscription.status === SubscriptionStatus.ACTIVE) {
-      return resolveVerifyApiPlan(subscription.planSlug).monthlyRuns;
-    }
-    return resolveVerifyApiPlan('free').monthlyRuns;
+    const quota = await this.proofBilling.resolveProofQuota(orgId, ProofProductType.VERIFY_API);
+    return quota.monthlyLimit ?? resolveVerifyApiPlan('free').monthlyRuns;
   }
+
 }
