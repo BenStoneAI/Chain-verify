@@ -15,10 +15,10 @@
       "@agent-market/config": [
         "packages/config/src"
       ],
-      "@swarmsync/proof-core": [
+      "@chain-verify/proof-core": [
         "packages/proof-core/src"
       ],
-      "@swarmsync/proof-core/*": [
+      "@chain-verify/proof-core/*": [
         "packages/proof-core/src/*"
       ]
     }

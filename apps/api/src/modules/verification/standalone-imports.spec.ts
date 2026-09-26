@@ -1,0 +1,3 @@
+import { readFileSync } from 'node:fs';import { describe,it,expect } from 'vitest';
+const files=['proof.service.ts','verify-api.controller.ts','verify-api-auth.guard.ts','software-delivery/software-delivery.service.ts'].map(p=>readFileSync(new URL('./'+p,import.meta.url),'utf8')).join('\n');
+describe('standalone verification dependency boundary',()=>{it('contains no SwarmSync-only module imports',()=>{for(const token of ['@agent-market/config','../conduit/','admin-only.guard','service-accounts.service','ssk-api-key.util','software-delivery-escalation','./checks/'])expect(files).not.toContain(token);});});

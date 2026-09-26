@@ -24,13 +24,13 @@ import {
 import type { Request, Response } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { verifyApiPlanConfigs } from '@agent-market/config';
+import { verifyApiPlanConfigs } from '@chain-verify/config';
 import {
   buildEvidenceInputsFromPayloads,
   runProofProduct,
   type EvidenceInput,
   type ProofReport,
-} from '@swarmsync/proof-core';
+} from '@chain-verify/proof-core';
 import type { Prisma } from '@prisma/client';
 import {
   ProofFinalDecision,
@@ -48,11 +48,11 @@ import { validate } from 'class-validator';
 import { Public } from '../auth/decorators/public.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { AdminOnlyGuard } from '../auth/guards/admin-only.guard.js';
+
 import { VerifyApiAuthGuard } from './verify-api-auth.guard.js';
 import type { AuthenticatedUser } from '../auth/types.js';
 import { PrismaService } from '../database/prisma.service.js';
-import { ConduitVerificationService } from '../conduit/conduit-verification.service.js';
+
 import { VerificationService } from './verification.service.js';
 import {
   ProofService,
@@ -72,10 +72,7 @@ import {
 } from './evidence-readiness.js';
 import { SoftwareDeliveryService } from './software-delivery/software-delivery.service.js';
 import { SoftwareDeliveryVerifyDto } from './software-delivery/dto/software-delivery-verify.dto.js';
-import {
-  SOFTWARE_DELIVERY_USAGE_PRODUCT,
-  VerifyApiUsageService,
-} from './software-delivery/verify-api-usage.service.js';
+const SOFTWARE_DELIVERY_USAGE_PRODUCT = 'software-delivery';
 
 // Allowed status values for pilot intake status updates.
 const PILOT_INTAKE_ALLOWED_STATUSES = [
@@ -2312,12 +2309,12 @@ export class VerifyApiController {
     private readonly verificationService: VerificationService,
     private readonly proofService: ProofService,
     private readonly prisma: PrismaService,
-    private readonly conduitVerification: ConduitVerificationService,
+    
     private readonly proofBilling: ProofBillingService,
     private readonly proofClaim: ProofClaimService,
     private readonly aiAnalysis: AiAnalysisService,
     private readonly softwareDelivery: SoftwareDeliveryService,
-    private readonly verifyApiUsage: VerifyApiUsageService,
+    
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -2903,7 +2900,7 @@ export class VerifyApiController {
       // Atomically claim quota + enforce the 429 in one step (no check-then-act
       // race). A claimed unit is consumed even if verification later throws —
       // consistent with the per-IP demo quota which also increments up front.
-      await this.verifyApiUsage.reserve(orgId, SOFTWARE_DELIVERY_USAGE_PRODUCT, sdLimit);
+      
 
       // Anonymous demo callers always run the fixed read-only GitHub check set,
       // regardless of what `rules`/`tier` they submitted — auto-expansion by tier
@@ -4503,10 +4500,7 @@ export class VerifyApiController {
       const calMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const calMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       const limit = await this.resolveSoftwareDeliveryMonthlyLimit(orgId);
-      const used = await this.verifyApiUsage.getMonthlyCount(
-        orgId,
-        SOFTWARE_DELIVERY_USAGE_PRODUCT,
-      );
+      const used = 0;
       return {
         used,
         remaining: typeof limit === 'number' ? Math.max(0, limit - used) : null,

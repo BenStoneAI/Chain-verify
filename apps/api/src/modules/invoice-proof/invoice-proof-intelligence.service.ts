@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { FraudIntelStatus } from '@prisma/client';
 
 import { PrismaService } from '../database/prisma.service.js';
-import type { Row } from '@swarmsync/proof-core/invoice-scan.js';
+import type { Row } from '@chain-verify/proof-core/invoice-scan.js';
 
 type Finding = {
   severity: 'critical' | 'high' | 'medium';

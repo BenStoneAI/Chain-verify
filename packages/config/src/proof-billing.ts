@@ -5,33 +5,6 @@ import {
 } from './billing.js';
 
 export type ProofProductSlug = 'invoice-proof' | 'audit-proof' | 'verify-api';
-export type PlatformPlanSlug = 'free' | 'pro' | 'premier';
-export type PlatformAccessDuration = 'ongoing' | 'pilot_90d' | 'sprint_90d' | 'contract';
-export type ProofCheckoutMode = 'payment' | 'subscription';
-
-export interface ProofPlatformBundleRule {
-  proofPlanSlug: string;
-  bundledPlatformPlan: PlatformPlanSlug;
-  platformAccessDuration: PlatformAccessDuration;
-}
-
-export const proofPlatformBundleMatrix: ProofPlatformBundleRule[] = [
-  { proofPlanSlug: 'verify-api-build', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'verify-api-scale', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'verify-api-production', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'verify-api-enterprise', bundledPlatformPlan: 'premier', platformAccessDuration: 'contract' },
-  { proofPlanSlug: 'invoiceproof-pilot', bundledPlatformPlan: 'pro', platformAccessDuration: 'pilot_90d' },
-  { proofPlanSlug: 'invoiceproof-verify', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'invoiceproof-protect', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'invoiceproof-govern', bundledPlatformPlan: 'premier', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'auditproof-pilot', bundledPlatformPlan: 'pro', platformAccessDuration: 'pilot_90d' },
-  { proofPlanSlug: 'auditproof-eu-sprint', bundledPlatformPlan: 'premier', platformAccessDuration: 'sprint_90d' },
-  { proofPlanSlug: 'auditproof-comply', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'auditproof-govern', bundledPlatformPlan: 'pro', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'auditproof-certify', bundledPlatformPlan: 'premier', platformAccessDuration: 'ongoing' },
-  { proofPlanSlug: 'auditproof-enterprise', bundledPlatformPlan: 'premier', platformAccessDuration: 'contract' },
-];
-
 export interface ProofBillingPlanConfig {
   slug: string;
   name: string;
@@ -64,10 +37,6 @@ export function getProofBillingPlan(slug: string): ProofBillingPlanConfig | unde
   return proofBillingPlanConfigs.find((p) => p.slug === slug);
 }
 
-export function getProofBundleRule(proofPlanSlug: string): ProofPlatformBundleRule | undefined {
-  return proofPlatformBundleMatrix.find((r) => r.proofPlanSlug === proofPlanSlug);
-}
-
 export function resolveProofPlanLimits(planSlug: string): { monthlyLimit: number | null; product: ProofProductSlug | null } {
   const billing = getProofBillingPlan(planSlug);
   if (billing) {
@@ -86,12 +55,6 @@ export function resolveProofPlanLimits(planSlug: string): { monthlyLimit: number
     return { monthlyLimit: invoice.monthlyInvoices, product: 'invoice-proof' };
   }
   return { monthlyLimit: null, product: null };
-}
-
-export function platformPlanRank(slug: string): number {
-  if (slug === 'premier') return 2;
-  if (slug === 'pro') return 1;
-  return 0;
 }
 
 export function resolveStripePriceIdForProofPlan(
@@ -119,13 +82,13 @@ export function resolveStripeOveragePriceIdForProofPlan(
 }
 
 export function defaultProofSuccessUrl(product: ProofProductSlug, planSlug: string): string {
-  const base = process.env.STRIPE_WEB_URL ?? process.env.WEB_URL ?? 'https://swarmsync.ai';
+  const base = process.env.STRIPE_WEB_URL ?? process.env.WEB_URL ?? 'http://localhost:3000';
   if (product === 'verify-api') return `${base}/verify-api/welcome?plan=${planSlug}`;
   if (product === 'audit-proof') return `${base}/audit-proof/welcome?plan=${planSlug}`;
   return `${base}/invoice-proof/welcome?plan=${planSlug}`;
 }
 
 export function defaultProofCancelUrl(product: ProofProductSlug): string {
-  const base = process.env.STRIPE_WEB_URL ?? process.env.WEB_URL ?? 'https://swarmsync.ai';
+  const base = process.env.STRIPE_WEB_URL ?? process.env.WEB_URL ?? 'http://localhost:3000';
   return `${base}/${product}?checkout=cancel`;
 }

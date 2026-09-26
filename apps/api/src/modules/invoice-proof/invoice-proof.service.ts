@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Inject,
   Logger,
   NotFoundException,
   ServiceUnavailableException,
@@ -27,7 +28,7 @@ import {
 import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'crypto';
 
 import { PrismaService } from '../database/prisma.service.js';
-import { EmailService } from '../email/email.service.js';
+import { BROWSER_INTAKE, OUTBOUND_EMAIL, type BrowserIntakePort, type OutboundEmailPort } from '../adapters/ports.js';
 import type { AuthenticatedUser } from '../auth/types.js';
 import { ProofService } from '../verification/proof.service.js';
 import { VerificationService } from '../verification/verification.service.js';
@@ -42,8 +43,7 @@ import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.se
 import { InvoicePdfService } from './invoice-pdf.service.js';
 import { extractInvoiceFieldsFromText, type ExtractedInvoiceFields } from '@swarmsync/proof-core/invoice-pdf-extract.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
-import { ConduitBrowserService } from '../conduit/conduit-browser.service.js';
-import { ConduitActionType, type ExecuteActionDto } from '../conduit/dto/execute-action.dto.js';
+
 import {
   combineUrlHtmlText,
   extractTextFromAriaSnapshot,
@@ -97,7 +97,7 @@ export class InvoiceProofService {
     private readonly prisma: PrismaService,
     private readonly erp: InvoiceProofErpService,
     private readonly intelligence: InvoiceProofIntelligenceService,
-    private readonly email: EmailService,
+    @Inject(OUTBOUND_EMAIL) private readonly email: OutboundEmailPort,
     private readonly pdf: InvoicePdfService,
     // Optional (trailing, backward-compatible with existing direct-instantiation
     // tests that construct this service with 5 args): VerificationService +
@@ -116,7 +116,7 @@ export class InvoiceProofService {
     // (requires a real Agent row, AP2 hiring/executing-agent semantics) and
     // does not fit a direct product feature unrelated to agent hiring — see
     // scanUrl()'s doc comment.
-    private readonly conduitBrowser?: ConduitBrowserService,
+    @Inject(BROWSER_INTAKE) private readonly browserIntake?: BrowserIntakePort,
   ) {}
 
   async resolveOrgId(user: AuthenticatedUser | null): Promise<string | undefined> {
@@ -158,35 +158,7 @@ export class InvoiceProofService {
    */
   private async resolveEntitledOrgId(user: AuthenticatedUser): Promise<string | undefined> {
     const explicitOrg = (user as AuthenticatedUser & { organizationId?: string }).organizationId;
-    if (explicitOrg) return explicitOrg;
-
-    const memberships = await this.prisma.organizationMembership.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'asc' },
-      select: { organizationId: true },
-    });
-    if (memberships.length === 0) return undefined;
-
-    // Check entitlements in parallel (avoids serial N+1) and prefer the earliest
-    // membership org that holds an ACTIVE INVOICE_PROOF entitlement.
-    const entitlementChecks = await Promise.all(
-      memberships.map((m) =>
-        this.prisma.proofProductEntitlement
-          .findFirst({
-            where: {
-              organizationId: m.organizationId,
-              product: ProofProductType.INVOICE_PROOF,
-              status: ProofEntitlementStatus.ACTIVE,
-            },
-          })
-          .then((entitlement) => ({ organizationId: m.organizationId, entitled: Boolean(entitlement) })),
-      ),
-    );
-    const preferred = entitlementChecks.find((c) => c.entitled);
-    // Return the entitled org if found; otherwise the earliest membership org.
-    // Callers that need an ACTIVE entitlement will re-check — here we just resolve
-    // the org so checkScanGate can do the definitive entitlement look-up.
-    return preferred?.organizationId ?? memberships[0].organizationId;
+    return explicitOrg || undefined;
   }
 
   clientIpHash(ip: string): string {
@@ -849,20 +821,17 @@ export class InvoiceProofService {
       );
     }
 
-    if (!this.conduitBrowser) {
+    if (!this.browserIntake) {
       throw new ServiceUnavailableException(
         'URL intake is not available (Conduit browser engine not configured).',
       );
     }
 
     const sessionId = `invoiceproof-url-${randomUUID()}`;
-    await this.conduitBrowser.initSession(sessionId, { allowedDomains: [] });
+    await this.browserIntake.initSession(sessionId, { allowedDomains: [] });
 
     try {
-      const navResult = await this.conduitBrowser.executeAction(sessionId, {
-        type: ConduitActionType.NAVIGATE,
-        url,
-      } as ExecuteActionDto);
+      const navResult = await this.browserIntake.navigate(sessionId, url);
 
       if (!navResult.success) {
         return {
@@ -885,10 +854,8 @@ export class InvoiceProofService {
 
       // HTML path.
       const [extractResult, snapshotResult] = await Promise.all([
-        this.conduitBrowser.executeAction(sessionId, { type: ConduitActionType.EXTRACT_MAIN } as ExecuteActionDto),
-        this.conduitBrowser.executeAction(sessionId, {
-          type: ConduitActionType.ACCESSIBILITY_SNAPSHOT,
-        } as ExecuteActionDto),
+        this.browserIntake.extractMain(sessionId),
+        this.browserIntake.accessibilitySnapshot(sessionId),
       ]);
 
       const mainText = extractResult.success ? extractResult.data : null;
@@ -1002,7 +969,7 @@ export class InvoiceProofService {
       );
       return { status: 'SCANNED', ok: true, extraction, scan };
     } finally {
-      await this.conduitBrowser.closeSession(sessionId).catch(() => undefined);
+      await this.browserIntake.closeSession(sessionId).catch(() => undefined);
     }
   }
 
