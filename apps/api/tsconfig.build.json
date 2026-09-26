@@ -6,20 +6,10 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": false,
-    "paths": {
-      "@chain-verify/proof-core": [
-        "../../packages/proof-core/src"
-      ],
-      "@chain-verify/proof-core/*": [
-        "../../packages/proof-core/src/*"
-      ],
-      "@chain-verify/config": [
-        "../../packages/config/src"
-      ]
-    },
     "noEmit": false,
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "rootDir": "src"
   },
   "include": [
     "src/**/*.ts"
