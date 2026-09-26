@@ -82,38 +82,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // spendWindowResetAt) are declared in apps/api/prisma/schema.prisma and managed via
     // Prisma migrations. Startup ALTER TABLE bypassed the migration system; removed 2026-06-15.
 
-    // Hard fail on known load-bearing Agent columns.
-    // This prevents runtime 400/500s (P2022) by surfacing schema drift during boot.
-    await this.assertRequiredAgentColumns();
-  }
-
-  private async assertRequiredAgentColumns(): Promise<void> {
-    const required = ['autonomyPolicy', 'benchmarkSummary', 'conduitTrustTier', 'trustTier'] as const;
-    const rows = await this.withTimeout(
-      this.$queryRaw<Array<{ column_name: string }>>`
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'Agent'
-      `,
-      5000,
-      'Schema drift check timed out while reading information_schema.columns for Agent',
-    );
-    const present = new Set(rows.map((r) => r.column_name));
-    const missing = required.filter((c) => !present.has(c));
-    if (missing.length === 0) {
-      this.logger.log('Startup schema check: Agent required columns verified');
-      return;
-    }
-
-    throw new Error(
-      [
-        `Database schema drift detected: missing Agent columns [${missing.join(', ')}].`,
-        'Run `npx prisma migrate deploy --schema apps/api/prisma/schema.prisma` against the production database.',
-        'If using Supabase, ensure DIRECT_URL points to the direct DB host',
-        '(db.<project-ref>.supabase.co:5432), not the pooler host.',
-      ].join(' '),
-    );
-  }
+    // Chain Verify owns a deliberately small schema; Prisma migrations are the schema gate.
 
   /** Log where we are connecting without exposing credentials. */
   private logDatabaseTarget(): void {
