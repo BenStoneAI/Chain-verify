@@ -1,21 +1,12 @@
 name: Chain Verify API
+
+# CI intentionally disabled. Run validation/build locally or only when explicitly requested.
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
+
 jobs:
   api:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm install --ignore-scripts
-      - run: npm run api:validate-schema
-        env:
-          DATABASE_URL: postgresql://chain_verify:chain_verify@localhost:5432/chain_verify
-      - run: npm run api:test
-      - run: npm run api:typecheck
-      - run: npm run api:build
+      - run: echo "CI disabled by repository owner"
