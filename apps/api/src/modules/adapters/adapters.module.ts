@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import { ProofEntitlementStatus, ProofProductType } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service.js';
 import { DatabaseModule } from '../database/database.module.js';
+import { ConduitBrowserAdapter } from './conduit-browser.adapter.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
 import { BROWSER_INTAKE, IDENTITY_CONTEXT, OUTBOUND_EMAIL, PROOF_BILLING, type BrowserActionResult, type BrowserIntakePort, type IdentityContextPort, type OutboundEmailPort, type ProofBillingPort } from './ports.js';
 
@@ -37,5 +38,5 @@ export class PrismaProofBillingAdapter implements ProofBillingPort {
  async getActiveEntitlement(organizationId:string,product:string){ const enumProduct=({invoice_proof:ProofProductType.INVOICE_PROOF,'invoice-proof':ProofProductType.INVOICE_PROOF,audit_proof:ProofProductType.AUDIT_PROOF,'audit-proof':ProofProductType.AUDIT_PROOF,verify_api:ProofProductType.VERIFY_API,'verify-api':ProofProductType.VERIFY_API} as Record<string,ProofProductType>)[product.toLowerCase()]; if(!enumProduct)return null; return this.prisma.proofProductEntitlement.findFirst({where:{organizationId,product:enumProduct,status:ProofEntitlementStatus.ACTIVE,OR:[{periodEnd:null},{periodEnd:{gte:new Date()}}]},orderBy:{createdAt:'desc'}}); }
 }
 
-@Module({imports:[DatabaseModule],providers:[{provide:OUTBOUND_EMAIL,useClass:SmtpOutboundEmailAdapter},{provide:BROWSER_INTAKE,useClass:HttpBrowserIntakeAdapter},{provide:IDENTITY_CONTEXT,useClass:ApiKeyIdentityAdapter},{provide:PROOF_BILLING,useClass:PrismaProofBillingAdapter}],exports:[OUTBOUND_EMAIL,BROWSER_INTAKE,IDENTITY_CONTEXT,PROOF_BILLING]})
+@Module({imports:[DatabaseModule],providers:[{provide:OUTBOUND_EMAIL,useClass:SmtpOutboundEmailAdapter},ConduitBrowserAdapter,HttpBrowserIntakeAdapter,{provide:BROWSER_INTAKE,useFactory:(conduit:ConduitBrowserAdapter,http:HttpBrowserIntakeAdapter)=>process.env.CONDUIT_MCP_URL?conduit:http,inject:[ConduitBrowserAdapter,HttpBrowserIntakeAdapter]},{provide:IDENTITY_CONTEXT,useClass:ApiKeyIdentityAdapter},{provide:PROOF_BILLING,useClass:PrismaProofBillingAdapter}],exports:[OUTBOUND_EMAIL,BROWSER_INTAKE,IDENTITY_CONTEXT,PROOF_BILLING]})
 export class ChainVerifyAdaptersModule {}
