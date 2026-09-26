@@ -1,0 +1,28 @@
+{
+  "name": "@chain-verify/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "prisma:validate": "prisma validate --schema=prisma/schema.prisma",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "build": "npm run prisma:generate && tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@prisma/client": "5.22.0",
+    "@swarmsync/proof-core": "*",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
+    "stripe": "^20.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.35",
+    "prisma": "5.22.0",
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.10"
+  }
+}
