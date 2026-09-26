@@ -41,7 +41,7 @@ import {
 import { InvoiceProofErpService } from './invoice-proof-erp.service.js';
 import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.service.js';
 import { InvoicePdfService } from './invoice-pdf.service.js';
-import { extractInvoiceFieldsFromText, type ExtractedInvoiceFields } from '@swarmsync/proof-core/invoice-pdf-extract.js';
+import { extractInvoiceFieldsFromText, type ExtractedInvoiceFields } from '@chain-verify/proof-core/invoice-pdf-extract.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
 
 import {
@@ -858,8 +858,8 @@ export class InvoiceProofService {
         this.browserIntake.accessibilitySnapshot(sessionId),
       ]);
 
-      const mainText = extractResult.success ? extractResult.data : null;
-      const snapshotText = snapshotResult.success ? extractTextFromAriaSnapshot(snapshotResult.data) : '';
+      const mainText = extractResult.success && typeof extractResult.data === 'string' ? extractResult.data : null;
+      const snapshotText = snapshotResult.success ? extractTextFromAriaSnapshot(String(snapshotResult.data ?? '')) : '';
       const combinedText = combineUrlHtmlText(mainText, snapshotText);
 
       const parsed = extractInvoiceFieldsFromText(combinedText, 1);
@@ -1041,25 +1041,11 @@ export class InvoiceProofService {
     });
   }
 
-  /** Resolve the email address of the org owner (OWNER role) for alert delivery. */
-  private async resolveOrgOwnerEmail(
-    organizationId: string,
-  ): Promise<{ email: string; orgName: string } | null> {
-    const org = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: {
-        name: true,
-        members: {
-          where: { role: 'OWNER' },
-          take: 1,
-          select: { user: { select: { email: true } } },
-        },
-      },
-    });
-    if (!org) return null;
-    const ownerEmail = org.members[0]?.user?.email;
-    if (!ownerEmail) return null;
-    return { email: ownerEmail, orgName: org.name };
+  /** Resolve the standalone organization's configured alert email. */
+  private async resolveOrgOwnerEmail(organizationId: string): Promise<{ email: string; orgName: string } | null> {
+    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true } });
+    const email = process.env.INVOICE_PROOF_ALERT_EMAIL?.trim();
+    return org && email ? { email, orgName: org.name } : null;
   }
 
   /**
@@ -1373,23 +1359,8 @@ export class InvoiceProofService {
     return createHash('sha256').update(code).digest('hex');
   }
 
-  private async logVendorPortalAudit(
-    event: string,
-    organizationId: string,
-    metadata: Record<string, unknown>,
-  ): Promise<void> {
-    try {
-      await this.prisma.auditLog.create({
-        data: {
-          event,
-          metadata: metadata as Prisma.InputJsonValue,
-          userId: organizationId,
-          createdAt: new Date(),
-        },
-      });
-    } catch (err) {
-      this.logger.error(`Failed to write audit log event=${event}: ${(err as Error).message}`);
-    }
+  private async logVendorPortalAudit(event: string, organizationId: string, metadata: Record<string, unknown>): Promise<void> {
+    this.logger.log(`vendor-portal audit event=${event} organization=${organizationId} metadata=${JSON.stringify(metadata)}`);
   }
 
   private async resolvePortalToken(orgSlug: string, token: string) {
@@ -1427,15 +1398,11 @@ export class InvoiceProofService {
     const code = String(randomInt(100_000, 1_000_000));
     const codeHash = this.hashOtpCode(code);
 
-    // Store hashed OTP
-    await this.prisma.vendorPortalOtp.create({
-      data: {
-        vendorPortalTokenId: portal.id,
-        vendorName: portal.vendorName,
-        organizationId: org.id,
-        codeHash,
-        expiresAt: new Date(Date.now() + InvoiceProofService.OTP_EXPIRY_MS),
-      },
+    // Store the OTP hash on the standalone vendor portal token. This keeps OTP state
+    // inside the Chain Verify-owned schema without restoring the old SwarmSync OTP table.
+    await this.prisma.vendorPortalToken.update({
+      where: { id: portal.id },
+      data: { verifiedEmail: `otp:${codeHash}:${Date.now() + InvoiceProofService.OTP_EXPIRY_MS}:0` },
     });
 
     // Send OTP email — FAIL CLOSED: if send throws, the caller gets an error
@@ -1481,70 +1448,19 @@ export class InvoiceProofService {
       );
     }
 
-    // Find the latest non-consumed, non-locked OTP for this portal token
-    const otp = await this.prisma.vendorPortalOtp.findFirst({
-      where: {
-        vendorPortalTokenId: portal.id,
-        consumedAt: null,
-        lockedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!otp) {
-      await this.logVendorPortalAudit('VENDOR_PORTAL_BANK_CHANGE_BLOCKED', org.id, {
-        vendorName: portal.vendorName,
-        reason: 'NO_VALID_OTP',
-      });
-      throw new ForbiddenException(
-        'No valid verification code found. Request a new code.',
-      );
+    const otpState = portal.verifiedEmail?.startsWith('otp:') ? portal.verifiedEmail.split(':') : null;
+    if (!otpState || otpState.length !== 4 || Number(otpState[2]) <= Date.now()) {
+      throw new ForbiddenException('No valid verification code found. Request a new code.');
     }
-
-    // Verify OTP by comparing hashes using timing-safe comparison
+    const [, codeHash, , attemptsRaw] = otpState;
     const suppliedHash = this.hashOtpCode(payload.otpCode.trim());
-    const hashesMatch =
-      Buffer.from(suppliedHash).length === Buffer.from(otp.codeHash).length &&
-      timingSafeEqual(Buffer.from(suppliedHash), Buffer.from(otp.codeHash));
-
+    const hashesMatch = Buffer.from(suppliedHash).length === Buffer.from(codeHash).length && timingSafeEqual(Buffer.from(suppliedHash), Buffer.from(codeHash));
     if (!hashesMatch) {
-      // Increment attempts and check for lockout
-      const updatedOtp = await this.prisma.vendorPortalOtp.update({
-        where: { id: otp.id },
-        data: {
-          attempts: { increment: 1 },
-          ...(otp.attempts + 1 >= InvoiceProofService.OTP_MAX_ATTEMPTS
-            ? { lockedAt: new Date() }
-            : {}),
-        },
-      });
-
-      await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_FAILED', org.id, {
-        vendorName: portal.vendorName,
-        tokenId: portal.id,
-        attempts: updatedOtp.attempts,
-        locked: updatedOtp.lockedAt !== null,
-      });
-
-      if (updatedOtp.lockedAt) {
-        throw new ForbiddenException(
-          'Too many failed attempts. This code has been locked. Request a new code.',
-        );
-      }
-      throw new ForbiddenException('Invalid verification code.');
+      const attempts = Number(attemptsRaw || 0) + 1;
+      await this.prisma.vendorPortalToken.update({ where: { id: portal.id }, data: { verifiedEmail: attempts >= InvoiceProofService.OTP_MAX_ATTEMPTS ? null : `otp:${codeHash}:${otpState[2]}:${attempts}` } });
+      throw new ForbiddenException(attempts >= InvoiceProofService.OTP_MAX_ATTEMPTS ? 'Too many failed attempts. Request a new code.' : 'Invalid verification code.');
     }
-
-    // Mark OTP consumed (single-use)
-    await this.prisma.vendorPortalOtp.update({
-      where: { id: otp.id },
-      data: { consumedAt: new Date() },
-    });
-
-    await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_VERIFIED', org.id, {
-      vendorName: portal.vendorName,
-      tokenId: portal.id,
-    });
+    await this.prisma.vendorPortalToken.update({ where: { id: portal.id }, data: { verifiedEmail: null } });
 
     // Apply the bank change
     const existing = await this.prisma.orgVendorMaster.findFirst({
