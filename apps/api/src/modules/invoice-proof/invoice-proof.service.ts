@@ -158,35 +158,7 @@ export class InvoiceProofService {
    */
   private async resolveEntitledOrgId(user: AuthenticatedUser): Promise<string | undefined> {
     const explicitOrg = (user as AuthenticatedUser & { organizationId?: string }).organizationId;
-    if (explicitOrg) return explicitOrg;
-
-    const memberships = await this.prisma.organizationMembership.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'asc' },
-      select: { organizationId: true },
-    });
-    if (memberships.length === 0) return undefined;
-
-    // Check entitlements in parallel (avoids serial N+1) and prefer the earliest
-    // membership org that holds an ACTIVE INVOICE_PROOF entitlement.
-    const entitlementChecks = await Promise.all(
-      memberships.map((m) =>
-        this.prisma.proofProductEntitlement
-          .findFirst({
-            where: {
-              organizationId: m.organizationId,
-              product: ProofProductType.INVOICE_PROOF,
-              status: ProofEntitlementStatus.ACTIVE,
-            },
-          })
-          .then((entitlement) => ({ organizationId: m.organizationId, entitled: Boolean(entitlement) })),
-      ),
-    );
-    const preferred = entitlementChecks.find((c) => c.entitled);
-    // Return the entitled org if found; otherwise the earliest membership org.
-    // Callers that need an ACTIVE entitlement will re-check — here we just resolve
-    // the org so checkScanGate can do the definitive entitlement look-up.
-    return preferred?.organizationId ?? memberships[0].organizationId;
+    return explicitOrg || undefined;
   }
 
   clientIpHash(ip: string): string {
