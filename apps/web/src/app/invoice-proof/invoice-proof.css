@@ -995,3 +995,11 @@
   }
   @keyframes cvSectionIn{from{opacity:.35;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 }
+
+/* ChainVerify Stella type scale */
+.ip-scope h1{font-size:clamp(48px,6vw,76px);font-weight:760;letter-spacing:-.048em;line-height:.98}
+.ip-scope h2{font-size:clamp(32px,4vw,50px);font-weight:730;letter-spacing:-.038em}
+.ip-scope .lede{font-size:clamp(17px,1.7vw,20px);line-height:1.62}
+.ip-scope .btn{border-radius:12px}
+.ip-scope .hero{padding-top:76px}
+@media(max-width:640px){.ip-scope h1{font-size:clamp(44px,13vw,58px)}.ip-scope .hero{padding-top:54px}}
