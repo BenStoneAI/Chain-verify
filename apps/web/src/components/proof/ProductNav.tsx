@@ -20,7 +20,7 @@ const PRODUCT_CTA = {
 } as const;
 
 const ctaButtonClass =
-  'rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]';
+  'rounded-lg px-4 py-2 text-sm font-medium text-[#071017] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]';
 
 const PRODUCTS = [
   {
@@ -244,7 +244,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 planSlug={PRODUCT_CTA[currentProduct].planSlug}
                 className={ctaButtonClass}
               >
-                <span style={{ backgroundColor: '#7BD8FF', display: 'block', borderRadius: 8, padding: '8px 16px' }}>
+                <span style={{ display: 'block', borderRadius: 8, padding: '8px 16px' }}>
                   {PRODUCT_CTA[currentProduct].label}
                 </span>
               </ProofCheckoutButton>
@@ -357,7 +357,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 <Link
                   href={PRODUCT_CTA['verify-api'].href}
                   onClick={() => setMobileOpen(false)}
-                  className="block w-full rounded-lg px-4 py-3 text-center text-sm font-medium text-white"
+                  className="block w-full rounded-lg px-4 py-3 text-center text-sm font-medium text-[#071017]"
                   style={{ backgroundColor: '#7BD8FF' }}
                 >
                   {PRODUCT_CTA['verify-api'].label}
