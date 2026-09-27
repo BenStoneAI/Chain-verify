@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 144" role="img" aria-labelledby="title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 220" role="img" aria-labelledby="title">
 <title id="title">ChainVerify logo</title>
-<g transform="translate(8 14)">
-  <path d="M58 0 108 28v58L58 116 8 86V28Z" fill="#0D1417" stroke="#00E5A8" stroke-width="8"/>
-  <path d="M31 58 50 77 86 40" fill="none" stroke="#F7FAFC" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M85 22 104 33v24" fill="none" stroke="#4FD1C5" stroke-width="8" stroke-linecap="round"/>
+<g transform="translate(24 24)">
+  <rect x="18" y="50" width="112" height="76" rx="38" fill="none" stroke="#7BD8FF" stroke-width="18" transform="rotate(-28 74 88)"/>
+  <rect x="78" y="50" width="112" height="76" rx="38" fill="none" stroke="#7BD8FF" stroke-width="18" transform="rotate(28 134 88)"/>
+  <path d="M76 91 L103 117 L154 63" fill="none" stroke="#F5F8FC" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
-<text x="145" y="91" fill="#F7FAFC" font-family="'Helvetica Neue',Arial,sans-serif" font-size="64" font-weight="700" letter-spacing="-2">ChainVerify</text>
+<text x="250" y="142" fill="#F5F8FC" font-family="'Helvetica Neue', Arial, sans-serif" font-size="92" font-weight="700" letter-spacing="-3">ChainVerify</text>
 </svg>
