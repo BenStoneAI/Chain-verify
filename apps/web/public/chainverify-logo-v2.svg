@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 220" role="img" aria-labelledby="title">
+<title id="title">ChainVerify logo</title>
+<g transform="translate(24 24)">
+  <rect x="18" y="50" width="112" height="76" rx="38" fill="none" stroke="#7B8CFF" stroke-width="18" transform="rotate(-28 74 88)"/>
+  <rect x="78" y="50" width="112" height="76" rx="38" fill="none" stroke="#7B8CFF" stroke-width="18" transform="rotate(28 134 88)"/>
+  <path d="M76 91 L103 117 L154 63" fill="none" stroke="#F4F7FB" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="250" y="142" fill="#F4F7FB" font-family="'Helvetica Neue', Arial, sans-serif" font-size="92" font-weight="700" letter-spacing="-3">ChainVerify</text>
+</svg>

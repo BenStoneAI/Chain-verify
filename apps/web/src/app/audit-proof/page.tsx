@@ -13,7 +13,7 @@ import './audit-proof.css';
 const auditProofMarketing = getProofProductMarketing('audit-proof');
 
 export const metadata: Metadata = {
-  title: 'AuditProof by SwarmSync — Prove your AI work to clients and regulators',
+  title: 'AuditProof by ChainVerify — Prove your AI work to clients and regulators',
   description: auditProofMarketing.description,
   keywords: [
     'EU AI Act Article 12',
@@ -25,27 +25,27 @@ export const metadata: Metadata = {
     'AI governance records',
     'AI work verification',
   ],
-  alternates: { canonical: 'https://swarmsync.ai/audit-proof' },
+  alternates: { canonical: 'https://chainverify.org/audit-proof' },
   openGraph: {
-    title: 'AuditProof by SwarmSync — Prove your AI work to clients and regulators',
+    title: 'AuditProof by ChainVerify — Prove your AI work to clients and regulators',
     description: auditProofMarketing.description,
-    url: 'https://swarmsync.ai/audit-proof',
-    siteName: 'SwarmSync',
+    url: 'https://chainverify.org/audit-proof',
+    siteName: 'ChainVerify',
     type: 'website',
     images: [
       {
-        url: 'https://swarmsync.ai/og-audit-proof.png',
+        url: 'https://chainverify.org/og-audit-proof.png',
         width: 1200,
         height: 630,
-        alt: 'AuditProof by SwarmSync',
+        alt: 'AuditProof by ChainVerify',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AuditProof by SwarmSync',
+    title: 'AuditProof by ChainVerify',
     description: 'Hand clients and regulators independent proof that your AI work is real.',
-    images: ['https://swarmsync.ai/og-audit-proof.png'],
+    images: ['https://chainverify.org/og-audit-proof.png'],
   },
 };
 
@@ -124,10 +124,10 @@ export default function AuditProofPage() {
                 <div
                   style={{
                     background: 'linear-gradient(180deg,#0d1021 0%,#080c18 100%)',
-                    border: '1px solid rgba(124,92,255,0.28)',
+                    border: '1px solid rgba(123,140,255,0.28)',
                     borderRadius: '14px',
                     boxShadow:
-                      '0 32px 80px rgba(0,0,0,0.65), 0 0 48px rgba(124,92,255,0.12), 0 1px 0 rgba(255,255,255,0.04) inset',
+                      '0 32px 80px rgba(0,0,0,0.65), 0 0 48px rgba(123,140,255,0.12), 0 1px 0 rgba(255,255,255,0.04) inset',
                     overflow: 'hidden',
                   }}
                 >
@@ -616,7 +616,7 @@ export default function AuditProofPage() {
             <div
               style={{
                 background: '#080c14',
-                border: '1px solid rgba(124,92,255,0.22)',
+                border: '1px solid rgba(123,140,255,0.22)',
                 borderRadius: '12px',
                 overflow: 'hidden',
                 maxWidth: '780px',
@@ -677,7 +677,7 @@ export default function AuditProofPage() {
                 }}
                 aria-label="cURL example for generating audit proof"
               >
-                <code>{`curl -X POST https://api.swarmsync.ai/api/verify \\
+                <code>{`curl -X POST https://chain-verify-api.onrender.com/api/verify \\
   -H "Authorization: Bearer <API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -807,7 +807,7 @@ export default function AuditProofPage() {
                   </ul>
                   {tier.slug === 'auditproof-enterprise' ? (
                     <Link
-                      href="mailto:proof@swarmsync.ai"
+                      href="mailto:proof@chainverify.org"
                       className="tcta"
                       style={{
                         textDecoration: 'none',
@@ -855,10 +855,10 @@ export default function AuditProofPage() {
               All tiers include structured proof records, JSON export where available, and API access. Enterprise
               pricing available on request —{' '}
               <a
-                href="mailto:proof@swarmsync.ai"
+                href="mailto:proof@chainverify.org"
                 style={{ color: 'var(--accent-soft)', textDecoration: 'none' }}
               >
-                proof@swarmsync.ai
+                proof@chainverify.org
               </a>
             </p>
           </section>
@@ -898,7 +898,7 @@ export default function AuditProofPage() {
           {/* Related products */}
           <section className="related wrap" aria-labelledby="related-heading">
             <div className="section-head" style={{ marginBottom: '32px' }}>
-              <span className="eyebrow">SwarmSync Proof Suite</span>
+              <span className="eyebrow">ChainVerify Proof Suite</span>
               <h2 id="related-heading" style={{ fontSize: '28px' }}>
                 More proof products.
               </h2>

@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'VerifyAPI Docs | SwarmSync',
+  title: 'VerifyAPI Docs | ChainVerify',
   description:
     'Developer documentation for VerifyAPI authentication, verification runs, proof records, and proof exports.',
-  alternates: { canonical: 'https://swarmsync.ai/verify-api/docs' },
+  alternates: { canonical: 'https://chainverify.org/verify-api/docs' },
 };
 
 const endpoints = [
@@ -106,7 +106,7 @@ export default function VerifyApiDocsPage() {
         <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h2 className="font-[var(--font-display)] text-2xl font-semibold">Authentication</h2>
           <p className="mt-4 text-sm leading-6 text-slate-300">
-            Production verification requires an authenticated SwarmSync principal. Send JSON and one
+            Production verification requires an authenticated ChainVerify principal. Send JSON and one
             supported credential header:
           </p>
           <pre className="mt-5 overflow-x-auto rounded-md border border-white/10 bg-black/50 p-4 font-mono text-xs leading-6 text-cyan-100">

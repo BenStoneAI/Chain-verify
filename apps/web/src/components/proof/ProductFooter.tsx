@@ -45,7 +45,7 @@ export interface ProductFooterProps {
 export function ProductFooter({ currentProduct }: ProductFooterProps) {
   return (
     <footer
-      className="border-t border-white/10 bg-[#03050A]"
+      className="border-t border-white/10 bg-[#0A0C12]"
       role="contentinfo"
       aria-label="Site footer"
     >
@@ -68,13 +68,13 @@ export function ProductFooter({ currentProduct }: ProductFooterProps) {
                         href={link.href}
                         aria-current={isCurrentProductLink ? 'page' : undefined}
                         className={cn(
-                          'text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] rounded-sm',
+                          'text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B8CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0C12] rounded-sm',
                           isCurrentProductLink
                             ? 'font-medium'
                             : 'text-white/50 hover:text-white',
                         )}
                         style={
-                          isCurrentProductLink ? { color: '#7C5CFF' } : undefined
+                          isCurrentProductLink ? { color: '#7B8CFF' } : undefined
                         }
                       >
                         {link.label}
@@ -92,11 +92,11 @@ export function ProductFooter({ currentProduct }: ProductFooterProps) {
               Platform
             </h2>
             <p className="text-xs leading-relaxed text-white/30">
-              The full SwarmSync agent platform{' '}
+              Independent verification for AI work{' '}
               <Link
                 href="/agents"
-                className="text-white/40 underline underline-offset-2 transition-colors duration-150 hover:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] rounded-sm"
-                aria-label="Go to the full SwarmSync agent platform"
+                className="text-white/40 underline underline-offset-2 transition-colors duration-150 hover:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B8CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0C12] rounded-sm"
+                aria-label="Go to the full ChainVerify agent platform"
               >
                 →
               </Link>
@@ -107,21 +107,21 @@ export function ProductFooter({ currentProduct }: ProductFooterProps) {
         {/* Bottom strip */}
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-xs text-white/30">
-            &copy; 2026 SwarmSync.ai
+            &copy; 2026 ChainVerify.ai
             <span aria-hidden="true" className="mx-2 text-white/20">
               ·
             </span>
             Verification for AI-generated work
           </p>
           <p className="text-xs text-white/20">
-            Built on the{' '}
+            Structured proof for{' '}
             <Link
               href="/agents"
-              className="text-white/30 underline underline-offset-2 transition-colors duration-150 hover:text-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] rounded-sm"
+              className="text-white/30 underline underline-offset-2 transition-colors duration-150 hover:text-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B8CFF] rounded-sm"
             >
-              SwarmSync
+              ChainVerify
             </Link>{' '}
-            agent network
+            high-stakes workflows
           </p>
         </div>
       </div>

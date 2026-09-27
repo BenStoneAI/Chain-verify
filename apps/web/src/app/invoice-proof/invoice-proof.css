@@ -3,18 +3,18 @@
 .ip-scope {
     --bg-base:        #060712;
     --bg-tier:        #0A0C1A;
-    --surface-base:   #0B0E1C;
-    --surface-raised: #111524;
-    --text-primary:   #EDEFF7;
-    --text-secondary: #C5CCE0;
-    --text-muted:     #8C95AE;
-    --text-faint:     #6A7290;
-    --accent:         #7C5CFF;
-    --accent-strong:  #9D85FF;
-    --accent-soft:    #B4BEFF;
-    --accent-dim:     rgba(124, 92, 255, 0.18);
-    --accent-wire:    rgba(124, 92, 255, 0.35);
-    --cyan:           #00F5FF;
+    --surface-base:   #121722;
+    --surface-raised: #1B2230;
+    --text-primary:   #F4F7FB;
+    --text-secondary: #B8C1CF;
+    --text-muted:     #98A2B3;
+    --text-faint:     #7D8798;
+    --accent:         #FF8A5B;
+    --accent-strong:  #FFA27F;
+    --accent-soft:    #FFC2AB;
+    --accent-dim:     rgba(255, 138, 91, 0.18);
+    --accent-wire:    rgba(255, 138, 91, 0.35);
+    --cyan:           #7B8CFF;
 
     --ok:             #3FD18B;
     --ok-dim:         rgba(63, 209, 139, 0.16);
@@ -26,8 +26,8 @@
     --err-dim:        rgba(240, 82, 82, 0.14);
     --err-wire:       rgba(240, 82, 82, 0.40);
 
-    --border-base:    rgba(180, 190, 255, 0.10);
-    --border-hover:   rgba(180, 190, 255, 0.18);
+    --border-base:    rgba(152, 162, 179, 0.10);
+    --border-hover:   rgba(152, 162, 179, 0.18);
     --border-soft:    rgba(255, 255, 255, 0.05);
 
     --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -36,7 +36,7 @@
     --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
     --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.50), 0 1px 0 rgba(255,255,255,0.03) inset;
     --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255,255,255,0.04) inset;
-    --shadow-glow-purple: 0 0 40px rgba(124, 92, 255, 0.22);
+    --shadow-glow-purple: 0 0 40px rgba(255, 138, 91, 0.22);
   }
 
 .ip-scope, .ip-scope * { box-sizing: border-box; }
@@ -62,16 +62,16 @@
 .ip-scope .page-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background:
-      radial-gradient(900px 600px at 78% -10%, rgba(124, 92, 255, 0.10), transparent 60%),
-      radial-gradient(800px 500px at -5% 30%, rgba(0, 245, 255, 0.04), transparent 60%),
+      radial-gradient(900px 600px at 78% -10%, rgba(255, 138, 91, 0.10), transparent 60%),
+      radial-gradient(800px 500px at -5% 30%, rgba(123, 140, 255, 0.04), transparent 60%),
       var(--bg-base);
   }
 
 .ip-scope .page-bg::after {
     content: ""; position: absolute; inset: 0;
     background-image:
-      linear-gradient(rgba(124, 92, 255, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 92, 255, 0.045) 1px, transparent 1px);
+      linear-gradient(rgba(255, 138, 91, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 138, 91, 0.045) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
@@ -112,7 +112,7 @@
 .ip-scope .brand-mark-img {
     width: auto; height: 30px;
     object-fit: contain;
-    filter: drop-shadow(0 0 14px rgba(124, 92, 255, 0.45));
+    filter: drop-shadow(0 0 14px rgba(255, 138, 91, 0.45));
   }
 
 .ip-scope .brand-mark {
@@ -120,7 +120,7 @@
     background:
       radial-gradient(60% 60% at 35% 30%, rgba(255,255,255,0.16), transparent 70%),
       linear-gradient(135deg, var(--accent) 0%, #5B3FE0 100%);
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(124,92,255,0.35);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(255,138,91,0.35);
     position: relative;
   }
 
@@ -170,11 +170,11 @@
     background: var(--accent); color: #fff;
     border-radius: 8px;
     font-size: 14px; font-weight: 600;
-    box-shadow: 0 8px 24px rgba(124, 92, 255, 0.25);
+    box-shadow: 0 8px 24px rgba(255, 138, 91, 0.25);
     transition: transform .15s, box-shadow .15s;
   }
 
-.ip-scope .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(124, 92, 255, 0.35); }
+.ip-scope .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(255, 138, 91, 0.35); }
 
 @media (max-width: 880px) {
 .ip-scope .nav-links a:not(.nav-cta) { display: none; }
@@ -224,10 +224,10 @@
 
 .ip-scope .btn-primary {
     background: var(--accent); color: #fff;
-    box-shadow: 0 12px 32px rgba(124, 92, 255, 0.30);
+    box-shadow: 0 12px 32px rgba(255, 138, 91, 0.30);
   }
 
-.ip-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124, 92, 255, 0.40); }
+.ip-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(255, 138, 91, 0.40); }
 
 .ip-scope .btn-secondary {
     background: rgba(255,255,255,0.03);
@@ -273,7 +273,7 @@
 .ip-scope .trust-pill {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 12px;
-    background: rgba(124, 92, 255, 0.06);
+    background: rgba(255, 138, 91, 0.06);
     border: 1px solid var(--accent-wire);
     border-radius: 100px;
     color: var(--accent-soft);
@@ -300,7 +300,7 @@
 
 .ip-scope .audit-card::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(500px 220px at 100% 0%, rgba(124, 92, 255, 0.10), transparent 60%);
+    background: radial-gradient(500px 220px at 100% 0%, rgba(255, 138, 91, 0.10), transparent 60%);
   }
 
 .ip-scope .audit-card > * { position: relative; }
@@ -579,7 +579,7 @@
 .ip-scope .problem-card p { color: var(--text-secondary); margin: 0; }
 
 .ip-scope .problem-card.accent {
-    background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+    background: linear-gradient(180deg, rgba(255,138,91,0.10), rgba(255,138,91,0.02));
     border-color: var(--accent-wire);
     box-shadow: var(--shadow-glow-purple);
   }
@@ -590,7 +590,7 @@
     margin-top: 18px;
     padding: 14px 16px;
     border-left: 2px solid var(--accent);
-    background: rgba(124, 92, 255, 0.05);
+    background: rgba(255, 138, 91, 0.05);
     border-radius: 0 8px 8px 0;
     font-size: 15px;
     color: var(--text-primary);
@@ -783,11 +783,11 @@
     border-radius: 20px;
     padding: 56px 56px;
     background:
-      radial-gradient(700px 360px at 100% 0%, rgba(124, 92, 255, 0.18), transparent 60%),
-      radial-gradient(500px 300px at 0% 100%, rgba(0, 245, 255, 0.06), transparent 60%),
+      radial-gradient(700px 360px at 100% 0%, rgba(255, 138, 91, 0.18), transparent 60%),
+      radial-gradient(500px 300px at 0% 100%, rgba(123, 140, 255, 0.06), transparent 60%),
       linear-gradient(180deg, #0E1124 0%, #0A0D1B 100%);
     border: 1px solid var(--accent-wire);
-    box-shadow: var(--shadow-lift), 0 0 80px rgba(124, 92, 255, 0.10);
+    box-shadow: var(--shadow-lift), 0 0 80px rgba(255, 138, 91, 0.10);
     overflow: hidden;
     display: grid;
     grid-template-columns: 1.1fr 1fr;
@@ -801,8 +801,8 @@
 .ip-scope .pilot::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background-image:
-      linear-gradient(rgba(124, 92, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 92, 255, 0.04) 1px, transparent 1px);
+      linear-gradient(rgba(255, 138, 91, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 138, 91, 0.04) 1px, transparent 1px);
     background-size: 40px 40px;
     mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
@@ -881,7 +881,7 @@
 .ip-scope .pillar .ic {
     width: 30px; height: 30px;
     border-radius: 8px;
-    background: rgba(124, 92, 255, 0.10);
+    background: rgba(255, 138, 91, 0.10);
     border: 1px solid var(--accent-wire);
     color: var(--accent-soft);
     display: inline-flex; align-items: center; justify-content: center;
@@ -926,7 +926,7 @@
 .ip-scope .final::before {
     content: ""; position: absolute; inset: 0;
     background:
-      radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.16), transparent 60%);
+      radial-gradient(600px 300px at 50% 50%, rgba(255, 138, 91, 0.16), transparent 60%);
     pointer-events: none;
   }
 
@@ -972,3 +972,34 @@
 .ip-scope .related-icon.audit { background: rgba(34,211,238,.12); color: #22d3ee; }
 .ip-scope .related-icon.verify { background: rgba(139,92,246,.12); color: #8b5cf6; }
 .ip-scope .related-arrow { margin-left: auto; color: var(--lo); font-size: 1.2rem; }
+
+/* Stella interaction layer */
+.ip-scope .check-card,
+.ip-scope .problem-card,
+.ip-scope .flow-step,
+.ip-scope .related-card{
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),border-color .28s ease,background .28s ease,box-shadow .28s ease;
+}
+.ip-scope .check-card:hover,
+.ip-scope .problem-card:hover,
+.ip-scope .flow-step:hover,
+.ip-scope .related-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 22px 55px rgba(0,0,0,.24);
+}
+@supports (animation-timeline:view()){
+  .ip-scope .section{
+    animation:cvSectionIn both linear;
+    animation-timeline:view();
+    animation-range:entry 8% cover 26%;
+  }
+  @keyframes cvSectionIn{from{opacity:.35;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+}
+
+/* ChainVerify Stella type scale */
+.ip-scope h1{font-size:clamp(48px,6vw,76px);font-weight:760;letter-spacing:-.048em;line-height:.98}
+.ip-scope h2{font-size:clamp(32px,4vw,50px);font-weight:730;letter-spacing:-.038em}
+.ip-scope .lede{font-size:clamp(17px,1.7vw,20px);line-height:1.62}
+.ip-scope .btn{border-radius:12px}
+.ip-scope .hero{padding-top:76px}
+@media(max-width:640px){.ip-scope h1{font-size:clamp(44px,13vw,58px)}.ip-scope .hero{padding-top:54px}}
