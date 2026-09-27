@@ -7,19 +7,19 @@
    SwarmSync tokens — AuditProof (slightly cooler, more enterprise)
    ============================================================ */
 .ap-scope {
-  --bg-base:        #05060F;
-  --bg-tier:        #090B18;
-  --surface-base:   #0B0E1C;
-  --surface-raised: #111524;
-  --text-primary:   #EDEFF7;
-  --text-secondary: #C5CCE0;
-  --text-muted:     #8C95AE;
-  --text-faint:     #6A7290;
-  --accent:         #7C5CFF;
-  --accent-strong:  #9D85FF;
-  --accent-soft:    #B4BEFF;
-  --accent-dim:     rgba(124, 92, 255, 0.16);
-  --accent-wire:    rgba(124, 92, 255, 0.32);
+  --bg-base:        #07080D;
+  --bg-tier:        #0B0D14;
+  --surface-base:   #10141F;
+  --surface-raised: #171D29;
+  --text-primary:   #F8FAFC;
+  --text-secondary: #BCC7D8;
+  --text-muted:     #8F9DB2;
+  --text-faint:     #637289;
+  --accent:         #22D3EE;
+  --accent-strong:  #5EE7F4;
+  --accent-soft:    #A5F3FC;
+  --accent-dim:     rgba(34, 211, 238, 0.16);
+  --accent-wire:    rgba(34, 211, 238, 0.32);
   --steel:          #6C7AA6;
   --steel-dim:      rgba(108, 122, 166, 0.12);
   --steel-wire:     rgba(180, 200, 255, 0.18);
@@ -44,7 +44,7 @@
   --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
   --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
-  --shadow-glow-purple: 0 0 50px rgba(124, 92, 255, 0.18);
+  --shadow-glow-purple: 0 0 50px rgba(34, 211, 238, 0.18);
 
   font-family: var(--font-display);
   background: var(--bg-base);
@@ -70,15 +70,15 @@
 .ap-scope .page-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(900px 600px at 82% -8%, rgba(124, 92, 255, 0.09), transparent 60%),
+    radial-gradient(900px 600px at 82% -8%, rgba(34, 211, 238, 0.09), transparent 60%),
     radial-gradient(800px 500px at -8% 22%, rgba(60, 110, 200, 0.05), transparent 60%),
     var(--bg-base);
 }
 .ap-scope .page-bg::after {
   content: ""; position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.040) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.040) 1px, transparent 1px);
+    linear-gradient(rgba(34, 211, 238, 0.040) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.040) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
@@ -137,9 +137,9 @@
 }
 .ap-scope .btn-primary {
   background: var(--accent); color: #fff;
-  box-shadow: 0 12px 32px rgba(124, 92, 255, 0.28);
+  box-shadow: 0 12px 32px rgba(34, 211, 238, 0.28);
 }
-.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124, 92, 255, 0.38); }
+.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(34, 211, 238, 0.38); }
 .ap-scope .btn-secondary {
   background: rgba(255,255,255,0.03);
   color: var(--text-primary);
@@ -176,7 +176,7 @@
 .ap-scope .trust-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 6px 12px;
-  background: rgba(124, 92, 255, 0.05);
+  background: rgba(34, 211, 238, 0.05);
   border: 1px solid var(--accent-wire);
   border-radius: 100px;
   color: var(--accent-soft);
@@ -204,7 +204,7 @@
 }
 .ap-scope .audit-card::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(500px 220px at 100% 0%, rgba(124, 92, 255, 0.08), transparent 60%);
+  background: radial-gradient(500px 220px at 100% 0%, rgba(34, 211, 238, 0.08), transparent 60%);
 }
 .ap-scope .audit-card > * { position: relative; }
 .ap-scope .audit-head {
@@ -507,7 +507,7 @@
 }
 .ap-scope .problem-card p { color: var(--text-secondary); margin: 0; font-size: 14.5px; line-height: 1.55; }
 .ap-scope .problem-card.accent {
-  background: linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.015));
+  background: linear-gradient(180deg, rgba(34,211,238,0.08), rgba(34,211,238,0.015));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -801,11 +801,11 @@
   border-radius: 20px;
   padding: 56px;
   background:
-    radial-gradient(700px 360px at 100% 0%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(700px 360px at 100% 0%, rgba(34, 211, 238, 0.18), transparent 60%),
     radial-gradient(500px 300px at 0% 100%, rgba(63, 209, 139, 0.06), transparent 60%),
     linear-gradient(180deg, #0E1124 0%, #0A0D1B 100%);
   border: 1px solid var(--accent-wire);
-  box-shadow: var(--shadow-lift), 0 0 80px rgba(124, 92, 255, 0.10);
+  box-shadow: var(--shadow-lift), 0 0 80px rgba(34, 211, 238, 0.10);
   overflow: hidden;
   display: grid;
   grid-template-columns: 1.05fr 1fr;
@@ -816,8 +816,8 @@
 .ap-scope .pilot::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
@@ -892,7 +892,7 @@
 .ap-scope .final::before {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.14), transparent 60%);
+    radial-gradient(600px 300px at 50% 50%, rgba(34, 211, 238, 0.14), transparent 60%);
   pointer-events: none;
 }
 .ap-scope .final > * { position: relative; }
@@ -917,8 +917,8 @@
 .ap-scope .passport .avatar {
   width: 38px; height: 38px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #7C5CFF 0%, #4B3CBB 100%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(124,92,255,0.35);
+  background: linear-gradient(135deg, #22D3EE 0%, #4B3CBB 100%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(34,211,238,0.35);
   display: inline-flex; align-items: center; justify-content: center;
   color: #fff;
   font-family: var(--font-mono); font-weight: 600; font-size: 14px;
@@ -978,7 +978,7 @@
 .ap-scope .pillar .ic {
   width: 30px; height: 30px;
   border-radius: 8px;
-  background: rgba(124, 92, 255, 0.10);
+  background: rgba(34, 211, 238, 0.10);
   border: 1px solid var(--accent-wire);
   color: var(--accent-soft);
   display: inline-flex; align-items: center; justify-content: center;
@@ -1008,7 +1008,7 @@
   content: ""; position: absolute;
   left: 13px; top: 18px; bottom: 18px;
   width: 1px;
-  background: linear-gradient(180deg, var(--accent-wire), rgba(124,92,255,0.06));
+  background: linear-gradient(180deg, var(--accent-wire), rgba(34,211,238,0.06));
 }
 .ap-scope .event-row {
   display: grid;
@@ -1069,7 +1069,7 @@
   display: flex; flex-direction: column;
 }
 .ap-scope .tier.featured {
-  background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+  background: linear-gradient(180deg, rgba(34,211,238,0.10), rgba(34,211,238,0.02));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -1159,7 +1159,7 @@
 }
 .ap-scope .related-card:hover {
   border-color: var(--accent-wire);
-  background: rgba(124,92,255,0.04);
+  background: rgba(34,211,238,0.04);
   transform: translateY(-2px);
 }
 .ap-scope .related-card .label {
@@ -1241,4 +1241,74 @@
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border-width: 0;
+}
+
+
+/* ChainVerify 2026 interaction layer */
+.ap-scope .hero-visual,
+.ip-scope .hero-visual { animation: cv-product-float 8s ease-in-out infinite; transform-origin: 50% 60%; }
+.ap-scope .problem-card,
+.ap-scope .flow-step,
+.ap-scope .check-card,
+.ap-scope .related-card {
+  transition: transform .28s cubic-bezier(.22,1,.36,1), border-color .28s, box-shadow .28s, background .28s;
+}
+.ap-scope .problem-card:hover,
+.ap-scope .flow-step:hover,
+.ap-scope .check-card:hover,
+.ap-scope .related-card:hover {
+  transform: translateY(-5px) scale(1.008);
+  border-color: rgba(34, 211, 238,.38);
+  box-shadow: 0 24px 70px rgba(0,0,0,.28), 0 0 34px rgba(34, 211, 238,.08);
+}
+.ap-scope .page-bg {
+  background:
+    radial-gradient(760px 520px at 78% -8%, rgba(34, 211, 238,.12), transparent 62%),
+    radial-gradient(700px 460px at -4% 28%, rgba(79, 124, 255,.07), transparent 64%),
+    #07080D;
+}
+.ap-scope .page-bg::before {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.13;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+  mix-blend-mode:soft-light;
+}
+.ap-scope .btn-primary {
+  box-shadow: 0 14px 38px rgba(34, 211, 238,.22), inset 0 1px 0 rgba(255,255,255,.22);
+}
+.ap-scope .btn-primary:hover {
+  box-shadow: 0 20px 50px rgba(34, 211, 238,.32);
+}
+@keyframes cv-product-float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-5px) scale(1.008); } }
+@media (prefers-reduced-motion:reduce){ .ap-scope * { animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; } }
+
+html[data-theme="light"] .ap-scope{
+  --bg-base:#F4F7FB;
+  --bg-tier:#FFFFFF;
+  --surface-base:#FFFFFF;
+  --surface-raised:#E9EEF6;
+  --text-primary:#0B1020;
+  --text-secondary:#40516A;
+  --text-muted:#68778E;
+  --text-faint:#8692A5;
+  --border-base:rgba(33,48,75,.14);
+  --border-hover:rgba(33,48,75,.24);
+  --border-soft:rgba(33,48,75,.08);
+  --code-bg:#EDF2F8;
+  color:#0B1020;
+  background:#F4F7FB;
+}
+html[data-theme="light"] .ap-scope .page-bg{
+  background:
+    radial-gradient(760px 520px at 78% -8%, rgba(139,92,246,.09), transparent 62%),
+    radial-gradient(700px 460px at -4% 28%, rgba(34,211,238,.06), transparent 64%),
+    #F4F7FB;
+}
+html[data-theme="light"] .ap-scope .code-panel,
+html[data-theme="light"] .ap-scope .audit-card,
+html[data-theme="light"] .ap-scope .problem-card,
+html[data-theme="light"] .ap-scope .flow-step,
+html[data-theme="light"] .ap-scope .check-card,
+html[data-theme="light"] .ap-scope .related-card{
+  background:rgba(255,255,255,.82);
+  box-shadow:0 18px 55px rgba(40,55,82,.09);
 }

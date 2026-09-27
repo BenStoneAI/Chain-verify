@@ -4,22 +4,22 @@
    ============================================================ */
 
 .va-scope {
-  --bg-base:        #05060F;
-  --bg-tier:        #090B18;
-  --surface-base:   #0B0E1C;
-  --surface-raised: #111524;
-  --text-primary:   #EDEFF7;
-  --text-secondary: #C5CCE0;
-  --text-muted:     #8C95AE;
-  --text-faint:     #6A7290;
-  --accent:         #7C5CFF;
-  --accent-strong:  #9D85FF;
-  --accent-soft:    #B4BEFF;
-  --accent-dim:     rgba(124, 92, 255, 0.16);
-  --accent-wire:    rgba(124, 92, 255, 0.32);
-  --cyan:           #4FE0F0;
-  --cyan-dim:       rgba(79, 224, 240, 0.12);
-  --cyan-wire:      rgba(79, 224, 240, 0.35);
+  --bg-base:        #07080D;
+  --bg-tier:        #0B0D14;
+  --surface-base:   #10141F;
+  --surface-raised: #171D29;
+  --text-primary:   #F8FAFC;
+  --text-secondary: #BCC7D8;
+  --text-muted:     #8F9DB2;
+  --text-faint:     #637289;
+  --accent:         #8B5CF6;
+  --accent-strong:  #A78BFA;
+  --accent-soft:    #C4B5FD;
+  --accent-dim:     rgba(139, 92, 246, 0.16);
+  --accent-wire:    rgba(139, 92, 246, 0.32);
+  --cyan:           #22D3EE;
+  --cyan-dim:       rgba(34, 211, 238, 0.12);
+  --cyan-wire:      rgba(34, 211, 238, 0.35);
 
   --ok:             #3FD18B;
   --ok-dim:         rgba(63, 209, 139, 0.14);
@@ -41,15 +41,15 @@
   --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
   --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
-  --shadow-glow-purple: 0 0 50px rgba(124, 92, 255, 0.18);
+  --shadow-glow-purple: 0 0 50px rgba(139, 92, 246, 0.18);
 
   --code-bg: #07080F;
-  --syn-key:  #B4BEFF;
+  --syn-key:  #C4B5FD;
   --syn-str:  #6EE7B7;
   --syn-num:  #F6B955;
   --syn-bool: #F0A8F0;
   --syn-com:  #4F5778;
-  --syn-pun:  #6A7290;
+  --syn-pun:  #637289;
 
   font-family: var(--font-display);
   background: var(--bg-base);
@@ -71,15 +71,15 @@
 .va-scope .page-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(900px 600px at 82% -8%, rgba(124, 92, 255, 0.09), transparent 60%),
-    radial-gradient(800px 500px at -8% 22%, rgba(79, 224, 240, 0.05), transparent 60%),
+    radial-gradient(900px 600px at 82% -8%, rgba(139, 92, 246, 0.09), transparent 60%),
+    radial-gradient(800px 500px at -8% 22%, rgba(34, 211, 238, 0.05), transparent 60%),
     var(--bg-base);
 }
 .va-scope .page-bg::after {
   content: ""; position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.040) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.040) 1px, transparent 1px);
+    linear-gradient(rgba(139, 92, 246, 0.040) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.040) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
@@ -144,11 +144,11 @@
 }
 .va-scope .btn-primary {
   background: var(--accent); color: #fff;
-  box-shadow: 0 12px 32px rgba(124, 92, 255, 0.28);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.28);
 }
 .va-scope .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 44px rgba(124, 92, 255, 0.38);
+  box-shadow: 0 18px 44px rgba(139, 92, 246, 0.38);
 }
 .va-scope .btn-secondary {
   background: rgba(255,255,255,0.03);
@@ -187,7 +187,7 @@
 .va-scope .trust-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 6px 12px;
-  background: rgba(124, 92, 255, 0.05);
+  background: rgba(139, 92, 246, 0.05);
   border: 1px solid var(--accent-wire);
   border-radius: 100px;
   color: var(--accent-soft);
@@ -267,7 +267,7 @@
   border: 1px solid var(--ok-wire);
 }
 .va-scope .method.get {
-  background: rgba(124,92,255,0.14); color: var(--accent-soft);
+  background: rgba(139,92,246,0.14); color: var(--accent-soft);
   border: 1px solid var(--accent-wire);
 }
 .va-scope .method.del {
@@ -388,7 +388,7 @@
   color: var(--text-secondary); margin: 0; font-size: 14.5px; line-height: 1.55;
 }
 .va-scope .problem-card.accent {
-  background: linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.015));
+  background: linear-gradient(180deg, rgba(139,92,246,0.08), rgba(139,92,246,0.015));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -528,7 +528,7 @@
 }
 .va-scope .api-preview .res .code-body {
   background:
-    radial-gradient(400px 200px at 100% 0%, rgba(124,92,255,0.08), transparent 60%);
+    radial-gradient(400px 200px at 100% 0%, rgba(139,92,246,0.08), transparent 60%);
 }
 .va-scope .api-preview .badge-strip {
   display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
@@ -585,7 +585,7 @@
 .va-scope .va-lang-tab.active,
 .va-scope .va-lang-tab[aria-selected="true"] {
   color: var(--text-primary);
-  background: rgba(124,92,255,0.14);
+  background: rgba(139,92,246,0.14);
   box-shadow: inset 0 0 0 1px var(--accent-wire);
 }
 
@@ -661,7 +661,7 @@
   min-height: 380px;
 }
 .va-scope .tier.featured {
-  background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+  background: linear-gradient(180deg, rgba(139,92,246,0.10), rgba(139,92,246,0.02));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
   position: relative;
@@ -792,7 +792,7 @@
 .va-scope .pillar .ic {
   width: 30px; height: 30px;
   border-radius: 8px;
-  background: rgba(124, 92, 255, 0.10);
+  background: rgba(139, 92, 246, 0.10);
   border: 1px solid var(--accent-wire);
   color: var(--accent-soft);
   display: inline-flex; align-items: center; justify-content: center;
@@ -833,7 +833,7 @@
 }
 .va-scope .related-card:hover {
   border-color: var(--accent-wire);
-  background: rgba(124,92,255,0.04);
+  background: rgba(139,92,246,0.04);
   transform: translateY(-2px);
 }
 .va-scope .related-card .label {
@@ -881,7 +881,7 @@
 .va-scope .final::before {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.14), transparent 60%);
+    radial-gradient(600px 300px at 50% 50%, rgba(139, 92, 246, 0.14), transparent 60%);
   pointer-events: none;
 }
 .va-scope .final > * { position: relative; }
@@ -897,3 +897,73 @@
 .va-scope .text-soft { color: var(--text-secondary); }
 .va-scope .text-muted { color: var(--text-muted); }
 .va-scope .accent { color: var(--accent-soft); }
+
+
+/* ChainVerify 2026 interaction layer */
+.va-scope .hero-visual,
+.ip-scope .hero-visual { animation: cv-product-float 8s ease-in-out infinite; transform-origin: 50% 60%; }
+.va-scope .problem-card,
+.va-scope .flow-step,
+.va-scope .check-card,
+.va-scope .related-card {
+  transition: transform .28s cubic-bezier(.22,1,.36,1), border-color .28s, box-shadow .28s, background .28s;
+}
+.va-scope .problem-card:hover,
+.va-scope .flow-step:hover,
+.va-scope .check-card:hover,
+.va-scope .related-card:hover {
+  transform: translateY(-5px) scale(1.008);
+  border-color: rgba(139, 92, 246,.38);
+  box-shadow: 0 24px 70px rgba(0,0,0,.28), 0 0 34px rgba(139, 92, 246,.08);
+}
+.va-scope .page-bg {
+  background:
+    radial-gradient(760px 520px at 78% -8%, rgba(139, 92, 246,.12), transparent 62%),
+    radial-gradient(700px 460px at -4% 28%, rgba(34, 211, 238,.07), transparent 64%),
+    #07080D;
+}
+.va-scope .page-bg::before {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.13;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+  mix-blend-mode:soft-light;
+}
+.va-scope .btn-primary {
+  box-shadow: 0 14px 38px rgba(139, 92, 246,.22), inset 0 1px 0 rgba(255,255,255,.22);
+}
+.va-scope .btn-primary:hover {
+  box-shadow: 0 20px 50px rgba(139, 92, 246,.32);
+}
+@keyframes cv-product-float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-5px) scale(1.008); } }
+@media (prefers-reduced-motion:reduce){ .va-scope * { animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; } }
+
+html[data-theme="light"] .va-scope{
+  --bg-base:#F4F7FB;
+  --bg-tier:#FFFFFF;
+  --surface-base:#FFFFFF;
+  --surface-raised:#E9EEF6;
+  --text-primary:#0B1020;
+  --text-secondary:#40516A;
+  --text-muted:#68778E;
+  --text-faint:#8692A5;
+  --border-base:rgba(33,48,75,.14);
+  --border-hover:rgba(33,48,75,.24);
+  --border-soft:rgba(33,48,75,.08);
+  --code-bg:#EDF2F8;
+  color:#0B1020;
+  background:#F4F7FB;
+}
+html[data-theme="light"] .va-scope .page-bg{
+  background:
+    radial-gradient(760px 520px at 78% -8%, rgba(139,92,246,.09), transparent 62%),
+    radial-gradient(700px 460px at -4% 28%, rgba(34,211,238,.06), transparent 64%),
+    #F4F7FB;
+}
+html[data-theme="light"] .va-scope .code-panel,
+html[data-theme="light"] .va-scope .audit-card,
+html[data-theme="light"] .va-scope .problem-card,
+html[data-theme="light"] .va-scope .flow-step,
+html[data-theme="light"] .va-scope .check-card,
+html[data-theme="light"] .va-scope .related-card{
+  background:rgba(255,255,255,.82);
+  box-shadow:0 18px 55px rgba(40,55,82,.09);
+}
