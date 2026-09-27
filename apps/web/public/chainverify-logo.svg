@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 144" role="img" aria-labelledby="title">
-<title id="title">ChainVerify logo</title>
-<g transform="translate(8 14)">
-  <path d="M58 0 108 28v58L58 116 8 86V28Z" fill="#0D1417" stroke="#00E5A8" stroke-width="8"/>
-  <path d="M31 58 50 77 86 40" fill="none" stroke="#F7FAFC" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M85 22 104 33v24" fill="none" stroke="#4FD1C5" stroke-width="8" stroke-linecap="round"/>
-</g>
-<text x="145" y="91" fill="#F7FAFC" font-family="'Helvetica Neue',Arial,sans-serif" font-size="64" font-weight="700" letter-spacing="-2">ChainVerify</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 72"><defs><linearGradient id="a" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse"><stop stop-color="#A855F7"/><stop offset=".48" stop-color="#5B8CFF"/><stop offset="1" stop-color="#22D3EE"/></linearGradient><linearGradient id="b" x1="54" y1="8" x2="11" y2="55" gradientUnits="userSpaceOnUse"><stop stop-color="#FFB45C"/><stop offset=".56" stop-color="#8B5CF6"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs><g transform="translate(4 4)"><path d="M32 4 56 18v28L32 60 8 46V18L32 4Z" fill="#090B12" stroke="#2A3042" stroke-width="1.5"/><path d="M32 8 50 18.4 32 28.8 14 18.4 32 8Z" fill="url(#a)"/><path d="M14 20.8 30 30v20.8l-16-9.2V20.8Z" fill="url(#b)"/><path d="M50 20.8 34 30v20.8l16-9.2V20.8Z" fill="url(#a)"/><path d="m24 31 5.4 5.4L41 24.7" fill="none" stroke="#F8FAFC" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></g><text x="82" y="47" fill="#F8FAFC" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="760" letter-spacing="-1.2">ChainVerify</text></svg>
