@@ -15,7 +15,8 @@ export const metadata: Metadata = {
     type: 'website'
   },
   twitter: { card: 'summary_large_image', title: 'ChainVerify', description: 'Independent proof for AI work.' },
-  robots: { index: true, follow: true }
+  robots: { index: true, follow: true },
+  icons: { icon: '/chainverify-icon.svg', shortcut: '/chainverify-icon.svg', apple: '/chainverify-icon.svg' }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
