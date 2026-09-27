@@ -8,7 +8,7 @@ import './invoice-proof.css';
 const invoiceProofMarketing = getProofProductMarketing('invoiceproof');
 
 export const metadata: Metadata = {
-  title: 'InvoiceProof by SwarmSync — Catch invoice fraud before you pay',
+  title: 'InvoiceProof by ChainVerify — Catch invoice fraud before you pay',
   description: invoiceProofMarketing.description,
   keywords: [
     'invoice fraud detection',
@@ -21,20 +21,20 @@ export const metadata: Metadata = {
     'PO mismatch detection',
     'invoice verification',
   ],
-  alternates: { canonical: 'https://swarmsync.ai/invoice-proof' },
+  alternates: { canonical: 'https://chainverify.org/invoice-proof' },
   openGraph: {
-    title: 'InvoiceProof by SwarmSync — Catch invoice fraud before you pay',
+    title: 'InvoiceProof by ChainVerify — Catch invoice fraud before you pay',
     description: invoiceProofMarketing.description,
-    url: 'https://swarmsync.ai/invoice-proof',
-    siteName: 'SwarmSync',
+    url: 'https://chainverify.org/invoice-proof',
+    siteName: 'ChainVerify',
     type: 'website',
-    images: [{ url: 'https://swarmsync.ai/og-invoice-proof.png', width: 1200, height: 630, alt: 'InvoiceProof by SwarmSync' }],
+    images: [{ url: 'https://chainverify.org/chainverify-logo.svg', width: 1200, height: 630, alt: 'InvoiceProof by ChainVerify' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'InvoiceProof by SwarmSync',
+    title: 'InvoiceProof by ChainVerify',
     description: invoiceProofMarketing.shortClaim,
-    images: ['https://swarmsync.ai/og-invoice-proof.png'],
+    images: ['https://chainverify.org/chainverify-logo.svg'],
   },
 };
 
