@@ -807,7 +807,7 @@ export default function AuditProofPage() {
                   </ul>
                   {tier.slug === 'auditproof-enterprise' ? (
                     <Link
-                      href="mailto:proof@swarmsync.ai"
+                      href="mailto:proof@chainverify.org"
                       className="tcta"
                       style={{
                         textDecoration: 'none',
@@ -855,10 +855,10 @@ export default function AuditProofPage() {
               All tiers include structured proof records, JSON export where available, and API access. Enterprise
               pricing available on request —{' '}
               <a
-                href="mailto:proof@swarmsync.ai"
+                href="mailto:proof@chainverify.org"
                 style={{ color: 'var(--accent-soft)', textDecoration: 'none' }}
               >
-                proof@swarmsync.ai
+                proof@chainverify.org
               </a>
             </p>
           </section>
