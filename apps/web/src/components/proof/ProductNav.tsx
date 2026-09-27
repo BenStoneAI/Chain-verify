@@ -22,7 +22,7 @@ const PRODUCTS = [
 const PRODUCT_CTA = {
   'invoice-proof': { label: 'Start pilot – $750', planSlug: 'invoiceproof-pilot' },
   'audit-proof': { label: 'Start pilot – $2,500', planSlug: 'auditproof-pilot' },
-  'verify-api': { label: 'Start free', href: '/register' },
+  'verify-api': { label: 'Start Build – $99/mo', planSlug: 'verify-api-build' },
 } as const;
 
 export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps) {
@@ -96,13 +96,9 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
 
           <ThemeToggle />
 
-          {currentProduct === 'verify-api' ? (
-            <Link href={PRODUCT_CTA['verify-api'].href} className="cv-nav-cta">{PRODUCT_CTA['verify-api'].label} <span>→</span></Link>
-          ) : (
-            <ProofCheckoutButton product={currentProduct} planSlug={PRODUCT_CTA[currentProduct].planSlug} className="cv-nav-cta">
-              {PRODUCT_CTA[currentProduct].label} <span>→</span>
-            </ProofCheckoutButton>
-          )}
+          <ProofCheckoutButton product={currentProduct} planSlug={PRODUCT_CTA[currentProduct].planSlug} className="cv-nav-cta">
+            {PRODUCT_CTA[currentProduct].label} <span>→</span>
+          </ProofCheckoutButton>
 
           <button className="cv-mobile-menu-button" type="button" onClick={() => setMobileOpen(v => !v)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'}>
             {mobileOpen ? <X size={20}/> : <Menu size={20}/>}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './site.css';
+import './product-marketing.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chainverify.org'),

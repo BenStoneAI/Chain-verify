@@ -72,7 +72,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 const LABEL_CLASS = 'block text-xs font-medium text-white/60 mb-1.5';
 const SELECT_CLASS =
-  'w-full rounded-lg border border-white/10 bg-[#0B0E1C] px-3 py-2.5 text-sm text-white outline-none transition-colors duration-150 focus:border-[#7C5CFF]/60 focus:ring-1 focus:ring-[#7C5CFF]/40';
+  'w-full rounded-lg border border-white/10 bg-[#0B0E1C] px-3 py-2.5 text-sm text-white outline-none transition-colors duration-150 focus:border-[#8B5CF6]/60 focus:ring-1 focus:ring-[#8B5CF6]/40';
 
 const RULES_BY_TYPE: Record<VerificationType, string[]> = {
   invoice_extraction: [
@@ -246,9 +246,9 @@ export function VerifyAPISandbox() {
             aria-controls={`sandbox-panel-${mode}`}
             id={`sandbox-tab-${mode}`}
             onClick={() => setSandboxMode(mode)}
-            className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/60 ${
+            className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/60 ${
               sandboxMode === mode
-                ? 'bg-[#7C5CFF] text-white shadow-sm'
+                ? 'bg-[#8B5CF6] text-white shadow-sm'
                 : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -326,7 +326,7 @@ export function VerifyAPISandbox() {
             aria-required="true"
             aria-describedby={contentError ? 'vs-err-content' : undefined}
             aria-invalid={!!contentError}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition-colors duration-150 focus:border-[#7C5CFF]/60 focus:ring-1 focus:ring-[#7C5CFF]/40 resize-y font-mono"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition-colors duration-150 focus:border-[#8B5CF6]/60 focus:ring-1 focus:ring-[#8B5CF6]/40 resize-none font-mono"
           />
           {contentError && (
             <p id="vs-err-content" role="alert" className="mt-1 text-xs text-red-400">
@@ -339,7 +339,7 @@ export function VerifyAPISandbox() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-[#7C5CFF] px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-[#8B5CF6] px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] disabled:cursor-not-allowed disabled:opacity-60"
           aria-busy={loading}
         >
           {loading ? (
@@ -463,7 +463,7 @@ export function VerifyAPISandbox() {
               type="button"
               onClick={() => handleExport(result, 'pdf')}
               disabled={pdfLoading}
-              className="bg-[#7C5CFF] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#6b4fe0] disabled:opacity-50 transition-colors duration-150"
+              className="bg-[#8B5CF6] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#7650D8] disabled:opacity-50 transition-colors duration-150"
             >
               {pdfLoading ? 'Preparing PDF...' : 'Download PDF'}
             </button>
@@ -489,7 +489,7 @@ export function VerifyAPISandbox() {
           <p className="text-xs text-white/30 px-1">
             Retrieve this result anytime:{' '}
             <span className="font-mono text-white/50">
-              GET https://api.swarmsync.ai/api/verify/{result.verification_id}
+              GET https://chain-verify-api.onrender.com/api/verify/{result.verification_id}
             </span>
           </p>
         </div>

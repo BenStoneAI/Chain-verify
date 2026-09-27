@@ -8,7 +8,7 @@ export interface ProductFooterProps {
 const columns = [
   { heading: 'Products', links: [['VerifyAPI','/verify-api'],['AuditProof','/audit-proof'],['InvoiceProof','/invoice-proof']] },
   { heading: 'Explore', links: [['How it works','/#how-it-works'],['Proof model','/#proof'],['API','/verify-api#api-example']] },
-  { heading: 'Company', links: [['Contact','/contact'],['Security','/security'],['Privacy','/privacy']] },
+  { heading: 'Company', links: [['Email us','mailto:proof@chainverify.org'],['Home','/'],['Proof model','/#proof']] },
 ];
 
 export function ProductFooter({ currentProduct }: ProductFooterProps) {
