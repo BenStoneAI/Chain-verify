@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 const products = [
@@ -37,8 +38,7 @@ export default function HomePage() {
     <main>
       <header className="site-nav">
         <Link href="/" className="brand" aria-label="ChainVerify home">
-          <span className="brand-mark" aria-hidden="true"><span>✓</span></span>
-          <span>ChainVerify</span>
+          <Image src="/chainverify-logo-v2.svg" alt="ChainVerify" width={168} height={40} priority className="h-9 w-auto" />
         </Link>
         <nav aria-label="Primary">
           <Link href="#products">Products</Link>
@@ -144,7 +144,7 @@ export default function HomePage() {
       </section>
 
       <footer>
-        <div className="brand footer-brand"><span className="brand-mark" aria-hidden="true"><span>✓</span></span><span>ChainVerify</span></div>
+        <div className="brand footer-brand"><Image src="/chainverify-logo-v2.svg" alt="ChainVerify" width={168} height={40} className="h-9 w-auto" /></div>
         <p>Independent verification for AI work and high-stakes workflows.</p>
         <div><Link href="/audit-proof">AuditProof</Link><Link href="/invoice-proof">InvoiceProof</Link><Link href="/verify-api">VerifyAPI</Link></div>
       </footer>
