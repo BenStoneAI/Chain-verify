@@ -310,7 +310,7 @@ export default function InvoiceProofClient() {
                         flex: 1,
                       }}
                     >
-                      invoice-verification — SwarmSync
+                      invoice-verification — ChainVerify
                     </span>
                     {/* Visible EXAMPLE badge so sighted users know this is illustrative */}
                     <span
@@ -969,7 +969,7 @@ export default function InvoiceProofClient() {
                   tabSize: 2,
                 }}
               >
-                <code>{`curl -X POST https://api.swarmsync.ai/api/verify \\
+                <code>{`curl -X POST https://chain-verify-api.onrender.com/api/verify \\
   -H "Authorization: Bearer <API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -1261,9 +1261,9 @@ export default function InvoiceProofClient() {
             }}
           >
             <div style={{ marginBottom: '24px' }}>
-              <span className="eyebrow">SwarmSync Proof Suite</span>
+              <span className="eyebrow">ChainVerify Proof Suite</span>
               <h2 style={{ marginTop: '12px', fontSize: '24px' }}>
-                More proof products from SwarmSync.
+                More proof products from ChainVerify.
               </h2>
             </div>
             <div className="related-grid">
