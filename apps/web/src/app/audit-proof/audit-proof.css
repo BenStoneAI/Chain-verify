@@ -4,29 +4,29 @@
 */
 
 /* ============================================================
-   SwarmSync tokens — AuditProof (slightly cooler, more enterprise)
+   ChainVerify Blue Signal tokens — AuditProof (slightly cooler, more enterprise)
    ============================================================ */
 .ap-scope {
-  --bg-base:        #05060F;
-  --bg-tier:        #090B18;
-  --surface-base:   #0B0E1C;
-  --surface-raised: #111524;
-  --text-primary:   #EDEFF7;
-  --text-secondary: #C5CCE0;
-  --text-muted:     #8C95AE;
-  --text-faint:     #6A7290;
-  --accent:         #7C5CFF;
-  --accent-strong:  #9D85FF;
-  --accent-soft:    #B4BEFF;
-  --accent-dim:     rgba(124, 92, 255, 0.16);
-  --accent-wire:    rgba(124, 92, 255, 0.32);
+  --bg-base:        #090C12;
+  --bg-tier:        #0D121B;
+  --surface-base:   #101722;
+  --surface-raised: #182231;
+  --text-primary:   #F5F8FC;
+  --text-secondary: #CDD8E5;
+  --text-muted:     #9AA8B8;
+  --text-faint:     #718196;
+  --accent:         #7BD8FF;
+  --accent-strong:  #A8E5FF;
+  --accent-soft:    #C7EEFF;
+  --accent-dim:     rgba(123, 216, 255, 0.16);
+  --accent-wire:    rgba(123, 216, 255, 0.32);
   --steel:          #6C7AA6;
   --steel-dim:      rgba(108, 122, 166, 0.12);
   --steel-wire:     rgba(180, 200, 255, 0.18);
 
-  --ok:             #3FD18B;
-  --ok-dim:         rgba(63, 209, 139, 0.14);
-  --ok-wire:        rgba(63, 209, 139, 0.38);
+  --ok:             #74D6C2;
+  --ok-dim:         rgba(116, 214, 194, 0.14);
+  --ok-wire:        rgba(116, 214, 194, 0.38);
   --hold:           #F6B955;
   --hold-dim:       rgba(246, 185, 85, 0.12);
   --hold-wire:      rgba(246, 185, 85, 0.38);
@@ -34,8 +34,8 @@
   --err-dim:        rgba(240, 82, 82, 0.12);
   --err-wire:       rgba(240, 82, 82, 0.38);
 
-  --border-base:    rgba(180, 190, 255, 0.10);
-  --border-hover:   rgba(180, 190, 255, 0.18);
+  --border-base:    rgba(123, 216, 255, 0.10);
+  --border-hover:   rgba(123, 216, 255, 0.18);
   --border-soft:    rgba(255, 255, 255, 0.05);
 
   --font-display: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -44,7 +44,7 @@
   --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
   --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
-  --shadow-glow-purple: 0 0 50px rgba(124, 92, 255, 0.18);
+  --shadow-glow-purple: 0 0 50px rgba(123, 216, 255, 0.18);
 
   font-family: var(--font-display);
   background: var(--bg-base);
@@ -70,15 +70,15 @@
 .ap-scope .page-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(900px 600px at 82% -8%, rgba(124, 92, 255, 0.09), transparent 60%),
+    radial-gradient(900px 600px at 82% -8%, rgba(123, 216, 255, 0.09), transparent 60%),
     radial-gradient(800px 500px at -8% 22%, rgba(60, 110, 200, 0.05), transparent 60%),
     var(--bg-base);
 }
 .ap-scope .page-bg::after {
   content: ""; position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.040) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.040) 1px, transparent 1px);
+    linear-gradient(rgba(123, 216, 255, 0.040) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(123, 216, 255, 0.040) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
@@ -137,9 +137,9 @@
 }
 .ap-scope .btn-primary {
   background: var(--accent); color: #fff;
-  box-shadow: 0 12px 32px rgba(124, 92, 255, 0.28);
+  box-shadow: 0 12px 32px rgba(123, 216, 255, 0.28);
 }
-.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124, 92, 255, 0.38); }
+.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(123, 216, 255, 0.38); }
 .ap-scope .btn-secondary {
   background: rgba(255,255,255,0.03);
   color: var(--text-primary);
@@ -176,7 +176,7 @@
 .ap-scope .trust-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 6px 12px;
-  background: rgba(124, 92, 255, 0.05);
+  background: rgba(123, 216, 255, 0.05);
   border: 1px solid var(--accent-wire);
   border-radius: 100px;
   color: var(--accent-soft);
@@ -204,7 +204,7 @@
 }
 .ap-scope .audit-card::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(500px 220px at 100% 0%, rgba(124, 92, 255, 0.08), transparent 60%);
+  background: radial-gradient(500px 220px at 100% 0%, rgba(123, 216, 255, 0.08), transparent 60%);
 }
 .ap-scope .audit-card > * { position: relative; }
 .ap-scope .audit-head {
@@ -388,7 +388,7 @@
   flex-shrink: 0;
   width: 28px; height: 28px;
   border-radius: 8px;
-  background: rgba(63, 209, 139, 0.18);
+  background: rgba(116, 214, 194, 0.18);
   color: var(--ok);
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--font-mono); font-weight: 600;
@@ -446,7 +446,7 @@
 }
 .ap-scope .live-strip .dots i:nth-child(1) { background: #F05252; opacity: 0.75; }
 .ap-scope .live-strip .dots i:nth-child(2) { background: #F6B955; opacity: 0.75; }
-.ap-scope .live-strip .dots i:nth-child(3) { background: #3FD18B; opacity: 0.75; }
+.ap-scope .live-strip .dots i:nth-child(3) { background: #74D6C2; opacity: 0.75; }
 .ap-scope .live-strip .pulse {
   display: inline-flex; align-items: center; gap: 6px;
   margin-left: auto;
@@ -507,7 +507,7 @@
 }
 .ap-scope .problem-card p { color: var(--text-secondary); margin: 0; font-size: 14.5px; line-height: 1.55; }
 .ap-scope .problem-card.accent {
-  background: linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.015));
+  background: linear-gradient(180deg, rgba(123,216,255,0.08), rgba(123,216,255,0.015));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -801,11 +801,11 @@
   border-radius: 20px;
   padding: 56px;
   background:
-    radial-gradient(700px 360px at 100% 0%, rgba(124, 92, 255, 0.18), transparent 60%),
-    radial-gradient(500px 300px at 0% 100%, rgba(63, 209, 139, 0.06), transparent 60%),
+    radial-gradient(700px 360px at 100% 0%, rgba(123, 216, 255, 0.18), transparent 60%),
+    radial-gradient(500px 300px at 0% 100%, rgba(116, 214, 194, 0.06), transparent 60%),
     linear-gradient(180deg, #0E1124 0%, #0A0D1B 100%);
   border: 1px solid var(--accent-wire);
-  box-shadow: var(--shadow-lift), 0 0 80px rgba(124, 92, 255, 0.10);
+  box-shadow: var(--shadow-lift), 0 0 80px rgba(123, 216, 255, 0.10);
   overflow: hidden;
   display: grid;
   grid-template-columns: 1.05fr 1fr;
@@ -816,8 +816,8 @@
 .ap-scope .pilot::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(123, 216, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(123, 216, 255, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
@@ -892,7 +892,7 @@
 .ap-scope .final::before {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.14), transparent 60%);
+    radial-gradient(600px 300px at 50% 50%, rgba(123, 216, 255, 0.14), transparent 60%);
   pointer-events: none;
 }
 .ap-scope .final > * { position: relative; }
@@ -917,8 +917,8 @@
 .ap-scope .passport .avatar {
   width: 38px; height: 38px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #7C5CFF 0%, #4B3CBB 100%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(124,92,255,0.35);
+  background: linear-gradient(135deg, #7BD8FF 0%, #4B3CBB 100%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(123,216,255,0.35);
   display: inline-flex; align-items: center; justify-content: center;
   color: #fff;
   font-family: var(--font-mono); font-weight: 600; font-size: 14px;
@@ -978,7 +978,7 @@
 .ap-scope .pillar .ic {
   width: 30px; height: 30px;
   border-radius: 8px;
-  background: rgba(124, 92, 255, 0.10);
+  background: rgba(123, 216, 255, 0.10);
   border: 1px solid var(--accent-wire);
   color: var(--accent-soft);
   display: inline-flex; align-items: center; justify-content: center;
@@ -1008,7 +1008,7 @@
   content: ""; position: absolute;
   left: 13px; top: 18px; bottom: 18px;
   width: 1px;
-  background: linear-gradient(180deg, var(--accent-wire), rgba(124,92,255,0.06));
+  background: linear-gradient(180deg, var(--accent-wire), rgba(123,216,255,0.06));
 }
 .ap-scope .event-row {
   display: grid;
@@ -1069,7 +1069,7 @@
   display: flex; flex-direction: column;
 }
 .ap-scope .tier.featured {
-  background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+  background: linear-gradient(180deg, rgba(123,216,255,0.10), rgba(123,216,255,0.02));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -1159,7 +1159,7 @@
 }
 .ap-scope .related-card:hover {
   border-color: var(--accent-wire);
-  background: rgba(124,92,255,0.04);
+  background: rgba(123,216,255,0.04);
   transform: translateY(-2px);
 }
 .ap-scope .related-card .label {
@@ -1241,4 +1241,69 @@
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border-width: 0;
+}
+
+
+/* ChainVerify Blue Signal — Stella motion/depth layer */
+.ap-scope {
+  --font-display: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:#090C12;
+}
+.ap-scope .page-bg{
+  background:
+    radial-gradient(900px 580px at 82% -8%,rgba(123,216,255,.10),transparent 60%),
+    radial-gradient(720px 460px at -8% 28%,rgba(202,189,255,.06),transparent 62%),
+    #090C12;
+  animation:cv-ambient 18s ease-in-out infinite alternate;
+}
+.ap-scope .page-bg::after{
+  background-image:linear-gradient(rgba(123,216,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(123,216,255,.035) 1px,transparent 1px);
+  background-size:58px 58px;
+}
+.ap-scope h1{font-size:clamp(46px,6.5vw,78px);font-weight:760;line-height:.96;letter-spacing:-.048em;text-wrap:balance}
+.ap-scope h2{font-size:clamp(32px,4.3vw,52px);font-weight:730;letter-spacing:-.038em;text-wrap:balance}
+.ap-scope .lede{font-size:clamp(17px,1.7vw,20px);color:#AEBBC8}
+.ap-scope .btn{border-radius:13px;transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease,border-color .2s ease,background .2s ease}
+.ap-scope .btn-primary{color:#071017;box-shadow:0 14px 36px rgba(123,216,255,.18)}
+.ap-scope .btn-primary:hover{transform:translateY(-3px);box-shadow:0 20px 48px rgba(123,216,255,.28)}
+.ap-scope .code-panel,
+.ap-scope .audit-card,
+.ap-scope .problem-card,
+.ap-scope .check-card,
+.ap-scope .flow-step,
+.ap-scope .stat,
+.ap-scope .pillar,
+.ap-scope .related-card{
+  border-radius:18px;
+  border-color:rgba(123,216,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 18px 48px rgba(0,0,0,.18);
+  transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .25s ease,box-shadow .3s ease,background .25s ease;
+}
+.ap-scope .code-panel:hover,
+.ap-scope .audit-card:hover,
+.ap-scope .problem-card:hover,
+.ap-scope .check-card:hover,
+.ap-scope .flow-step:hover,
+.ap-scope .pillar:hover,
+.ap-scope .related-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(123,216,255,.32);
+  box-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);
+}
+.ap-scope .eyebrow::before{animation:cv-pulse 1.9s ease-in-out infinite}
+.ap-scope .trust-pill{background:rgba(123,216,255,.055)}
+.ap-scope .hero-stack .arrow{box-shadow:0 0 0 4px #090C12,0 0 28px rgba(123,216,255,.12)}
+@keyframes cv-ambient{from{transform:translate3d(-1%,0,0) scale(1)}to{transform:translate3d(1%,1%,0) scale(1.025)}}
+@keyframes cv-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.42;transform:scale(.78)}}
+@keyframes cv-rise{from{opacity:0;transform:translateY(24px) scale(.988)}to{opacity:1;transform:none}}
+@supports (animation-timeline:view()){
+  .ap-scope .section-head,.ap-scope .problem-card,.ap-scope .flow-step,.ap-scope .check-card,.ap-scope .audit-card,.ap-scope .pricing-card{animation:cv-rise linear both;animation-timeline:view();animation-range:entry 8% cover 26%}
+}
+@media (max-width:640px){
+  .ap-scope h1{font-size:clamp(44px,13.5vw,62px)}
+  .ap-scope .wrap{padding-left:18px;padding-right:18px}
+  .ap-scope .section{padding-top:72px;padding-bottom:72px}
+}
+@media (prefers-reduced-motion:reduce){
+  .ap-scope *,.ap-scope *::before,.ap-scope *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
