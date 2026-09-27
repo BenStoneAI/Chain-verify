@@ -151,11 +151,11 @@ interface DocumentDeliveryResult {
 
 const LABEL_CLASS = 'block text-xs font-medium text-white/60 mb-1.5';
 const INPUT_CLASS =
-  'w-full rounded-lg border border-white/10 bg-[#0B0E1C] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition-colors duration-150 focus:border-[#7C5CFF]/60 focus:ring-1 focus:ring-[#7C5CFF]/40';
+  'w-full rounded-lg border border-white/10 bg-[#0B0E1C] px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition-colors duration-150 focus:border-[#7BD8FF]/60 focus:ring-1 focus:ring-[#7BD8FF]/40';
 const SELECT_CLASS =
-  'w-full rounded-lg border border-white/10 bg-[#0B0E1C] px-3 py-2.5 text-sm text-white outline-none transition-colors duration-150 focus:border-[#7C5CFF]/60 focus:ring-1 focus:ring-[#7C5CFF]/40';
+  'w-full rounded-lg border border-white/10 bg-[#0B0E1C] px-3 py-2.5 text-sm text-white outline-none transition-colors duration-150 focus:border-[#7BD8FF]/60 focus:ring-1 focus:ring-[#7BD8FF]/40';
 const TEXTAREA_CLASS =
-  'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition-colors duration-150 focus:border-[#7C5CFF]/60 focus:ring-1 focus:ring-[#7C5CFF]/40 resize-y font-mono';
+  'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition-colors duration-150 focus:border-[#7BD8FF]/60 focus:ring-1 focus:ring-[#7BD8FF]/40 resize-y font-mono';
 const SECTION_TITLE_CLASS = 'text-xs font-semibold text-white/40 uppercase tracking-widest mb-3';
 
 // ---------------------------------------------------------------------------
@@ -513,9 +513,9 @@ export function SoftwareDeliveryForm() {
           aria-controls="sd-panel-git"
           id="sd-tab-git"
           onClick={() => setDeliverySubTab('git')}
-          className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/60 ${
+          className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF]/60 ${
             deliverySubTab === 'git'
-              ? 'bg-[#7C5CFF] text-white shadow-sm'
+              ? 'bg-[#7BD8FF] text-white shadow-sm'
               : 'text-white/50 hover:text-white/80'
           }`}
         >
@@ -528,9 +528,9 @@ export function SoftwareDeliveryForm() {
           aria-controls="sd-panel-document"
           id="sd-tab-document"
           onClick={() => setDeliverySubTab('document')}
-          className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/60 ${
+          className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF]/60 ${
             deliverySubTab === 'document'
-              ? 'bg-[#7C5CFF] text-white shadow-sm'
+              ? 'bg-[#7BD8FF] text-white shadow-sm'
               : 'text-white/50 hover:text-white/80'
           }`}
         >
@@ -592,7 +592,7 @@ export function SoftwareDeliveryForm() {
             <button
               type="submit"
               disabled={docLoading}
-              className="w-full rounded-lg bg-[#7C5CFF] px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-[#7BD8FF] px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] disabled:cursor-not-allowed disabled:opacity-60"
               aria-busy={docLoading}
             >
               {docLoading ? (
@@ -694,7 +694,7 @@ export function SoftwareDeliveryForm() {
           <p>{errorMessage}</p>
           <a
             href="/login?redirect=/verify-api"
-            className="mt-2 inline-block text-sm text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
+            className="mt-2 inline-block text-sm text-[#7BD8FF] hover:opacity-80 underline underline-offset-2"
           >
             Sign in →
           </a>
@@ -879,7 +879,7 @@ export function SoftwareDeliveryForm() {
             onClick={() => setAdvancedOpen((v) => !v)}
             aria-expanded={advancedOpen}
             aria-controls="sd-advanced-panel"
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-white/60 hover:text-white/80 hover:bg-white/5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/60 focus-visible:ring-inset"
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-white/60 hover:text-white/80 hover:bg-white/5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF]/60 focus-visible:ring-inset"
           >
             <span>Advanced / Evidence sources</span>
             <svg
@@ -1272,7 +1272,7 @@ export function SoftwareDeliveryForm() {
         <button
           type="submit"
           disabled={loading || noToken}
-          className="w-full rounded-lg bg-[#7C5CFF] px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-[#7BD8FF] px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] disabled:cursor-not-allowed disabled:opacity-60"
           aria-busy={loading}
         >
           {loading ? (
@@ -1319,7 +1319,7 @@ export function SoftwareDeliveryForm() {
           <p>{errorMessage}</p>
           <a
             href="/proof/checkout?product=verify-api&plan=verify-api-build"
-            className="mt-2 inline-block text-sm text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
+            className="mt-2 inline-block text-sm text-[#7BD8FF] hover:opacity-80 underline underline-offset-2"
           >
             Upgrade plan →
           </a>
@@ -1473,13 +1473,13 @@ export function SoftwareDeliveryForm() {
             <div className="flex items-center gap-4 text-xs">
               <a
                 href="/console/runs"
-                className="text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
+                className="text-[#7BD8FF] hover:opacity-80 underline underline-offset-2"
               >
                 View all runs →
               </a>
               <a
                 href="/verify-api/logs"
-                className="text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
+                className="text-[#7BD8FF] hover:opacity-80 underline underline-offset-2"
               >
                 Verification logs →
               </a>
