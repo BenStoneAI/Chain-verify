@@ -20,7 +20,7 @@ const PRODUCT_CTA = {
 } as const;
 
 const ctaButtonClass =
-  'rounded-lg px-4 py-2 text-sm font-medium text-[#071017] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]';
+  'rounded-lg bg-[#7BD8FF] px-4 py-2 text-sm font-medium text-[#071017] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]';
 
 const PRODUCTS = [
   {
@@ -366,7 +366,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 <ProofCheckoutButton
                   product={currentProduct}
                   planSlug={PRODUCT_CTA[currentProduct].planSlug}
-                  className="block w-full rounded-lg px-4 py-3 text-center text-sm font-medium text-white"
+                  className="block w-full rounded-lg bg-[#7BD8FF] px-4 py-3 text-center text-sm font-medium text-[#071017]"
                 >
                   {PRODUCT_CTA[currentProduct].label}
                 </ProofCheckoutButton>
