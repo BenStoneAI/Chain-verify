@@ -161,7 +161,7 @@ export default function HomePage() {
       <footer className="cv-home-footer">
         <div className="cv-brand"><ChainVerifyMark className="cv-brand-mark"/><span>ChainVerify</span></div>
         <p>Independent verification for AI work and high-stakes workflows.</p>
-        <div><Link href="/verify-api">VerifyAPI</Link><Link href="/audit-proof">AuditProof</Link><Link href="/invoice-proof">InvoiceProof</Link></div>
+        <div><Link href="/verify-api">VerifyAPI</Link><Link href="/audit-proof">AuditProof</Link><Link href="/invoice-proof">InvoiceProof</Link><Link href="/contact">Contact</Link><Link href="/security">Security</Link><Link href="/privacy">Privacy</Link></div>
       </footer>
     </main>
   );
