@@ -3,6 +3,8 @@ import './site.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chainverify.org'),
+  applicationName: 'ChainVerify',
+  icons: { icon: '/chainverify-icon.svg', shortcut: '/chainverify-icon.svg', apple: '/chainverify-icon.svg' },
   title: { default: 'ChainVerify — Independent Proof for AI Work', template: '%s | ChainVerify' },
   description: 'Independent verification for AI outputs, software delivery, agent activity, and invoice risk — with structured proof records you can review and export.',
   alternates: { canonical: '/' },
