@@ -11,7 +11,7 @@ import { VerifyAPISandbox } from '@/components/proof/VerifyAPISandbox';
 import './verify-api.css';
 
 export const metadata: Metadata = {
-  title: 'VerifyAPI — AI Said the Work Is Done. Now Prove It. | SwarmSync',
+  title: 'VerifyAPI — AI Said the Work Is Done. Now Prove It. | ChainVerify',
   description:
     'Independent checks on commits, builds, tests, CI, security, and fake-work patterns before you accept or release AI-generated deliveries.',
   keywords: [
@@ -24,21 +24,21 @@ export const metadata: Metadata = {
     'AI delivery validation',
     'commit verification',
   ],
-  alternates: { canonical: 'https://swarmsync.ai/verify-api' },
+  alternates: { canonical: 'https://chainverify.org/verify-api' },
   openGraph: {
-    title: 'VerifyAPI — AI Said the Work Is Done. Now Prove It. | SwarmSync',
+    title: 'VerifyAPI — AI Said the Work Is Done. Now Prove It. | ChainVerify',
     description:
       'Independent checks on commits, builds, tests, CI, security, and fake-work patterns before you accept or release AI-generated deliveries.',
-    url: 'https://swarmsync.ai/verify-api',
-    siteName: 'SwarmSync',
+    url: 'https://chainverify.org/verify-api',
+    siteName: 'ChainVerify',
     type: 'website',
-    images: [{ url: 'https://swarmsync.ai/og-verify-api.png', width: 1200, height: 630, alt: 'VerifyAPI by SwarmSync' }],
+    images: [{ url: 'https://chainverify.org/chainverify-logo.svg', width: 1200, height: 630, alt: 'VerifyAPI by ChainVerify' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'VerifyAPI by SwarmSync',
+    title: 'VerifyAPI by ChainVerify',
     description: 'AI Said the Work Is Done. Now Prove It.',
-    images: ['https://swarmsync.ai/og-verify-api.png'],
+    images: ['https://chainverify.org/chainverify-logo.svg'],
   },
 };
 
@@ -78,7 +78,7 @@ export default function VerifyApiPage() {
             */}
             <div className="hero-grid">
               <div className="hero-text">
-                <span className="eyebrow">VerifyAPI by SwarmSync</span>
+                <span className="eyebrow">VerifyAPI by ChainVerify</span>
                 <h1>
                   AI Said the Work Is Done.{' '}
                   <span className="accent">Now Prove It.</span>
@@ -341,7 +341,7 @@ export default function VerifyApiPage() {
                   Send a repo URL and commit SHA — get back a structured verdict with proof ID.{' '}
                   <Link
                     href="/docs/verify-api#software-delivery-verification"
-                    style={{ color: '#7C5CFF', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                    style={{ color: '#7BD8FF', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                   >
                     Full integration docs →
                   </Link>
@@ -376,7 +376,7 @@ export default function VerifyApiPage() {
                     // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{
                       __html: `<span style="color:var(--syn-com)"># Verify a delivery</span>
-<span style="color:var(--text-secondary)">curl</span> <span style="color:var(--syn-key)">-X POST</span> https://api.swarmsync.ai/api/verify \\
+<span style="color:var(--text-secondary)">curl</span> <span style="color:var(--syn-key)">-X POST</span> https://chain-verify-api.onrender.com/api/verify \\
   <span style="color:var(--syn-key)">-H</span> <span style="color:var(--syn-str)">"Authorization: Bearer &lt;API_KEY&gt;"</span> \\
   <span style="color:var(--syn-key)">-H</span> <span style="color:var(--syn-str)">"Content-Type: application/json"</span> \\
   <span style="color:var(--syn-key)">-d</span> <span style="color:var(--syn-str)">'{"source_type": "software_delivery", "task": "verify_delivery", "output": {"repo_url": "https://github.com/org/repo", "commit_sha": "abc123def"}, "rules": []}'</span>`,
