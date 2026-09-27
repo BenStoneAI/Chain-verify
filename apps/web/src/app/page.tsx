@@ -2,52 +2,52 @@ import Link from 'next/link';
 
 import { ChainVerifyMark } from '@/components/brand/ChainVerifyMark';
 import { ThemeToggle } from '@/components/brand/ThemeToggle';
+import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
 
-const products = [
+const offers = [
   {
+    product: 'verify-api' as const,
     name: 'VerifyAPI',
-    href: '/verify-api',
-    accent: 'violet',
-    glyph: '</>',
+    eyebrow: 'AI + SOFTWARE DELIVERY',
+    price: '$99/mo',
+    plan: 'verify-api-build',
+    cta: 'Start VerifyAPI — $99/mo',
     title: 'Verify AI output before users rely on it.',
-    body: 'Check AI outputs and software-delivery claims against rules, evidence, and acceptance criteria. Return a structured verdict, issues, confidence, and proof ID.',
-    tags: ['API','RULES','REAL-TIME'],
+    body: 'Check output and delivery claims against rules, tests, CI, evidence, and acceptance criteria.',
+    href: '/verify-api',
+    bullets: ['5,000 runs / month', 'Proof ID every run', '90-day retention'],
   },
   {
+    product: 'audit-proof' as const,
     name: 'AuditProof',
+    eyebrow: 'AI GOVERNANCE',
+    price: '$2,500 pilot',
+    plan: 'auditproof-pilot',
+    cta: 'Start AuditProof Pilot — $2,500',
+    title: 'Prove what the AI did — and who approved it.',
+    body: 'Capture agent activity, human oversight, policy context, and structured evidence for review.',
     href: '/audit-proof',
-    accent: 'cyan',
-    glyph: '◇',
-    title: 'Prove what your AI did — and who approved it.',
-    body: 'Capture agent execution evidence, human oversight, policy context, and a reviewable proof record for clients, investors, auditors, and governance teams.',
-    tags: ['AUDIT','PROOF RECORDS','GOVERNANCE'],
+    bullets: ['100-run managed pilot', 'Structured proof record', 'Reviewable evidence'],
   },
   {
+    product: 'invoice-proof' as const,
     name: 'InvoiceProof',
-    href: '/invoice-proof',
-    accent: 'amber',
-    glyph: '▤',
+    eyebrow: 'FINANCE + AP',
+    price: '$750 pilot',
+    plan: 'invoiceproof-pilot',
+    cta: 'Start InvoiceProof Pilot — $750',
     title: 'Catch invoice risk before money moves.',
-    body: 'Flag duplicate invoices, vendor and PO mismatches, and bank-change risk, then generate structured evidence your finance team can review.',
-    tags: ['INVOICES','CLAIMS','RISK DETECTION'],
+    body: 'Flag duplicates, vendor changes, PO mismatches, and payment anomalies before approval.',
+    href: '/invoice-proof',
+    bullets: ['100-invoice pilot', 'Duplicate + math checks', 'Payment-risk evidence'],
   },
 ];
-
-const live = [
-  ['✓','AI output verified','2s ago'],
-  ['</>','Build checked','14s ago'],
-  ['▤','Invoice analyzed','37s ago'],
-  ['◆','Agent activity traced','1m ago'],
-];
-
-const sampleJson = '{\n  "verdict": "pass",\n  "confidence": 0.98,\n  "checks": [\n    "source_match",\n    "policy_compliant",\n    "no_fabrication"\n  ],\n  "proof_id": "cv_8f3e2..."\n}';
 
 export default function HomePage() {
   return (
-    <main className="cv-home">
+    <main className="cv-home cv-home-conversion">
       <div className="cv-ambient" aria-hidden="true">
-        <i className="orb orb-one"/><i className="orb orb-two"/><i className="orb orb-three"/>
-        <span className="cv-noise"/>
+        <i className="orb orb-one"/><i className="orb orb-two"/><span className="cv-noise"/>
       </div>
 
       <header className="cv-home-nav">
@@ -56,124 +56,106 @@ export default function HomePage() {
           <span>ChainVerify</span>
         </Link>
         <nav aria-label="Primary">
-          <Link href="#products">Product</Link>
+          <Link href="#products">Products</Link>
           <Link href="#how-it-works">How it works</Link>
           <Link href="#proof">Proof model</Link>
-          <Link href="/verify-api">Docs</Link>
         </nav>
         <div className="cv-home-nav-actions">
           <ThemeToggle />
-          <Link href="/verify-api" className="cv-nav-cta">Get started <span>→</span></Link>
+          <Link href="#products" className="cv-nav-cta">Choose a product <span>↓</span></Link>
         </div>
       </header>
 
-      <section className="cv-hero">
-        <div className="cv-hero-copy">
-          <div className="cv-kicker"><i/>INDEPENDENT AI VERIFICATION</div>
-          <h1>Don’t trust<br/>the output.<br/><span>Verify it.</span></h1>
-          <p>
-            AI can say the work is done. ChainVerify gives you independent evidence that it actually is —
-            across software delivery, agent activity, and finance workflows.
-          </p>
-          <div className="cv-hero-actions">
-            <Link href="/verify-api" className="cv-button cv-button-primary">Try ChainVerify <span>→</span></Link>
-            <Link href="#products" className="cv-button cv-button-secondary"><i>▶</i> Explore proof products</Link>
-          </div>
-          <div className="cv-trust-list">
-            <span>✓ Independent</span><span>✓ Reviewable</span><span>✓ Exportable</span>
-          </div>
+      <section className="cv-conversion-hero">
+        <div className="cv-kicker"><i/>INDEPENDENT AI VERIFICATION</div>
+        <h1>Don’t trust the output.<br/><span>Verify it.</span></h1>
+        <p>
+          ChainVerify turns AI output, software-delivery claims, agent activity, and invoice risk
+          into structured evidence your team can review before it makes a decision.
+        </p>
+        <div className="cv-hero-actions cv-conversion-actions">
+          <ProofCheckoutButton product="verify-api" planSlug="verify-api-build" className="cv-button cv-button-primary">
+            Start VerifyAPI — $99/mo <span>→</span>
+          </ProofCheckoutButton>
+          <Link href="#products" className="cv-button cv-button-secondary">Compare proof products</Link>
         </div>
-
-        <div className="cv-hero-stage" id="proof" aria-label="Illustrative ChainVerify proof console">
-          <div className="cv-orbit orbit-a"/><div className="cv-orbit orbit-b"/>
-          <div className="cv-planet"/>
-          <div className="cv-float-card card-ai"><b>AI Output</b><span>Analyze and verify</span></div>
-          <div className="cv-float-card card-agent"><b>Agent Activity</b><span>Trace every action</span></div>
-          <div className="cv-float-card card-delivery"><b>Software Delivery</b><span>Check builds, tests, CI</span></div>
-          <div className="cv-float-card card-invoice"><b>Invoice Risk</b><span>Verify claims and bills</span></div>
-
-          <div className="cv-dashboard">
-            <aside>
-              <div className="cv-mini-brand"><ChainVerifyMark className="cv-mini-mark"/><strong>ChainVerify</strong></div>
-              <span className="active">Overview</span>
-              <span>Verifications</span><span>Proof Records</span><span>Integrations</span><span>Settings</span>
-            </aside>
-            <section>
-              <div className="cv-dashboard-head">
-                <div><span className="cv-check">✓</span><div><strong>Verification Complete</strong><small>AI output verified and traced to source</small></div></div>
-                <button type="button">Share proof</button>
-              </div>
-              <div className="cv-tabs"><span>Output</span><span className="active">Evidence</span><span>Policy</span><span>Verdict</span></div>
-              <div className="cv-dashboard-grid">
-                <pre>{sampleJson}</pre>
-                <div className="cv-evidence-list">
-                  <div><i>✓</i><span><b>Source traced</b><small>Matches repository commit</small></span></div>
-                  <div><i>✓</i><span><b>Policy compliant</b><small>No disallowed content</small></span></div>
-                  <div><i>✓</i><span><b>Evidence attached</b><small>4 artifacts, 1 log, 2 references</small></span></div>
-                </div>
-              </div>
-            </section>
-          </div>
+        <div className="cv-conversion-trust">
+          <span>✓ Secure Stripe checkout</span>
+          <span>✓ No account required before purchase</span>
+          <span>✓ Independent · Reviewable · Exportable</span>
         </div>
       </section>
 
-      <section id="products" className="cv-products">
-        {products.map(product => (
-          <Link href={product.href} className={'cv-product-card ' + product.accent} key={product.name}>
-            <div className="cv-product-top">
-              <span className="cv-product-icon">{product.glyph}</span><span className="cv-card-arrow">→</span>
-            </div>
-            <h2>{product.name}</h2>
-            <h3>{product.title}</h3>
-            <p>{product.body}</p>
-            <div className="cv-tags">{product.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
-            <div className="cv-card-wave" aria-hidden="true"/>
-          </Link>
-        ))}
-      </section>
-
-      <section className="cv-live">
-        <div className="cv-live-heading"><i/>LIVE VERIFICATIONS</div>
-        <div className="cv-live-grid">
-          {live.map(([glyph,label,time]) => (
-            <div className="cv-live-item" key={label}><i>{glyph}</i><span><b>{label}</b><small>{time}</small></span></div>
+      <section id="products" className="cv-offer-section">
+        <div className="cv-offer-heading">
+          <span>CHOOSE THE DECISION YOU NEED TO TRUST</span>
+          <h2>Buy the proof layer that matches the risk.</h2>
+          <p>Starting price, outcome, and checkout are visible before you have to dig through a product page.</p>
+        </div>
+        <div className="cv-offer-grid">
+          {offers.map((offer) => (
+            <article className={'cv-offer-card ' + offer.product} key={offer.name}>
+              <div className="cv-offer-top">
+                <span>{offer.eyebrow}</span>
+                <strong>{offer.price}</strong>
+              </div>
+              <h3>{offer.name}</h3>
+              <h4>{offer.title}</h4>
+              <p>{offer.body}</p>
+              <ul>{offer.bullets.map((item) => <li key={item}>✓ {item}</li>)}</ul>
+              <div className="cv-offer-actions">
+                <ProofCheckoutButton product={offer.product} planSlug={offer.plan} className="cv-button cv-button-primary">
+                  {offer.cta}
+                </ProofCheckoutButton>
+                <Link href={offer.href}>See details <span>→</span></Link>
+              </div>
+            </article>
           ))}
-          <div className="cv-live-stat"><div className="bars"><i/><i/><i/><i/></div><span><b>12,458</b><small>verifications this hour</small></span></div>
         </div>
       </section>
 
-      <section id="how-it-works" className="cv-story">
+      <section className="cv-proof-story" id="proof">
+        <div className="cv-proof-story-copy">
+          <div className="cv-kicker"><i/>WHAT YOU ACTUALLY GET</div>
+          <h2>A verdict is useful.<br/>A proof record is defensible.</h2>
+          <p>
+            Each product is built around the same idea: don’t stop at a model answer or a status message.
+            Keep the evidence, the checks, the decision, and the proof ID together.
+          </p>
+        </div>
+        <div className="cv-proof-record-card">
+          <div className="cv-proof-record-head"><span>ChainVerify proof record</span><b>VERIFIED</b></div>
+          <div><span>Claim</span><strong>Captured</strong></div>
+          <div><span>Evidence</span><strong>Attached</strong></div>
+          <div><span>Checks</span><strong>Passed</strong></div>
+          <div><span>Human review</span><strong>Recorded</strong></div>
+          <div><span>Proof ID</span><code>cv_8f3e2…</code></div>
+        </div>
+      </section>
+
+      <section className="cv-story cv-conversion-story" id="how-it-works">
         <div className="cv-section-copy">
-          <div className="cv-kicker"><i/>FROM CLAIM TO PROOF</div>
+          <div className="cv-kicker"><i/>ONE SIMPLE FLOW</div>
           <h2>From claim to proof in three moves.</h2>
-          <p>Use the product that matches the decision you need to trust.</p>
+          <p>Every page now follows the same path so buyers always know what happens next.</p>
         </div>
         <div className="cv-story-steps">
-          <article><span>01</span><h3>Send the claim.</h3><p>Output, delivery statement, invoice, URL, or evidence bundle.</p></article>
-          <article><span>02</span><h3>Run the checks.</h3><p>Rules, evidence, risk signals, and review context are evaluated.</p></article>
-          <article><span>03</span><h3>Keep the proof.</h3><p>Return a verdict and generate a structured record you can review or export.</p></article>
+          <article><span>01</span><h3>Send the work.</h3><p>Submit the output, delivery claim, invoice, or evidence bundle you need to trust.</p></article>
+          <article><span>02</span><h3>Run the checks.</h3><p>ChainVerify evaluates the relevant evidence, rules, risk signals, and review context.</p></article>
+          <article><span>03</span><h3>Keep the proof.</h3><p>Use the structured result and proof record to approve, hold, reject, or escalate.</p></article>
         </div>
       </section>
 
-      <section className="cv-proof-layer">
-        <div>
-          <div className="cv-kicker"><i/>ONE PROOF LAYER</div>
-          <h2>Built for the moment AI work has to be believed.</h2>
-          <p>ChainVerify is for engineering teams, AI vendors, finance teams, auditors, and operators who need more than a model response or a delivery report.</p>
-        </div>
-        <div className="cv-proof-metrics">
-          <span><b>AI verification API</b><small>Structured verdicts</small></span>
-          <span><b>AI audit trail</b><small>Reviewable evidence</small></span>
-          <span><b>Invoice fraud detection</b><small>Risk before payment</small></span>
-          <span><b>Agent proof records</b><small>Traceable activity</small></span>
-        </div>
-      </section>
-
-      <section className="cv-final">
+      <section className="cv-final cv-conversion-final">
         <div className="cv-final-glow"/>
-        <h2>When the work matters,<br/>ask for proof.</h2>
-        <p>Verify the output before your users, buyers, finance team, or auditors have to trust it.</p>
-        <Link href="/verify-api" className="cv-button cv-button-primary">Start with VerifyAPI <span>→</span></Link>
+        <h2>When the work matters,<br/>put proof in the path.</h2>
+        <p>Start with the smallest paid plan or pilot that matches the decision you need to trust.</p>
+        <div className="cv-hero-actions">
+          <ProofCheckoutButton product="verify-api" planSlug="verify-api-build" className="cv-button cv-button-primary">
+            Start VerifyAPI — $99/mo
+          </ProofCheckoutButton>
+          <Link href="#products" className="cv-button cv-button-secondary">Compare products</Link>
+        </div>
       </section>
 
       <footer className="cv-home-footer">
