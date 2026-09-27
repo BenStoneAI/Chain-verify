@@ -250,7 +250,7 @@ export default function InvoiceProofClient() {
                 <div
                   style={{
                     background: 'linear-gradient(180deg,#0E1224 0%,#0A0D1B 100%)',
-                    border: '1px solid rgba(124,92,255,0.25)',
+                    border: '1px solid rgba(123,140,255,0.25)',
                     borderRadius: '16px',
                     boxShadow: '0 30px 80px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.04) inset',
                     overflow: 'hidden',
@@ -310,7 +310,7 @@ export default function InvoiceProofClient() {
                         flex: 1,
                       }}
                     >
-                      invoice-verification — SwarmSync
+                      invoice-verification — ChainVerify
                     </span>
                     {/* Visible EXAMPLE badge so sighted users know this is illustrative */}
                     <span
@@ -912,7 +912,7 @@ export default function InvoiceProofClient() {
             <div
               style={{
                 background: '#080c14',
-                border: '1px solid rgba(124,92,255,0.2)',
+                border: '1px solid rgba(123,140,255,0.2)',
                 borderRadius: '14px',
                 overflow: 'hidden',
                 maxWidth: '760px',
@@ -969,7 +969,7 @@ export default function InvoiceProofClient() {
                   tabSize: 2,
                 }}
               >
-                <code>{`curl -X POST https://api.swarmsync.ai/api/verify \\
+                <code>{`curl -X POST https://chain-verify-api.onrender.com/api/verify \\
   -H "Authorization: Bearer <API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -1077,7 +1077,7 @@ export default function InvoiceProofClient() {
                     role="listitem"
                     style={{
                       background: isPilot
-                        ? 'linear-gradient(180deg,rgba(124,92,255,0.10),rgba(124,92,255,0.02))'
+                        ? 'linear-gradient(180deg,rgba(123,140,255,0.10),rgba(123,140,255,0.02))'
                         : 'rgba(255,255,255,0.02)',
                       border: `1px solid ${isPilot ? 'var(--accent-wire)' : 'var(--border-base)'}`,
                       borderRadius: '14px',
@@ -1154,7 +1154,7 @@ export default function InvoiceProofClient() {
                         planSlug={slug}
                         className={
                           isPilot
-                            ? 'block w-full text-center py-2.5 rounded-lg text-xs font-bold bg-[#7C5CFF] text-white shadow-[0_8px_24px_rgba(124,92,255,0.25)] hover:bg-[#6b4ef2] transition-colors cursor-pointer'
+                            ? 'block w-full text-center py-2.5 rounded-lg text-xs font-bold bg-[#FF8A5B] text-white shadow-[0_8px_24px_rgba(123,140,255,0.25)] hover:bg-[#6b4ef2] transition-colors cursor-pointer'
                             : 'block w-full text-center py-2.5 rounded-lg text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer'
                         }
                       >
@@ -1261,9 +1261,9 @@ export default function InvoiceProofClient() {
             }}
           >
             <div style={{ marginBottom: '24px' }}>
-              <span className="eyebrow">SwarmSync Proof Suite</span>
+              <span className="eyebrow">ChainVerify Proof Suite</span>
               <h2 style={{ marginTop: '12px', fontSize: '24px' }}>
-                More proof products from SwarmSync.
+                More proof products from ChainVerify.
               </h2>
             </div>
             <div className="related-grid">
