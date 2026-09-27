@@ -1,24 +1,24 @@
 /* Scoped under .ip-scope — see page.tsx. */
 
 .ip-scope {
-    --bg-base:        #060712;
-    --bg-tier:        #0A0C1A;
-    --surface-base:   #0B0E1C;
-    --surface-raised: #111524;
-    --text-primary:   #EDEFF7;
-    --text-secondary: #C5CCE0;
-    --text-muted:     #8C95AE;
-    --text-faint:     #6A7290;
-    --accent:         #7C5CFF;
-    --accent-strong:  #9D85FF;
-    --accent-soft:    #B4BEFF;
-    --accent-dim:     rgba(124, 92, 255, 0.18);
-    --accent-wire:    rgba(124, 92, 255, 0.35);
-    --cyan:           #00F5FF;
+    --bg-base:        #090C12;
+    --bg-tier:        #0D121B;
+    --surface-base:   #101722;
+    --surface-raised: #182231;
+    --text-primary:   #F5F8FC;
+    --text-secondary: #CDD8E5;
+    --text-muted:     #9AA8B8;
+    --text-faint:     #718196;
+    --accent:         #7BD8FF;
+    --accent-strong:  #A8E5FF;
+    --accent-soft:    #C7EEFF;
+    --accent-dim:     rgba(123, 216, 255, 0.18);
+    --accent-wire:    rgba(123, 216, 255, 0.35);
+    --cyan:           #CABDFF;
 
-    --ok:             #3FD18B;
-    --ok-dim:         rgba(63, 209, 139, 0.16);
-    --ok-wire:        rgba(63, 209, 139, 0.40);
+    --ok:             #74D6C2;
+    --ok-dim:         rgba(116, 214, 194, 0.16);
+    --ok-wire:        rgba(116, 214, 194, 0.40);
     --hold:           #F6B955;
     --hold-dim:       rgba(246, 185, 85, 0.14);
     --hold-wire:      rgba(246, 185, 85, 0.40);
@@ -26,8 +26,8 @@
     --err-dim:        rgba(240, 82, 82, 0.14);
     --err-wire:       rgba(240, 82, 82, 0.40);
 
-    --border-base:    rgba(180, 190, 255, 0.10);
-    --border-hover:   rgba(180, 190, 255, 0.18);
+    --border-base:    rgba(123, 216, 255, 0.10);
+    --border-hover:   rgba(123, 216, 255, 0.18);
     --border-soft:    rgba(255, 255, 255, 0.05);
 
     --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -36,7 +36,7 @@
     --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
     --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.50), 0 1px 0 rgba(255,255,255,0.03) inset;
     --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255,255,255,0.04) inset;
-    --shadow-glow-purple: 0 0 40px rgba(124, 92, 255, 0.22);
+    --shadow-glow-purple: 0 0 40px rgba(123, 216, 255, 0.22);
   }
 
 .ip-scope, .ip-scope * { box-sizing: border-box; }
@@ -62,7 +62,7 @@
 .ip-scope .page-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background:
-      radial-gradient(900px 600px at 78% -10%, rgba(124, 92, 255, 0.10), transparent 60%),
+      radial-gradient(900px 600px at 78% -10%, rgba(123, 216, 255, 0.10), transparent 60%),
       radial-gradient(800px 500px at -5% 30%, rgba(0, 245, 255, 0.04), transparent 60%),
       var(--bg-base);
   }
@@ -70,8 +70,8 @@
 .ip-scope .page-bg::after {
     content: ""; position: absolute; inset: 0;
     background-image:
-      linear-gradient(rgba(124, 92, 255, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 92, 255, 0.045) 1px, transparent 1px);
+      linear-gradient(rgba(123, 216, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(123, 216, 255, 0.045) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
@@ -112,15 +112,15 @@
 .ip-scope .brand-mark-img {
     width: auto; height: 30px;
     object-fit: contain;
-    filter: drop-shadow(0 0 14px rgba(124, 92, 255, 0.45));
+    filter: drop-shadow(0 0 14px rgba(123, 216, 255, 0.45));
   }
 
 .ip-scope .brand-mark {
     width: 28px; height: 28px; border-radius: 7px;
     background:
       radial-gradient(60% 60% at 35% 30%, rgba(255,255,255,0.16), transparent 70%),
-      linear-gradient(135deg, var(--accent) 0%, #5B3FE0 100%);
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(124,92,255,0.35);
+      linear-gradient(135deg, var(--accent) 0%, #3B8FB5 100%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(123,216,255,0.35);
     position: relative;
   }
 
@@ -170,11 +170,11 @@
     background: var(--accent); color: #fff;
     border-radius: 8px;
     font-size: 14px; font-weight: 600;
-    box-shadow: 0 8px 24px rgba(124, 92, 255, 0.25);
+    box-shadow: 0 8px 24px rgba(123, 216, 255, 0.25);
     transition: transform .15s, box-shadow .15s;
   }
 
-.ip-scope .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(124, 92, 255, 0.35); }
+.ip-scope .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(123, 216, 255, 0.35); }
 
 @media (max-width: 880px) {
 .ip-scope .nav-links a:not(.nav-cta) { display: none; }
@@ -224,10 +224,10 @@
 
 .ip-scope .btn-primary {
     background: var(--accent); color: #fff;
-    box-shadow: 0 12px 32px rgba(124, 92, 255, 0.30);
+    box-shadow: 0 12px 32px rgba(123, 216, 255, 0.30);
   }
 
-.ip-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124, 92, 255, 0.40); }
+.ip-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(123, 216, 255, 0.40); }
 
 .ip-scope .btn-secondary {
     background: rgba(255,255,255,0.03);
@@ -273,7 +273,7 @@
 .ip-scope .trust-pill {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 12px;
-    background: rgba(124, 92, 255, 0.06);
+    background: rgba(123, 216, 255, 0.06);
     border: 1px solid var(--accent-wire);
     border-radius: 100px;
     color: var(--accent-soft);
@@ -300,7 +300,7 @@
 
 .ip-scope .audit-card::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(500px 220px at 100% 0%, rgba(124, 92, 255, 0.10), transparent 60%);
+    background: radial-gradient(500px 220px at 100% 0%, rgba(123, 216, 255, 0.10), transparent 60%);
   }
 
 .ip-scope .audit-card > * { position: relative; }
@@ -508,7 +508,7 @@
 
 .ip-scope .live-strip .dots i:nth-child(2) { background: #F6B955; opacity: 0.75; }
 
-.ip-scope .live-strip .dots i:nth-child(3) { background: #3FD18B; opacity: 0.75; }
+.ip-scope .live-strip .dots i:nth-child(3) { background: #74D6C2; opacity: 0.75; }
 
 .ip-scope .live-strip .pulse {
     display: inline-flex; align-items: center; gap: 6px;
@@ -579,7 +579,7 @@
 .ip-scope .problem-card p { color: var(--text-secondary); margin: 0; }
 
 .ip-scope .problem-card.accent {
-    background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+    background: linear-gradient(180deg, rgba(123,216,255,0.10), rgba(123,216,255,0.02));
     border-color: var(--accent-wire);
     box-shadow: var(--shadow-glow-purple);
   }
@@ -590,7 +590,7 @@
     margin-top: 18px;
     padding: 14px 16px;
     border-left: 2px solid var(--accent);
-    background: rgba(124, 92, 255, 0.05);
+    background: rgba(123, 216, 255, 0.05);
     border-radius: 0 8px 8px 0;
     font-size: 15px;
     color: var(--text-primary);
@@ -783,11 +783,11 @@
     border-radius: 20px;
     padding: 56px 56px;
     background:
-      radial-gradient(700px 360px at 100% 0%, rgba(124, 92, 255, 0.18), transparent 60%),
+      radial-gradient(700px 360px at 100% 0%, rgba(123, 216, 255, 0.18), transparent 60%),
       radial-gradient(500px 300px at 0% 100%, rgba(0, 245, 255, 0.06), transparent 60%),
       linear-gradient(180deg, #0E1124 0%, #0A0D1B 100%);
     border: 1px solid var(--accent-wire);
-    box-shadow: var(--shadow-lift), 0 0 80px rgba(124, 92, 255, 0.10);
+    box-shadow: var(--shadow-lift), 0 0 80px rgba(123, 216, 255, 0.10);
     overflow: hidden;
     display: grid;
     grid-template-columns: 1.1fr 1fr;
@@ -801,8 +801,8 @@
 .ip-scope .pilot::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background-image:
-      linear-gradient(rgba(124, 92, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 92, 255, 0.04) 1px, transparent 1px);
+      linear-gradient(rgba(123, 216, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(123, 216, 255, 0.04) 1px, transparent 1px);
     background-size: 40px 40px;
     mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
@@ -881,7 +881,7 @@
 .ip-scope .pillar .ic {
     width: 30px; height: 30px;
     border-radius: 8px;
-    background: rgba(124, 92, 255, 0.10);
+    background: rgba(123, 216, 255, 0.10);
     border: 1px solid var(--accent-wire);
     color: var(--accent-soft);
     display: inline-flex; align-items: center; justify-content: center;
@@ -926,7 +926,7 @@
 .ip-scope .final::before {
     content: ""; position: absolute; inset: 0;
     background:
-      radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.16), transparent 60%);
+      radial-gradient(600px 300px at 50% 50%, rgba(123, 216, 255, 0.16), transparent 60%);
     pointer-events: none;
   }
 
@@ -972,3 +972,68 @@
 .ip-scope .related-icon.audit { background: rgba(34,211,238,.12); color: #22d3ee; }
 .ip-scope .related-icon.verify { background: rgba(139,92,246,.12); color: #8b5cf6; }
 .ip-scope .related-arrow { margin-left: auto; color: var(--lo); font-size: 1.2rem; }
+
+
+/* ChainVerify Blue Signal — Stella motion/depth layer */
+.ip-scope {
+  --font-display: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:#090C12;
+}
+.ip-scope .page-bg{
+  background:
+    radial-gradient(900px 580px at 82% -8%,rgba(123,216,255,.10),transparent 60%),
+    radial-gradient(720px 460px at -8% 28%,rgba(202,189,255,.06),transparent 62%),
+    #090C12;
+  animation:cv-ambient 18s ease-in-out infinite alternate;
+}
+.ip-scope .page-bg::after{
+  background-image:linear-gradient(rgba(123,216,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(123,216,255,.035) 1px,transparent 1px);
+  background-size:58px 58px;
+}
+.ip-scope h1{font-size:clamp(46px,6.5vw,78px);font-weight:760;line-height:.96;letter-spacing:-.048em;text-wrap:balance}
+.ip-scope h2{font-size:clamp(32px,4.3vw,52px);font-weight:730;letter-spacing:-.038em;text-wrap:balance}
+.ip-scope .lede{font-size:clamp(17px,1.7vw,20px);color:#AEBBC8}
+.ip-scope .btn{border-radius:13px;transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease,border-color .2s ease,background .2s ease}
+.ip-scope .btn-primary{color:#071017;box-shadow:0 14px 36px rgba(123,216,255,.18)}
+.ip-scope .btn-primary:hover{transform:translateY(-3px);box-shadow:0 20px 48px rgba(123,216,255,.28)}
+.ip-scope .code-panel,
+.ip-scope .audit-card,
+.ip-scope .problem-card,
+.ip-scope .check-card,
+.ip-scope .flow-step,
+.ip-scope .stat,
+.ip-scope .pillar,
+.ip-scope .related-card{
+  border-radius:18px;
+  border-color:rgba(123,216,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 18px 48px rgba(0,0,0,.18);
+  transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .25s ease,box-shadow .3s ease,background .25s ease;
+}
+.ip-scope .code-panel:hover,
+.ip-scope .audit-card:hover,
+.ip-scope .problem-card:hover,
+.ip-scope .check-card:hover,
+.ip-scope .flow-step:hover,
+.ip-scope .pillar:hover,
+.ip-scope .related-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(123,216,255,.32);
+  box-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);
+}
+.ip-scope .eyebrow::before{animation:cv-pulse 1.9s ease-in-out infinite}
+.ip-scope .trust-pill{background:rgba(123,216,255,.055)}
+.ip-scope .hero-stack .arrow{box-shadow:0 0 0 4px #090C12,0 0 28px rgba(123,216,255,.12)}
+@keyframes cv-ambient{from{transform:translate3d(-1%,0,0) scale(1)}to{transform:translate3d(1%,1%,0) scale(1.025)}}
+@keyframes cv-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.42;transform:scale(.78)}}
+@keyframes cv-rise{from{opacity:0;transform:translateY(24px) scale(.988)}to{opacity:1;transform:none}}
+@supports (animation-timeline:view()){
+  .ip-scope .section-head,.ip-scope .problem-card,.ip-scope .flow-step,.ip-scope .check-card,.ip-scope .audit-card,.ip-scope .pricing-card{animation:cv-rise linear both;animation-timeline:view();animation-range:entry 8% cover 26%}
+}
+@media (max-width:640px){
+  .ip-scope h1{font-size:clamp(44px,13.5vw,62px)}
+  .ip-scope .wrap{padding-left:18px;padding-right:18px}
+  .ip-scope .section{padding-top:72px;padding-bottom:72px}
+}
+@media (prefers-reduced-motion:reduce){
+  .ip-scope *,.ip-scope *::before,.ip-scope *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
