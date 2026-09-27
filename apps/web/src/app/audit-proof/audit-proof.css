@@ -4,23 +4,23 @@
 */
 
 /* ============================================================
-   SwarmSync tokens — AuditProof (slightly cooler, more enterprise)
+   ChainVerify tokens — AuditProof (slightly cooler, more enterprise)
    ============================================================ */
 .ap-scope {
-  --bg-base:        #05060F;
-  --bg-tier:        #090B18;
-  --surface-base:   #0B0E1C;
-  --surface-raised: #111524;
-  --text-primary:   #EDEFF7;
-  --text-secondary: #C5CCE0;
-  --text-muted:     #8C95AE;
-  --text-faint:     #6A7290;
-  --accent:         #7C5CFF;
-  --accent-strong:  #9D85FF;
-  --accent-soft:    #B4BEFF;
-  --accent-dim:     rgba(124, 92, 255, 0.16);
-  --accent-wire:    rgba(124, 92, 255, 0.32);
-  --steel:          #6C7AA6;
+  --bg-base:        #0A0C12;
+  --bg-tier:        #0E121A;
+  --surface-base:   #121722;
+  --surface-raised: #1B2230;
+  --text-primary:   #F4F7FB;
+  --text-secondary: #B8C1CF;
+  --text-muted:     #98A2B3;
+  --text-faint:     #7D8798;
+  --accent:         #A78BFA;
+  --accent-strong:  #B9A7FF;
+  --accent-soft:    #D9C2FF;
+  --accent-dim:     rgba(167, 139, 250, 0.16);
+  --accent-wire:    rgba(167, 139, 250, 0.32);
+  --steel:          #8492B3;
   --steel-dim:      rgba(108, 122, 166, 0.12);
   --steel-wire:     rgba(180, 200, 255, 0.18);
 
@@ -34,8 +34,8 @@
   --err-dim:        rgba(240, 82, 82, 0.12);
   --err-wire:       rgba(240, 82, 82, 0.38);
 
-  --border-base:    rgba(180, 190, 255, 0.10);
-  --border-hover:   rgba(180, 190, 255, 0.18);
+  --border-base:    rgba(152, 162, 179, 0.10);
+  --border-hover:   rgba(152, 162, 179, 0.18);
   --border-soft:    rgba(255, 255, 255, 0.05);
 
   --font-display: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -44,7 +44,7 @@
   --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
   --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
-  --shadow-glow-purple: 0 0 50px rgba(124, 92, 255, 0.18);
+  --shadow-glow-purple: 0 0 50px rgba(167, 139, 250, 0.18);
 
   font-family: var(--font-display);
   background: var(--bg-base);
@@ -70,15 +70,15 @@
 .ap-scope .page-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(900px 600px at 82% -8%, rgba(124, 92, 255, 0.09), transparent 60%),
+    radial-gradient(900px 600px at 82% -8%, rgba(167, 139, 250, 0.09), transparent 60%),
     radial-gradient(800px 500px at -8% 22%, rgba(60, 110, 200, 0.05), transparent 60%),
     var(--bg-base);
 }
 .ap-scope .page-bg::after {
   content: ""; position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.040) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.040) 1px, transparent 1px);
+    linear-gradient(rgba(167, 139, 250, 0.040) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.040) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
@@ -137,9 +137,9 @@
 }
 .ap-scope .btn-primary {
   background: var(--accent); color: #fff;
-  box-shadow: 0 12px 32px rgba(124, 92, 255, 0.28);
+  box-shadow: 0 12px 32px rgba(167, 139, 250, 0.28);
 }
-.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124, 92, 255, 0.38); }
+.ap-scope .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(167, 139, 250, 0.38); }
 .ap-scope .btn-secondary {
   background: rgba(255,255,255,0.03);
   color: var(--text-primary);
@@ -176,7 +176,7 @@
 .ap-scope .trust-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 6px 12px;
-  background: rgba(124, 92, 255, 0.05);
+  background: rgba(167, 139, 250, 0.05);
   border: 1px solid var(--accent-wire);
   border-radius: 100px;
   color: var(--accent-soft);
@@ -204,7 +204,7 @@
 }
 .ap-scope .audit-card::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(500px 220px at 100% 0%, rgba(124, 92, 255, 0.08), transparent 60%);
+  background: radial-gradient(500px 220px at 100% 0%, rgba(167, 139, 250, 0.08), transparent 60%);
 }
 .ap-scope .audit-card > * { position: relative; }
 .ap-scope .audit-head {
@@ -507,7 +507,7 @@
 }
 .ap-scope .problem-card p { color: var(--text-secondary); margin: 0; font-size: 14.5px; line-height: 1.55; }
 .ap-scope .problem-card.accent {
-  background: linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.015));
+  background: linear-gradient(180deg, rgba(167,139,250,0.08), rgba(167,139,250,0.015));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -801,11 +801,11 @@
   border-radius: 20px;
   padding: 56px;
   background:
-    radial-gradient(700px 360px at 100% 0%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(700px 360px at 100% 0%, rgba(167, 139, 250, 0.18), transparent 60%),
     radial-gradient(500px 300px at 0% 100%, rgba(63, 209, 139, 0.06), transparent 60%),
     linear-gradient(180deg, #0E1124 0%, #0A0D1B 100%);
   border: 1px solid var(--accent-wire);
-  box-shadow: var(--shadow-lift), 0 0 80px rgba(124, 92, 255, 0.10);
+  box-shadow: var(--shadow-lift), 0 0 80px rgba(167, 139, 250, 0.10);
   overflow: hidden;
   display: grid;
   grid-template-columns: 1.05fr 1fr;
@@ -816,8 +816,8 @@
 .ap-scope .pilot::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image:
-    linear-gradient(rgba(124, 92, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(167, 139, 250, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
@@ -892,7 +892,7 @@
 .ap-scope .final::before {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(600px 300px at 50% 50%, rgba(124, 92, 255, 0.14), transparent 60%);
+    radial-gradient(600px 300px at 50% 50%, rgba(167, 139, 250, 0.14), transparent 60%);
   pointer-events: none;
 }
 .ap-scope .final > * { position: relative; }
@@ -917,8 +917,8 @@
 .ap-scope .passport .avatar {
   width: 38px; height: 38px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #7C5CFF 0%, #4B3CBB 100%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(124,92,255,0.35);
+  background: linear-gradient(135deg, #A78BFA 0%, #4B3CBB 100%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 0 16px rgba(167,139,250,0.35);
   display: inline-flex; align-items: center; justify-content: center;
   color: #fff;
   font-family: var(--font-mono); font-weight: 600; font-size: 14px;
@@ -978,7 +978,7 @@
 .ap-scope .pillar .ic {
   width: 30px; height: 30px;
   border-radius: 8px;
-  background: rgba(124, 92, 255, 0.10);
+  background: rgba(167, 139, 250, 0.10);
   border: 1px solid var(--accent-wire);
   color: var(--accent-soft);
   display: inline-flex; align-items: center; justify-content: center;
@@ -1008,7 +1008,7 @@
   content: ""; position: absolute;
   left: 13px; top: 18px; bottom: 18px;
   width: 1px;
-  background: linear-gradient(180deg, var(--accent-wire), rgba(124,92,255,0.06));
+  background: linear-gradient(180deg, var(--accent-wire), rgba(167,139,250,0.06));
 }
 .ap-scope .event-row {
   display: grid;
@@ -1069,7 +1069,7 @@
   display: flex; flex-direction: column;
 }
 .ap-scope .tier.featured {
-  background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+  background: linear-gradient(180deg, rgba(167,139,250,0.10), rgba(167,139,250,0.02));
   border-color: var(--accent-wire);
   box-shadow: var(--shadow-glow-purple);
 }
@@ -1159,7 +1159,7 @@
 }
 .ap-scope .related-card:hover {
   border-color: var(--accent-wire);
-  background: rgba(124,92,255,0.04);
+  background: rgba(167,139,250,0.04);
   transform: translateY(-2px);
 }
 .ap-scope .related-card .label {
@@ -1241,4 +1241,27 @@
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Stella interaction layer */
+.ap-scope .check-card,
+.ap-scope .problem-card,
+.ap-scope .flow-step,
+.ap-scope .related-card{
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),border-color .28s ease,background .28s ease,box-shadow .28s ease;
+}
+.ap-scope .check-card:hover,
+.ap-scope .problem-card:hover,
+.ap-scope .flow-step:hover,
+.ap-scope .related-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 22px 55px rgba(0,0,0,.24);
+}
+@supports (animation-timeline:view()){
+  .ap-scope .section{
+    animation:cvSectionIn both linear;
+    animation-timeline:view();
+    animation-range:entry 8% cover 26%;
+  }
+  @keyframes cvSectionIn{from{opacity:.35;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 }
