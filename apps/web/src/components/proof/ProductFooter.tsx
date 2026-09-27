@@ -114,14 +114,7 @@ export function ProductFooter({ currentProduct }: ProductFooterProps) {
             Verification for AI-generated work
           </p>
           <p className="text-xs text-white/20">
-            Built for reviewable AI work{' '}
-            <Link
-              href="/"
-              className="text-white/30 underline underline-offset-2 transition-colors duration-150 hover:text-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] rounded-sm"
-            >
-              SwarmSync
-            </Link>{' '}
-            proof layer
+            Built for reviewable, defensible AI work.
           </p>
         </div>
       </div>
