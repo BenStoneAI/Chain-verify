@@ -20,7 +20,7 @@ const PRODUCT_CTA = {
 } as const;
 
 const ctaButtonClass =
-  'rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]';
+  'rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]';
 
 const PRODUCTS = [
   {
@@ -113,8 +113,8 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
         className={cn(
           'fixed inset-x-0 top-0 z-50 transition-all duration-300',
           scrolled
-            ? 'border-b border-white/10 bg-[#03050A]/90 backdrop-blur-xl'
-            : 'bg-[#03050A]',
+            ? 'border-b border-white/10 bg-[#090C12]/90 backdrop-blur-xl'
+            : 'bg-[#090C12]',
         )}
         role="banner"
       >
@@ -126,17 +126,17 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
           <Link
             href="/"
             className="flex shrink-0 items-center gap-2 no-underline"
-            aria-label="SwarmSync home"
+            aria-label="ChainVerify home"
           >
             <Image
-              src="/logos/swarm-sync-purple.webp"
-              alt="SwarmSync logo"
-              width={80}
-              height={72}
+              src="/chainverify-logo.svg"
+              alt="ChainVerify"
+              width={168}
+              height={42}
               quality={75}
               priority
-              sizes="(max-width: 639px) 40px, 80px"
-              className="h-8 w-auto sm:h-10"
+              sizes="(max-width: 639px) 142px, 168px"
+              className="h-8 w-auto sm:h-9"
             />
           </Link>
 
@@ -151,7 +151,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 <li key={anchor.href}>
                   <a
                     href={anchor.href}
-                    className="text-sm text-white/60 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]"
+                    className="text-sm text-white/60 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]"
                   >
                     {anchor.label}
                   </a>
@@ -173,7 +173,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 aria-controls="products-dropdown"
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors duration-150',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12]',
                   productsOpen ? 'text-white' : 'text-white/60 hover:text-white',
                 )}
               >
@@ -192,7 +192,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                   id="products-dropdown"
                   role="menu"
                   aria-label="Products menu"
-                  className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-[#0A0C14] py-1 shadow-2xl"
+                  className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-[#101722] py-1 shadow-2xl"
                 >
                   {PRODUCTS.map((product) => {
                     const isCurrent = product.id === currentProduct;
@@ -205,7 +205,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                       >
                         <span
                           className="text-sm font-medium"
-                          style={{ color: '#7C5CFF' }}
+                          style={{ color: '#7BD8FF' }}
                         >
                           {product.label}
                         </span>
@@ -219,7 +219,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                         href={product.href}
                         role="menuitem"
                         onClick={() => setProductsOpen(false)}
-                        className="flex flex-col gap-0.5 px-4 py-3 text-white/70 transition-colors duration-150 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7C5CFF]"
+                        className="flex flex-col gap-0.5 px-4 py-3 text-white/70 transition-colors duration-150 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7BD8FF]"
                       >
                         <span className="text-sm font-medium">{product.label}</span>
                         <span className="text-xs text-white/40">{product.description}</span>
@@ -234,7 +234,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
               <Link
                 href={PRODUCT_CTA['verify-api'].href}
                 className={ctaButtonClass}
-                style={{ backgroundColor: '#7C5CFF' }}
+                style={{ backgroundColor: '#7BD8FF' }}
               >
                 {PRODUCT_CTA['verify-api'].label}
               </Link>
@@ -244,7 +244,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 planSlug={PRODUCT_CTA[currentProduct].planSlug}
                 className={ctaButtonClass}
               >
-                <span style={{ backgroundColor: '#7C5CFF', display: 'block', borderRadius: 8, padding: '8px 16px' }}>
+                <span style={{ backgroundColor: '#7BD8FF', display: 'block', borderRadius: 8, padding: '8px 16px' }}>
                   {PRODUCT_CTA[currentProduct].label}
                 </span>
               </ProofCheckoutButton>
@@ -255,7 +255,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
           <button
             ref={mobileMenuButtonRef}
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-white/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#03050A] md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-white/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BD8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090C12] md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
@@ -275,7 +275,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
         <div
           id="mobile-menu"
           ref={mobileMenuRef}
-          className="fixed inset-x-0 top-16 z-40 border-b border-white/10 bg-[#03050A] pb-6 md:hidden"
+          className="fixed inset-x-0 top-16 z-40 border-b border-white/10 bg-[#090C12] pb-6 md:hidden"
           role="dialog"
           aria-label="Mobile navigation menu"
           aria-modal="true"
@@ -292,7 +292,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                     key={anchor.href}
                     href={anchor.href}
                     onClick={() => setMobileOpen(false)}
-                    className="block rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7C5CFF]"
+                    className="block rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7BD8FF]"
                   >
                     {anchor.label}
                   </a>
@@ -306,7 +306,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                 type="button"
                 onClick={() => setMobileProductsOpen((v) => !v)}
                 aria-expanded={mobileProductsOpen}
-                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7C5CFF]"
+                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7BD8FF]"
               >
                 <span>Products</span>
                 <ChevronDown
@@ -330,7 +330,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                       >
                         <span
                           className="text-sm font-medium"
-                          style={{ color: '#7C5CFF' }}
+                          style={{ color: '#7BD8FF' }}
                         >
                           {product.label}
                         </span>
@@ -341,7 +341,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                         key={product.id}
                         href={product.href}
                         onClick={() => setMobileOpen(false)}
-                        className="block rounded-md px-3 py-2 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7C5CFF]"
+                        className="block rounded-md px-3 py-2 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7BD8FF]"
                       >
                         <span className="text-sm font-medium text-white/70">{product.label}</span>
                         <p className="mt-0.5 text-xs text-white/40">{product.description}</p>
@@ -358,7 +358,7 @@ export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps
                   href={PRODUCT_CTA['verify-api'].href}
                   onClick={() => setMobileOpen(false)}
                   className="block w-full rounded-lg px-4 py-3 text-center text-sm font-medium text-white"
-                  style={{ backgroundColor: '#7C5CFF' }}
+                  style={{ backgroundColor: '#7BD8FF' }}
                 >
                   {PRODUCT_CTA['verify-api'].label}
                 </Link>
