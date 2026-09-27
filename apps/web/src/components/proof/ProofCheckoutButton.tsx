@@ -31,13 +31,7 @@ export function ProofCheckoutButton({
     if (loading) return;
 
     if (planSlug === 'free') {
-      const params = new URLSearchParams({
-        type: 'human',
-        product,
-        plan: planSlug,
-        returnTo: `/${product}/welcome?plan=${planSlug}`,
-      });
-      router.push(`/register?${params.toString()}`);
+      router.push(`/${product}#proof`);
       return;
     }
 
