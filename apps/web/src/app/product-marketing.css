@@ -48,3 +48,15 @@ html[data-theme="light"] .pm-btn-secondary{color:#1b2535;background:rgba(255,255
 @media(max-width:900px){.pm-hero{grid-template-columns:1fr;gap:34px;padding-top:50px}.pm-hero h1{max-width:11ch}.pm-hero-proof{max-width:650px}.pm-proof-section{grid-template-columns:1fr;gap:24px}.pm-proof-section .pm-section-head{position:static}.pm-plan-grid,.pm-benefit-grid,.pm-steps{grid-template-columns:1fr}.pm-plan{min-height:unset}}
 @media(max-width:680px){.pm-page{padding-top:76px}.pm-hero,.pm-quick-facts,.pm-section,.pm-final{width:min(100% - 24px,1120px)}.pm-hero h1{font-size:clamp(46px,14vw,68px)}.pm-hero-copy>p{font-size:16px}.pm-hero-actions{display:grid}.pm-btn{width:100%}.pm-purchase-note{display:grid;gap:6px}.pm-quick-facts{grid-template-columns:1fr;padding-bottom:60px}.pm-section{padding:70px 0}}
 @media(prefers-reduced-motion:reduce){.pm-page *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+.pm-welcome{width:min(760px,calc(100% - 32px));margin:0 auto;padding:110px 0 130px}
+.pm-welcome h1{font-size:clamp(48px,7vw,76px);line-height:.96;letter-spacing:-.06em;margin:18px 0 22px}
+.pm-welcome h1 span{color:var(--pm-accent-soft)}
+.pm-welcome>p{color:#8f9caf;font-size:16px;line-height:1.65;max-width:650px}
+.pm-welcome-card{margin:32px 0 22px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.025);overflow:hidden}
+.pm-welcome-card>div{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.055);align-items:start}
+.pm-welcome-card>div:last-child{border-bottom:0}.pm-welcome-card span{color:#738196;font-size:11px}.pm-welcome-card strong,.pm-welcome-card code{font-size:12px;color:#e8edf5;line-height:1.5}.pm-welcome-card code{font-family:ui-monospace,SFMono-Regular,monospace;color:var(--pm-accent-soft);word-break:break-all}
+.pm-welcome-actions{display:flex;gap:10px;flex-wrap:wrap}.pm-welcome-note{font-size:11px!important;color:#68768b!important;margin-top:18px;max-width:680px!important}
+html[data-theme="light"] .pm-welcome-card{background:rgba(255,255,255,.76);border-color:rgba(35,48,74,.1)}
+html[data-theme="light"] .pm-welcome-card strong{color:#142033}
+@media(max-width:600px){.pm-welcome{width:min(100% - 24px,760px);padding-top:82px}.pm-welcome-card>div{grid-template-columns:1fr;gap:5px}.pm-welcome-actions{display:grid}.pm-welcome-actions .pm-btn{width:100%}}
