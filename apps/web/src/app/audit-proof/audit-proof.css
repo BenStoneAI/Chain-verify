@@ -1280,3 +1280,35 @@
 }
 @keyframes cv-product-float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-5px) scale(1.008); } }
 @media (prefers-reduced-motion:reduce){ .ap-scope * { animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; } }
+
+html[data-theme="light"] .ap-scope{
+  --bg-base:#F4F7FB;
+  --bg-tier:#FFFFFF;
+  --surface-base:#FFFFFF;
+  --surface-raised:#E9EEF6;
+  --text-primary:#0B1020;
+  --text-secondary:#40516A;
+  --text-muted:#68778E;
+  --text-faint:#8692A5;
+  --border-base:rgba(33,48,75,.14);
+  --border-hover:rgba(33,48,75,.24);
+  --border-soft:rgba(33,48,75,.08);
+  --code-bg:#EDF2F8;
+  color:#0B1020;
+  background:#F4F7FB;
+}
+html[data-theme="light"] .ap-scope .page-bg{
+  background:
+    radial-gradient(760px 520px at 78% -8%, rgba(139,92,246,.09), transparent 62%),
+    radial-gradient(700px 460px at -4% 28%, rgba(34,211,238,.06), transparent 64%),
+    #F4F7FB;
+}
+html[data-theme="light"] .ap-scope .code-panel,
+html[data-theme="light"] .ap-scope .audit-card,
+html[data-theme="light"] .ap-scope .problem-card,
+html[data-theme="light"] .ap-scope .flow-step,
+html[data-theme="light"] .ap-scope .check-card,
+html[data-theme="light"] .ap-scope .related-card{
+  background:rgba(255,255,255,.82);
+  box-shadow:0 18px 55px rgba(40,55,82,.09);
+}
