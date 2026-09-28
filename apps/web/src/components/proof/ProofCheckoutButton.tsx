@@ -1,5 +1,4 @@
-import { getStripePaymentLink } from '@/lib/stripe-payment-links';
-import type { ProofProductSlug } from '@/lib/proof-checkout';
+import { getStripePaymentLink, type ProofProductSlug } from '@/lib/stripe-payment-links';
 
 type Props = {
   product: ProofProductSlug;

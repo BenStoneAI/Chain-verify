@@ -5,6 +5,8 @@
  * proof-core. The real Conduit + SSRF end-to-end behavior is covered by
  * scripts/url-intake-smoke.ts (real browser, real local HTTP server, no mocks).
  */
+import { describe, expect, it } from 'vitest';
+
 import {
   combineUrlHtmlText,
   extractTextFromAriaSnapshot,

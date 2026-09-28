@@ -9,9 +9,9 @@
  * the existing "InvoiceProofService.scanPdf" describe block in
  * invoice-proof.service.spec.ts.
  */
-jest.mock('./invoice-proof-scan.runner.js', () => ({
-  hashFingerprint: jest.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
-  parseInvoiceScanBody: jest.fn((body: { invoices?: unknown[] }) => ({
+vi.mock('./invoice-proof-scan.runner.js', () => ({
+  hashFingerprint: vi.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
+  parseInvoiceScanBody: vi.fn((body: { invoices?: unknown[] }) => ({
     rows: (body.invoices ?? []).map((inv: Record<string, unknown>) => ({
       invoiceNo: inv.invoiceNo ?? 'INV-0',
       vendor: inv.vendor ?? 'Test Co',
@@ -24,7 +24,7 @@ jest.mock('./invoice-proof-scan.runner.js', () => ({
     poRegister: [],
     seededHistory: [],
   })),
-  runInvoiceScan: jest.fn(() => ({
+  runInvoiceScan: vi.fn(() => ({
     findings: [],
     findingCount: 0,
     rowCount: 1,
@@ -34,27 +34,30 @@ jest.mock('./invoice-proof-scan.runner.js', () => ({
 
 // DNS lookups must be mocked so assertSsrfSafeWithDns resolves deterministically
 // without a real network call — same convention as deployment-checks.service.spec.ts.
-const mockDnsLookup = jest.fn().mockResolvedValue([{ address: '93.184.216.34', family: 4 }]);
-jest.mock('node:dns/promises', () => ({
+const mockDnsLookup = vi.fn().mockResolvedValue([{ address: '93.184.216.34', family: 4 }]);
+vi.mock('node:dns/promises', () => ({
   lookup: (...args: unknown[]) => mockDnsLookup(...args),
 }));
 
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import { describe, expect, it, vi, type Mock } from 'vitest';
 
 import { InvoiceProofService } from './invoice-proof.service.js';
 
 function makeService(overrides: {
-  conduitBrowser?: Record<string, jest.Mock> | undefined;
-  pdfExtract?: jest.Mock;
+  conduitBrowser?: Record<string, Mock> | undefined;
+  pdfExtract?: Mock;
 } = {}) {
-  const prisma = { orgVendorMaster: { findFirst: jest.fn(), update: jest.fn() } };
-  const pdfService = { extract: overrides.pdfExtract ?? jest.fn() };
+  const prisma = { orgVendorMaster: { findFirst: vi.fn(), update: vi.fn() } };
+  const pdfService = { extract: overrides.pdfExtract ?? vi.fn() };
   const conduitBrowser =
     overrides.conduitBrowser === undefined
       ? {
-          initSession: jest.fn().mockResolvedValue(undefined),
-          executeAction: jest.fn(),
-          closeSession: jest.fn().mockResolvedValue(undefined),
+          initSession: vi.fn().mockResolvedValue(undefined),
+          navigate: vi.fn(),
+          extractMain: vi.fn(),
+          accessibilitySnapshot: vi.fn(),
+          closeSession: vi.fn().mockResolvedValue(undefined),
         }
       : overrides.conduitBrowser;
 
@@ -80,7 +83,7 @@ describe('InvoiceProofService.scanUrl — SSRF guard (mandatory, checked before 
       BadRequestException,
     );
     expect(conduitBrowser.initSession).not.toHaveBeenCalled();
-    expect(conduitBrowser.executeAction).not.toHaveBeenCalled();
+    expect(conduitBrowser.navigate).not.toHaveBeenCalled();
   });
 
   it('rejects a literal loopback/private-pattern hostname synchronously (no DNS lookup even needed)', async () => {
@@ -125,9 +128,11 @@ describe('InvoiceProofService.scanUrl — SSRF guard (mandatory, checked before 
   it('allows a plain http:// URL through the SSRF gate (only non-http(s) schemes are blocked, per spec)', async () => {
     const { service, conduitBrowser } = makeService({
       conduitBrowser: {
-        initSession: jest.fn().mockResolvedValue(undefined),
-        executeAction: jest.fn().mockResolvedValue({ success: false }),
-        closeSession: jest.fn().mockResolvedValue(undefined),
+        initSession: vi.fn().mockResolvedValue(undefined),
+        navigate: vi.fn().mockResolvedValue({ success: false }),
+        extractMain: vi.fn(),
+        accessibilitySnapshot: vi.fn(),
+        closeSession: vi.fn().mockResolvedValue(undefined),
       },
     });
 
@@ -160,15 +165,17 @@ describe('InvoiceProofService.scanUrl — URL resolves directly to a PDF', () =>
   it('routes through the SAME pipeline as scanPdf() and tags extraction_method: url_pdf', async () => {
     const pdfBytes = Buffer.from('%PDF-1.4 fake pdf bytes for this test');
     const conduitBrowser = {
-      initSession: jest.fn().mockResolvedValue(undefined),
-      executeAction: jest.fn().mockResolvedValue({
+      initSession: vi.fn().mockResolvedValue(undefined),
+      navigate: vi.fn().mockResolvedValue({
         success: true,
         contentType: 'application/pdf',
         bodyBase64: pdfBytes.toString('base64'),
       }),
-      closeSession: jest.fn().mockResolvedValue(undefined),
+      extractMain: vi.fn(),
+      accessibilitySnapshot: vi.fn(),
+      closeSession: vi.fn().mockResolvedValue(undefined),
     };
-    const pdfExtract = jest.fn().mockResolvedValue({
+    const pdfExtract = vi.fn().mockResolvedValue({
       ok: true,
       extraction: {
         status: 'OK',
@@ -180,7 +187,7 @@ describe('InvoiceProofService.scanUrl — URL resolves directly to a PDF', () =>
       },
     });
     const { service } = makeService({ conduitBrowser, pdfExtract });
-    const scanSpy = jest.spyOn(service, 'scan').mockResolvedValue({ scanId: 'scan-url-pdf-1' } as never);
+    const scanSpy = vi.spyOn(service, 'scan').mockResolvedValue({ scanId: 'scan-url-pdf-1' } as never);
 
     const result = await service.scanUrl('https://vendor.example.com/invoice.pdf', null, '127.0.0.1');
 
@@ -198,15 +205,17 @@ describe('InvoiceProofService.scanUrl — URL resolves directly to a PDF', () =>
 
   it('a TEXT_EXTRACTION_FAILED PDF-via-URL result never calls scan() (same honesty contract as scanPdf)', async () => {
     const conduitBrowser = {
-      initSession: jest.fn().mockResolvedValue(undefined),
-      executeAction: jest.fn().mockResolvedValue({
+      initSession: vi.fn().mockResolvedValue(undefined),
+      navigate: vi.fn().mockResolvedValue({
         success: true,
         contentType: 'application/pdf',
         bodyBase64: Buffer.from('%PDF-1.4 scanned image only').toString('base64'),
       }),
-      closeSession: jest.fn().mockResolvedValue(undefined),
+      extractMain: vi.fn(),
+      accessibilitySnapshot: vi.fn(),
+      closeSession: vi.fn().mockResolvedValue(undefined),
     };
-    const pdfExtract = jest.fn().mockResolvedValue({
+    const pdfExtract = vi.fn().mockResolvedValue({
       ok: true,
       extraction: {
         status: 'TEXT_EXTRACTION_FAILED',
@@ -218,7 +227,7 @@ describe('InvoiceProofService.scanUrl — URL resolves directly to a PDF', () =>
       },
     });
     const { service } = makeService({ conduitBrowser, pdfExtract });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanUrl('https://vendor.example.com/scan.pdf', null, '127.0.0.1');
 
@@ -230,13 +239,11 @@ describe('InvoiceProofService.scanUrl — URL resolves directly to a PDF', () =>
 describe('InvoiceProofService.scanUrl — HTML-rendered invoice page', () => {
   function makeHtmlConduitBrowser(mainText: string, snapshotJson: string | null) {
     return {
-      initSession: jest.fn().mockResolvedValue(undefined),
-      executeAction: jest
-        .fn()
-        .mockResolvedValueOnce({ success: true, contentType: 'text/html; charset=utf-8' }) // NAVIGATE
-        .mockResolvedValueOnce({ success: true, data: mainText }) // EXTRACT_MAIN
-        .mockResolvedValueOnce({ success: true, data: snapshotJson }), // ACCESSIBILITY_SNAPSHOT
-      closeSession: jest.fn().mockResolvedValue(undefined),
+      initSession: vi.fn().mockResolvedValue(undefined),
+      navigate: vi.fn().mockResolvedValue({ success: true, contentType: 'text/html; charset=utf-8' }),
+      extractMain: vi.fn().mockResolvedValue({ success: true, data: mainText }),
+      accessibilitySnapshot: vi.fn().mockResolvedValue({ success: true, data: snapshotJson }),
+      closeSession: vi.fn().mockResolvedValue(undefined),
     };
   }
 
@@ -246,7 +253,7 @@ describe('InvoiceProofService.scanUrl — HTML-rendered invoice page', () => {
       'Payment Terms: Net 30 Total Due: $500.00 Routing #: 021000021';
     const conduitBrowser = makeHtmlConduitBrowser(mainText, null);
     const { service } = makeService({ conduitBrowser });
-    jest.spyOn(service, 'scan').mockResolvedValue({ scanId: 'scan-url-html-1' } as never);
+    vi.spyOn(service, 'scan').mockResolvedValue({ scanId: 'scan-url-html-1' } as never);
 
     const result = await service.scanUrl('https://vendor-portal.example.com/invoice/9001', null, '127.0.0.1');
 
@@ -270,7 +277,7 @@ describe('InvoiceProofService.scanUrl — HTML-rendered invoice page', () => {
         'Payment Terms: Net 30 Total Due: $9,999.00';
       const conduitBrowser = makeHtmlConduitBrowser(mainText, null);
       const { service } = makeService({ conduitBrowser });
-      const scanSpy = jest.spyOn(service, 'scan').mockResolvedValue({
+      const scanSpy = vi.spyOn(service, 'scan').mockResolvedValue({
         scanId: 'scan-url-html-fraud',
         findings: [{ pattern: 'Round-dollar amount (ROUND_DOLLAR_AMOUNT)', severity: 'medium' }],
       } as never);
@@ -301,7 +308,7 @@ describe('InvoiceProofService.scanUrl — HTML-rendered invoice page', () => {
         'Payment Terms: Net 30 Total Due: $500.00 Routing #: 999999999';
       const conduitBrowser = makeHtmlConduitBrowser(mainText, null);
       const { service } = makeService({ conduitBrowser });
-      const scanSpy = jest.spyOn(service, 'scan').mockResolvedValue({
+      const scanSpy = vi.spyOn(service, 'scan').mockResolvedValue({
         scanId: 'scan-url-html-bec',
         findings: [{ pattern: 'Bank account change (BANK_ACCOUNT_CHANGE)', severity: 'critical' }],
       } as never);
@@ -325,7 +332,7 @@ describe('InvoiceProofService.scanUrl — HTML-rendered invoice page', () => {
     const mainText = 'Acme Industrial Supply Invoice #: INV-9005';
     const conduitBrowser = makeHtmlConduitBrowser(mainText, null);
     const { service } = makeService({ conduitBrowser });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanUrl('https://vendor-portal.example.com/invoice/9005', null, '127.0.0.1');
 
@@ -368,9 +375,11 @@ describe('InvoiceProofService.scanUrl — HTML-rendered invoice page', () => {
 describe('InvoiceProofService.scanUrl — navigation failure and session cleanup', () => {
   it('returns FETCH_FAILED (not a thrown error) when Conduit NAVIGATE fails, and still closes the session', async () => {
     const conduitBrowser = {
-      initSession: jest.fn().mockResolvedValue(undefined),
-      executeAction: jest.fn().mockResolvedValue({ success: false }),
-      closeSession: jest.fn().mockResolvedValue(undefined),
+      initSession: vi.fn().mockResolvedValue(undefined),
+      navigate: vi.fn().mockResolvedValue({ success: false }),
+      extractMain: vi.fn(),
+      accessibilitySnapshot: vi.fn(),
+      closeSession: vi.fn().mockResolvedValue(undefined),
     };
     const { service } = makeService({ conduitBrowser });
 
@@ -383,9 +392,11 @@ describe('InvoiceProofService.scanUrl — navigation failure and session cleanup
 
   it('closes the Conduit session even when an action throws unexpectedly', async () => {
     const conduitBrowser = {
-      initSession: jest.fn().mockResolvedValue(undefined),
-      executeAction: jest.fn().mockRejectedValue(new Error('boom')),
-      closeSession: jest.fn().mockResolvedValue(undefined),
+      initSession: vi.fn().mockResolvedValue(undefined),
+      navigate: vi.fn().mockRejectedValue(new Error('boom')),
+      extractMain: vi.fn(),
+      accessibilitySnapshot: vi.fn(),
+      closeSession: vi.fn().mockResolvedValue(undefined),
     };
     const { service } = makeService({ conduitBrowser });
 

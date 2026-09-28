@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
-jest.mock('@agent-market/config', () => ({
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+vi.mock('@chain-verify/config', () => ({
   verifyApiPlanConfigs: [
     {
       slug: 'free',
@@ -25,21 +25,6 @@ import {
 // without spreading undefined checks through every test assertion.
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const verifyApiRuleTestHooks = _testHooks!;
-
-function loadVerifyApiFixtureScenario(name: string): { input: { output: Record<string, unknown> } } {
-  const candidates = [
-    resolve(process.cwd(), 'testing/proof-products/verifyapi.fixture.json'),
-    resolve(process.cwd(), '../../testing/proof-products/verifyapi.fixture.json'),
-  ];
-  const file = candidates.find((candidate) => existsSync(candidate));
-  if (!file) throw new Error('Unable to locate testing/proof-products/verifyapi.fixture.json');
-  const fixture = JSON.parse(readFileSync(file, 'utf8')) as {
-    scenarios: Array<{ name: string; input: { output: Record<string, unknown> } }>;
-  };
-  const scenario = fixture.scenarios.find((item) => item.name === name);
-  if (!scenario) throw new Error(`VerifyAPI fixture scenario not found: ${name}`);
-  return scenario;
-}
 
 describe('VerifyApiController public proof endpoints', () => {
   it.each([['exportProofAsPdf'], ['exportProofAsJson'], ['listPublicProofs']] as const)(
@@ -489,96 +474,29 @@ describe('VerifyApiController rule detectors', () => {
   });
 });
 
-describe('VerifyApiController software_delivery retrieval fallback', () => {
-  function makeController(findUnique: jest.Mock) {
-    const prisma = {
-      softwareDeliveryVerification: { findUnique },
-    };
-    return new VerifyApiController(
-      {} as never, // verificationService
-      {} as never, // proofService
-      prisma as never,
-      {} as never, // conduitVerification
-      {} as never, // proofBilling
-      {} as never, // proofClaim
-      {} as never, // aiAnalysis
-      {} as never, // softwareDelivery
-      {} as never, // verifyApiUsage
-    );
-  }
+// Note: a "software_delivery retrieval fallback" describe block previously
+// lived here, testing GET /api/verify/:id and GET /api/proof/:id falling back
+// to a `softwareDeliveryVerification` Prisma table lookup by proofId.
+// `SoftwareDeliveryVerification` is not a model in the standalone Chain
+// Verify schema (see apps/api/prisma/schema.prisma) and neither getVerify nor
+// getProof reference it — both call verificationService.getVerificationRun /
+// proofService.getProofWithVerificationRunUnscoped directly with no
+// software-delivery-specific fallback. That retrieval path was never carried
+// into this extraction, so the tests were removed rather than pointed at a
+// table and code path that don't exist.
 
-  const sdRecord = {
-    proofId: 'sdv_proof_xyz',
-    overallStatus: 'NEEDS_REVIEW',
-    tier: 'STANDARD',
-    jobType: 'DEPLOY_UPDATE',
-    escalated: true,
-    escalationReason: 'Auto-escalated to Standard: sensitive keywords detected',
-    buyerSummary: '3 of 7 checks passed. 0 failed, 1 warnings.',
-    checksPassed: 3,
-    checksFailed: 0,
-    checksWarning: 1,
-    checksSkipped: 2,
-    results: [
-      {
-        checkId: 'S10',
-        checkName: 'Deploy platform',
-        status: 'SKIP',
-        detail: 'RAILWAY not enabled',
-        durationMs: 1,
-        evidence: null,
-      },
-      {
-        checkId: 'B1',
-        checkName: 'Work exists',
-        status: 'PASS',
-        detail: null,
-        durationMs: 5,
-        evidence: null,
-      },
-    ],
-  };
-
-  it('GET /api/verify/:id returns the software_delivery record by proofId', async () => {
-    const findUnique = jest.fn().mockResolvedValue(sdRecord);
-    const controller = makeController(findUnique);
-    const res = await controller.getVerify('sdv_proof_xyz', null);
-    expect(findUnique).toHaveBeenCalledWith({
-      where: { proofId: 'sdv_proof_xyz' },
-      include: { results: true },
-    });
-    expect(res).toMatchObject({
-      proof_id: 'sdv_proof_xyz',
-      verification_status: 'needs-review',
-      tier_run: 'STANDARD',
-      job_type: 'DEPLOY_UPDATE',
-      escalated: true,
-      recommended_action: 'human_review',
-    });
-    expect(Array.isArray((res as { results: unknown[] }).results)).toBe(true);
-  });
-
-  // C2/H3 hardening: an unauthenticated (non-owning) caller must receive the SD
-  // report in REDACTED form — proof_id + status are returned, but buyer_summary
-  // (buyer free text) is withheld. (Owner-gets-buyer_summary is covered in
-  // proof-phase8.spec.ts "Software-delivery redaction".) This test previously
-  // asserted buyer_summary was returned to a null caller — that was the leak.
-  it('GET /api/proof/:id returns a REDACTED software_delivery report to a non-owner (no buyer_summary leak)', async () => {
-    const findUnique = jest.fn().mockResolvedValue(sdRecord);
-    const controller = makeController(findUnique);
-    const res = (await controller.getProof('sdv_proof_xyz', null)) as {
-      buyer_summary?: string;
-      proof_id?: string;
-      redacted?: boolean;
-    };
-    expect(res.proof_id).toBe('sdv_proof_xyz');
-    expect(res.redacted).toBe(true);
-    // buyer_summary must NOT leak to a non-owner.
-    expect(res.buyer_summary === '' || res.buyer_summary === undefined).toBe(true);
-  });
-});
-
-describe('VerifyApiController chain_hash in software_delivery responses', () => {
+// Git-based software_delivery requests (repoOwner/repoName/beforeSha/afterSha)
+// route through SoftwareDeliveryService.verify(orgId, dto), which is a
+// documented stub in the standalone build — "External software-delivery
+// inspection provider is not configured" (see software-delivery.service.ts).
+// The controller passes that result straight through as
+// { verification_status, confidence, accepted, evidence_gaps, input_received,
+// checks_requested } — it does NOT mint a chain-hashed ProofRecord or a
+// risk_level for this path (that only happens for invoice/document-based
+// verification). These tests assert the real pass-through contract instead
+// of the richer chain_hash/proof_id shape an earlier, non-standalone
+// implementation produced.
+describe('VerifyApiController software_delivery response pass-through (git-based path)', () => {
   const validSdOutput = {
     repoOwner: 'acme',
     repoName: 'api',
@@ -590,48 +508,33 @@ describe('VerifyApiController chain_hash in software_delivery responses', () => 
   };
 
   const defaultSdResult = {
-    verificationId: 'vid_001',
-    proofId: 'sdv_proof_001',
-    verificationStatus: 'passed',
+    status: 'passed',
     confidence: 0.9,
-    tierRun: 'BASIC',
-    jobType: 'DEPLOY_UPDATE',
-    escalated: false,
-    escalationReason: null,
-    summary: '7 of 7 checks passed.',
-    checksPassed: 7,
-    checksFailed: 0,
-    checksWarning: 0,
-    checksSkipped: 0,
-    checksRun: 7,
-    issuesFound: [],
-    recommendedAction: 'approved',
-    results: [],
+    accepted: true,
+    evidence_gaps: [] as string[],
+    input_received: true,
   };
 
   function makeSdController(overrides: Partial<typeof defaultSdResult> = {}) {
     const sdResult = { ...defaultSdResult, ...overrides };
-    const softwareDelivery = { verify: jest.fn().mockResolvedValue(sdResult) };
+    const softwareDelivery = { verify: vi.fn().mockResolvedValue(sdResult) };
     const proofBilling = {
-      resolveProofQuota: jest.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
-      getActiveProofEntitlement: jest.fn().mockResolvedValue(null),
+      resolveProofQuota: vi.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
+      getActiveProofEntitlement: vi.fn().mockResolvedValue(null),
     };
-    const verifyApiUsage = { reserve: jest.fn().mockResolvedValue(undefined) };
     const prisma = {
-      softwareDeliveryVerification: { findUnique: jest.fn() },
-      organizationMembership: { findMany: jest.fn().mockResolvedValue([]) },
-      organizationSubscription: { findUnique: jest.fn().mockResolvedValue(null) },
+      softwareDeliveryVerification: { findUnique: vi.fn() },
+      organizationMembership: { findMany: vi.fn().mockResolvedValue([]) },
+      organizationSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
     };
     const controller = new VerifyApiController(
       {} as never, // verificationService
       {} as never, // proofService
       prisma as never,
-      {} as never, // conduitVerification
       proofBilling as never,
       {} as never, // proofClaim
       {} as never, // aiAnalysis
       softwareDelivery as never,
-      verifyApiUsage as never,
     );
     const user = { id: 'user_001', organizationId: 'org_001' } as never;
     return {
@@ -643,28 +546,35 @@ describe('VerifyApiController chain_hash in software_delivery responses', () => 
     };
   }
 
-  it('software_delivery response includes a valid SHA-256 chain_hash', async () => {
+  it('passes the configured status/confidence/accepted through as verification_status/confidence/accepted', async () => {
     const { run } = makeSdController();
     const result = await run();
-    expect(result.chain_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.verification_status).toBe('passed');
+    expect(result.confidence).toBe(0.9);
+    expect(result.accepted).toBe(true);
+    expect(result.evidence_gaps).toEqual([]);
+    expect(result.input_received).toBe(true);
   });
 
-  it('software_delivery risk_level is low when confidence is 0.90', async () => {
-    const { run } = makeSdController({ confidence: 0.9 });
+  it('reports needs_more_evidence with an explanatory gap when the provider is not configured', async () => {
+    const { run } = makeSdController({
+      status: 'needs_more_evidence',
+      accepted: false,
+      confidence: 0,
+      evidence_gaps: ['External software-delivery inspection provider is not configured.'],
+    });
     const result = await run();
-    expect(result.risk_level).toBe('low');
+    expect(result.verification_status).toBe('needs_more_evidence');
+    expect(result.accepted).toBe(false);
+    expect(result.evidence_gaps).toEqual([
+      'External software-delivery inspection provider is not configured.',
+    ]);
   });
 
-  it('software_delivery risk_level is medium when confidence is 0.6', async () => {
-    const { run } = makeSdController({ confidence: 0.6 });
+  it('echoes the caller-requested rule set back as checks_requested for an authenticated caller', async () => {
+    const { run } = makeSdController();
     const result = await run();
-    expect(result.risk_level).toBe('medium');
-  });
-
-  it('software_delivery risk_level is high when confidence is 0.3', async () => {
-    const { run } = makeSdController({ confidence: 0.3 });
-    const result = await run();
-    expect(result.risk_level).toBe('high');
+    expect(Array.isArray(result.checks_requested)).toBe(true);
   });
 });
 
@@ -675,11 +585,11 @@ describe('VerifyApiController document-based software_delivery proof-core path',
 
   function makeDocumentController() {
     const verificationService = {
-      queueVerification: jest.fn().mockResolvedValue({ id: 'run_doc_001' }),
-      updateVerificationStatus: jest.fn().mockResolvedValue(undefined),
+      queueVerification: vi.fn().mockResolvedValue({ id: 'run_doc_001' }),
+      updateVerificationStatus: vi.fn().mockResolvedValue(undefined),
     };
     const proofService = {
-      createProof: jest.fn().mockResolvedValue({
+      createProof: vi.fn().mockResolvedValue({
         id: 'proof_doc_001',
         chain_hash: 'abc123',
       }),
@@ -687,8 +597,6 @@ describe('VerifyApiController document-based software_delivery proof-core path',
     const controller = new VerifyApiController(
       verificationService as never,
       proofService as never,
-      {} as never,
-      {} as never,
       {} as never,
       {} as never,
       {} as never,
@@ -784,37 +692,14 @@ describe('VerifyApiController document-based software_delivery proof-core path',
     );
   });
 
-  it('false-positive fixture passes on the demo path despite staging rollback/test wording', async () => {
-    const { run } = makeDocumentController();
-    const scenario = loadVerifyApiFixtureScenario('false-positive-guard');
-    const result = await run(scenario.input.output);
-
-    expect(['failed', 'blocked']).not.toContain(result.status);
-    expect(result.status).toBe('passed');
-    expect(result.confidence as number).toBeGreaterThanOrEqual(0.55);
-    expect(result.controls).toEqual(
-      expect.objectContaining({
-        failed: [],
-      }),
-    );
-    expect(result.issues_found).toEqual([]);
-  });
-
-  it('false-positive fixture passes on the authenticated path despite staging rollback/test wording', async () => {
-    const { runAuthed } = makeDocumentController();
-    const scenario = loadVerifyApiFixtureScenario('false-positive-guard');
-    const result = await runAuthed(scenario.input.output);
-
-    expect(['failed', 'blocked']).not.toContain(result.status);
-    expect(result.status).toBe('passed');
-    expect(result.confidence as number).toBeGreaterThanOrEqual(0.55);
-    expect(result.controls).toEqual(
-      expect.objectContaining({
-        failed: [],
-      }),
-    );
-    expect(result.issues_found).toEqual([]);
-  });
+  // Note: two fixture-driven "false-positive-guard" regression tests
+  // (testing/proof-products/verifyapi.fixture.json) previously lived here.
+  // That fixture file was never carried into the standalone Chain Verify
+  // extraction (no testing/ directory exists in this repo) — removed rather
+  // than reconstructed from an unknown historical shape. The "bad nested
+  // delivery" and "clean nested delivery" tests above already exercise this
+  // same rule engine, on both the demo and authenticated paths, against real
+  // structured input.
 });
 
 // ---------------------------------------------------------------------------
@@ -829,8 +714,8 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
   });
 
   const APPROVED_DEMO_OUTPUT = {
-    repoOwner: 'foxfirepoets',
-    repoName: 'swarmsync-verifyapi-investor-demo',
+    repoOwner: 'benstoneai',
+    repoName: 'chainverify-investor-demo',
     beforeSha: 'aff74f1595a6d35ec966034e9ce9ca6962ca88e2',
     afterSha: 'd47985078ed3b3352090ecc43410b5d2d6f1463f',
     jobStartedAt: '2026-07-28T00:00:00.000Z',
@@ -838,47 +723,38 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
     jobType: 'NEW_FEATURE',
   };
 
+  // SoftwareDeliveryService.verify(orgId, dto) is a documented stub in the
+  // standalone build (see the "software_delivery response pass-through"
+  // describe block above) — the mock here can return any shape since it's
+  // fully dependency-injected, but the fields must match what the controller
+  // actually reads back off the result (status/confidence/accepted/
+  // evidence_gaps/input_received), not the richer pre-standalone shape.
   const demoSdResult = {
-    verificationId: 'vid_demo_001',
-    proofId: 'sdv_proof_demo_001',
-    verificationStatus: 'passed',
+    status: 'passed',
     confidence: 0.92,
-    tierRun: 'BASIC',
-    jobType: 'NEW_FEATURE',
-    escalated: false,
-    escalationReason: undefined,
-    summary: '5 of 5 checks passed.',
-    checksPassed: 5,
-    checksFailed: 0,
-    checksWarning: 0,
-    checksSkipped: 0,
-    checksRun: 5,
-    issuesFound: [],
-    recommendedAction: 'approved',
-    results: [],
+    accepted: true,
+    evidence_gaps: [] as string[],
+    input_received: true,
   };
 
   function makeDemoSdController(sdOverrides: Partial<typeof demoSdResult> = {}) {
     const softwareDelivery = {
-      verify: jest.fn().mockResolvedValue({ ...demoSdResult, ...sdOverrides }),
+      verify: vi.fn().mockResolvedValue({ ...demoSdResult, ...sdOverrides }),
     };
-    const verifyApiUsage = { reserve: jest.fn().mockResolvedValue(undefined) };
     const proofBilling = {
-      resolveProofQuota: jest.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
+      resolveProofQuota: vi.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
     };
     const prisma = {
-      organizationSubscription: { findUnique: jest.fn().mockResolvedValue(null) },
+      organizationSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
     };
     const controller = new VerifyApiController(
       {} as never, // verificationService
       {} as never, // proofService
       prisma as never,
-      {} as never, // conduitVerification
       proofBilling as never,
       {} as never, // proofClaim
       {} as never, // aiAnalysis
       softwareDelivery as never,
-      verifyApiUsage as never,
     );
     const req = { headers: {}, ip: '203.0.113.50' } as never;
     return {
@@ -896,24 +772,21 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
     const result = await run(APPROVED_DEMO_OUTPUT);
 
     expect(result).toMatchObject({
-      proof_id: 'sdv_proof_demo_001',
-      verification_id: 'vid_demo_001',
       verification_status: 'passed',
-      recommended_action: 'approved',
+      accepted: true,
     });
-    expect(Array.isArray(result.findings)).toBe(true);
 
     // Only the read-only public-GitHub check set (plus S12, pure diff-text
-    // static analysis) runs for anonymous callers — never live-site,
-    // build-sandbox, or deploy-platform checks. B2 ("commit made after job
-    // start") is excluded from the demo set: it compares against a
+    // static analysis) is reported back for anonymous callers — never
+    // live-site, build-sandbox, or deploy-platform checks. B2 ("commit made
+    // after job start") is excluded from the demo set: it compares against a
     // jobStartedAt generated live, which can never be satisfied by the demo's
     // fixed historical commits, so including it would only ever manufacture a
     // false failure.
+    expect(result.checks_requested).toEqual(['B1', 'B3', 'B4', 'B7', 'S12']);
     expect(softwareDelivery.verify).toHaveBeenCalledWith(
-      expect.objectContaining({ repoOwner: 'foxfirepoets', repoName: 'swarmsync-verifyapi-investor-demo' }),
-      ['B1', 'B3', 'B4', 'B7', 'S12'],
-      expect.objectContaining({ organizationId: 'anonymous' }),
+      'anonymous',
+      expect.objectContaining({ repoOwner: 'benstoneai', repoName: 'chainverify-investor-demo' }),
     );
   });
 
@@ -977,7 +850,7 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
 
     expect(softwareDelivery.verify).toHaveBeenCalledTimes(1);
     expect(second).toEqual(first);
-    expect(second.proof_id).toBe('sdv_proof_demo_001');
+    expect(second.verification_status).toBe('passed');
   });
 
   it('does not cache across different commit pairs', async () => {
@@ -992,22 +865,19 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
   });
 
   it('the authenticated software_delivery path is unaffected — arbitrary repos still work with a user', async () => {
-    const softwareDelivery = { verify: jest.fn().mockResolvedValue(demoSdResult) };
+    const softwareDelivery = { verify: vi.fn().mockResolvedValue(demoSdResult) };
     const proofBilling = {
-      resolveProofQuota: jest.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
+      resolveProofQuota: vi.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
     };
-    const prisma = { organizationSubscription: { findUnique: jest.fn().mockResolvedValue(null) } };
-    const verifyApiUsage = { reserve: jest.fn().mockResolvedValue(undefined) };
+    const prisma = { organizationSubscription: { findUnique: vi.fn().mockResolvedValue(null) } };
     const controller = new VerifyApiController(
       {} as never,
       {} as never,
       prisma as never,
-      {} as never,
       proofBilling as never,
       {} as never,
       {} as never,
       softwareDelivery as never,
-      verifyApiUsage as never,
     );
     const user = { id: 'user_demo_001', organizationId: 'org_demo_001' } as never;
 
@@ -1021,9 +891,8 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
     );
 
     expect(softwareDelivery.verify).toHaveBeenCalledWith(
+      'org_demo_001',
       expect.objectContaining({ repoOwner: 'acme', repoName: 'private-prod-repo' }),
-      ['S9'],
-      expect.objectContaining({ organizationId: 'org_demo_001' }),
     );
   });
 
@@ -1048,41 +917,39 @@ describe('VerifyApiController invoice demo regression', () => {
 
   it('a clean invoice still verifies through POST /api/verify/demo', async () => {
     const verificationService = {
-      queueVerification: jest.fn().mockResolvedValue({ id: 'run_invoice_demo_001' }),
-      updateVerificationStatus: jest.fn().mockResolvedValue({
+      queueVerification: vi.fn().mockResolvedValue({ id: 'run_invoice_demo_001' }),
+      updateVerificationStatus: vi.fn().mockResolvedValue({
         riskLevel: 'LOW',
         outputSummary: 'All checks passed',
       }),
     };
     const proofService = {
-      createProof: jest.fn().mockResolvedValue({ id: 'proof_invoice_demo_001', chain_hash: 'c'.repeat(64) }),
+      createProof: vi.fn().mockResolvedValue({ id: 'proof_invoice_demo_001', chain_hash: 'c'.repeat(64) }),
     };
     const prisma = {
-      organizationSubscription: { findUnique: jest.fn().mockResolvedValue(null) },
+      organizationSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
       verificationRun: {
-        count: jest.fn().mockResolvedValue(0),
-        update: jest.fn().mockResolvedValue({}),
+        count: vi.fn().mockResolvedValue(0),
+        update: vi.fn().mockResolvedValue({}),
       },
     };
     const aiAnalysis = {
-      analyze: jest.fn().mockResolvedValue({
+      analyze: vi.fn().mockResolvedValue({
         llm_unavailable: false,
         issues: [],
         ai_summary: 'Invoice looks clean.',
         risk_assessment: 'low',
       }),
     };
-    const proofClaim = { generateClaimToken: jest.fn().mockReturnValue('claim_invoice_demo') };
+    const proofClaim = { generateClaimToken: vi.fn().mockReturnValue('claim_invoice_demo') };
     const controller = new VerifyApiController(
       verificationService as never,
       proofService as never,
       prisma as never,
-      {} as never, // conduitVerification
       {} as never, // proofBilling (unused for anonymous callers)
       proofClaim as never,
       aiAnalysis as never,
       {} as never, // softwareDelivery
-      {} as never, // verifyApiUsage
     );
     const req = { headers: {}, ip: '203.0.113.60' } as never;
 

@@ -8,6 +8,7 @@
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ErpProvider } from '@prisma/client';
+import { describe, expect, it, vi, type Mock } from 'vitest';
 
 import { InvoiceProofErpService } from './invoice-proof-erp.service.js';
 
@@ -17,17 +18,17 @@ import { InvoiceProofErpService } from './invoice-proof-erp.service.js';
 function makePrisma(overrides: Record<string, unknown> = {}) {
   return {
     orgErpConnection: {
-      upsert: jest.fn().mockResolvedValue({}),
-      findUnique: jest.fn(),
-      findMany: jest.fn().mockResolvedValue([]),
-      update: jest.fn().mockResolvedValue({}),
-      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      upsert: vi.fn().mockResolvedValue({}),
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue({}),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     orgVendorMaster: {
-      count: jest.fn().mockResolvedValue(0),
+      count: vi.fn().mockResolvedValue(0),
     },
     orgPoRegister: {
-      count: jest.fn().mockResolvedValue(0),
+      count: vi.fn().mockResolvedValue(0),
     },
     ...overrides,
   };
@@ -35,9 +36,9 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
 
 // Encrypt/decrypt helpers are used by the service for token storage.
 // We mock the module so tests don't need a real encryption key in env.
-jest.mock('../outbound-deployment/credential-crypto.js', () => ({
-  encryptCredentials: jest.fn((v: unknown) => JSON.stringify(v)),
-  decryptCredentials: jest.fn((v: string) => {
+vi.mock('./credential-crypto.js', () => ({
+  encryptCredentials: vi.fn((v: unknown) => JSON.stringify(v)),
+  decryptCredentials: vi.fn((v: string) => {
     try {
       return JSON.parse(v);
     } catch {
@@ -84,11 +85,11 @@ describe('InvoiceProofErpService — pullProviderData is a stub (truth-labeling)
     it(`${provider}: syncProvider sets lastSyncStatus to SANDBOX_PENDING and returns live=false`, async () => {
       const prisma = makePrisma({
         orgErpConnection: {
-          findUnique: jest.fn().mockResolvedValue(authorizedConnection(provider)),
-          update: jest.fn().mockResolvedValue({}),
+          findUnique: vi.fn().mockResolvedValue(authorizedConnection(provider)),
+          update: vi.fn().mockResolvedValue({}),
         },
-        orgVendorMaster: { count: jest.fn().mockResolvedValue(0) },
-        orgPoRegister: { count: jest.fn().mockResolvedValue(0) },
+        orgVendorMaster: { count: vi.fn().mockResolvedValue(0) },
+        orgPoRegister: { count: vi.fn().mockResolvedValue(0) },
       });
 
       const service = new InvoiceProofErpService(prisma as never);
@@ -102,7 +103,7 @@ describe('InvoiceProofErpService — pullProviderData is a stub (truth-labeling)
       expect(result.message).toMatch(/sandbox pending/i);
 
       // DB status must be honest — not 'OK' or 'CONNECTED' or 'SCHEDULED'
-      const updateCall = (prisma.orgErpConnection.update as jest.Mock).mock.calls[0][0];
+      const updateCall = (prisma.orgErpConnection.update as Mock).mock.calls[0][0];
       expect(updateCall.data.lastSyncStatus).toBe('SANDBOX_PENDING');
     });
   }
@@ -121,11 +122,11 @@ describe('InvoiceProofErpService — pending connection (pre-OAuth-callback)', (
 
     const prisma = makePrisma({
       orgErpConnection: {
-        findUnique: jest.fn().mockResolvedValue(pendingConn),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: vi.fn().mockResolvedValue(pendingConn),
+        update: vi.fn().mockResolvedValue({}),
       },
-      orgVendorMaster: { count: jest.fn().mockResolvedValue(0) },
-      orgPoRegister: { count: jest.fn().mockResolvedValue(0) },
+      orgVendorMaster: { count: vi.fn().mockResolvedValue(0) },
+      orgPoRegister: { count: vi.fn().mockResolvedValue(0) },
     });
 
     const service = new InvoiceProofErpService(prisma as never);
@@ -151,7 +152,7 @@ describe('InvoiceProofErpService — startConnect for non-OAuth providers', () =
 
     const prisma = makePrisma({
       orgErpConnection: {
-        upsert: jest.fn().mockResolvedValue({}),
+        upsert: vi.fn().mockResolvedValue({}),
       },
     });
 
@@ -171,7 +172,7 @@ describe('InvoiceProofErpService — startConnect for non-OAuth providers', () =
 
     const prisma = makePrisma({
       orgErpConnection: {
-        upsert: jest.fn().mockResolvedValue({}),
+        upsert: vi.fn().mockResolvedValue({}),
       },
     });
 
@@ -194,8 +195,8 @@ describe('InvoiceProofErpService — syncProvider with missing connection', () =
   it('throws NotFoundException when connection does not exist', async () => {
     const prisma = makePrisma({
       orgErpConnection: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        update: jest.fn(),
+        findUnique: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
       },
     });
 

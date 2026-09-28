@@ -13,10 +13,12 @@
  * number, account number, total amount), regardless of how high either
  * confidence signal is.
  */
+import { describe, expect, it } from 'vitest';
+
 import {
   applyOcrExtraction,
   OCR_ENGINE_MIN_CONFIDENCE,
-} from '@swarmsync/proof-core/invoice-pdf-extract.js';
+} from '@chain-verify/proof-core/invoice-pdf-extract.js';
 
 const CLEAN_INVOICE_TEXT =
   'Acme Industrial Supply Invoice #: INV-4471 Invoice Date: 03/14/2026 PO Number: PO-9920 ' +

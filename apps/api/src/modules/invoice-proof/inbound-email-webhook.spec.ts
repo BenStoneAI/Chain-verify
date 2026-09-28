@@ -14,20 +14,22 @@
  *   4. PDF attachments are NOT reported as scanned.
  *   5. No reply-email claim in the response.
  *
- * Mock the scan runner the same way as sibling specs to avoid @swarmsync/proof-core
+ * Mock the scan runner the same way as sibling specs to avoid @chain-verify/proof-core
  * resolution issues in the Jest module mapper.
  */
 
-jest.mock('./invoice-proof-scan.runner.js', () => ({
-  hashFingerprint: jest.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
-  parseInvoiceScanBody: jest.fn(() => ({
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+vi.mock('./invoice-proof-scan.runner.js', () => ({
+  hashFingerprint: vi.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
+  parseInvoiceScanBody: vi.fn(() => ({
     rows: [],
     vendorMaster: [],
     vendorMasterExtended: [],
     poRegister: [],
     seededHistory: [],
   })),
-  runInvoiceScan: jest.fn(() => ({
+  runInvoiceScan: vi.fn(() => ({
     findings: [],
     findingCount: 0,
     rowCount: 0,
@@ -36,6 +38,7 @@ jest.mock('./invoice-proof-scan.runner.js', () => ({
 }));
 
 import { ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+
 import { InvoiceProofController } from './invoice-proof.controller.js';
 import { InvoiceProofService } from './invoice-proof.service.js';
 
@@ -51,7 +54,7 @@ const VALID_WEBHOOK_SECRET = 'test-webhook-secret-abc';
 /** Minimal InvoiceProofService mock sufficient for controller-level tests. */
 function makeServiceMock() {
   return {
-    processInboundEmail: jest.fn().mockResolvedValue({
+    processInboundEmail: vi.fn().mockResolvedValue({
       orgSlug: ORG_SLUG,
       from: 'vendor@example.com',
       subject: 'Invoice #1001',
@@ -60,14 +63,14 @@ function makeServiceMock() {
       riskLevel: 'LOW',
       summary: 'No fraud findings detected.',
     }),
-    webhookScan: jest.fn().mockResolvedValue({
+    webhookScan: vi.fn().mockResolvedValue({
       findings: [],
       findingCount: 0,
       riskLevel: 'LOW',
       scanId: 'scan-2',
     }),
-    resolveOrgId: jest.fn().mockResolvedValue(ORG_ID),
-    scan: jest.fn(),
+    resolveOrgId: vi.fn().mockResolvedValue(ORG_ID),
+    scan: vi.fn(),
     erpService: {},
   } as unknown as InvoiceProofService;
 }
@@ -288,7 +291,7 @@ describe('inboundEmail — truth-labeling: no fake PDF scan, no reply email', ()
     expect(svc.processInboundEmail).toHaveBeenCalledWith(ORG_SLUG, payloadWithPdf);
 
     // Confirm the response contains no claim that PDF was processed
-    const callResult = await (svc.processInboundEmail as jest.Mock).mock.results[0]?.value;
+    const callResult = await (svc.processInboundEmail as Mock).mock.results[0]?.value;
     const resultStr = JSON.stringify(callResult);
     expect(resultStr).not.toMatch(/pdf/i);
     expect(resultStr).not.toMatch(/extracted from pdf/i);

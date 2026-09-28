@@ -1,3 +1,5 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { InvoicePdfService, PDF_MAX_BYTES } from './invoice-pdf.service.js';
 
 /**
@@ -54,9 +56,9 @@ describe('InvoicePdfService.extract — pre-parse validation', () => {
 // script) specifically so this exact per-page-vs-whole-document branch is
 // covered by a deterministic, CI-run test.
 // ---------------------------------------------------------------------------
-jest.mock('unpdf', () => ({
-  getDocumentProxy: jest.fn(async () => ({ numPages: 2 })),
-  extractText: jest.fn(async () => ({
+vi.mock('unpdf', () => ({
+  getDocumentProxy: vi.fn(async () => ({ numPages: 2 })),
+  extractText: vi.fn(async () => ({
     text: [
       'Acme Industrial Supply Invoice #: INV-5001 Invoice Date: 03/14/2026 PO Number: PO-1 ' +
         'Payment Terms: Net 30 Total Due: $1,200.00',
@@ -64,9 +66,9 @@ jest.mock('unpdf', () => ({
     ],
   })),
 }));
-jest.mock('./invoice-pdf-ocr.js', () => ({
-  invoiceProofOcrEnabled: jest.fn(() => true),
-  ocrPdfPage: jest.fn(),
+vi.mock('./invoice-pdf-ocr.js', () => ({
+  invoiceProofOcrEnabled: vi.fn(() => true),
+  ocrPdfPage: vi.fn(),
 }));
 
 describe('InvoicePdfService.extract — already-OK digital text is never sent through OCR just for an incidental weak page', () => {

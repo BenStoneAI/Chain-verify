@@ -1,3 +1,5 @@
+export type ProofProductSlug = 'invoice-proof' | 'audit-proof' | 'verify-api';
+
 export const STRIPE_PAYMENT_LINKS: Record<string, string> = {
   'verify-api-build': 'https://buy.stripe.com/00w9AS9mq5BtbYX73Q2wU0f',
   'verify-api-scale': 'https://buy.stripe.com/8x27sKbuy7JB2onewi2wU0g',

@@ -1027,18 +1027,11 @@ export default function InvoiceProofClient() {
 
             <div style={{ marginTop: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <Link
-                href="/docs/quickstart-for-agents"
+                href="/verify-api/docs"
                 className="btn btn-secondary"
                 style={{ fontSize: '14px', padding: '10px 18px', minHeight: 'unset' }}
               >
                 View API docs
-              </Link>
-              <Link
-                href="/console/proof"
-                className="btn btn-secondary"
-                style={{ fontSize: '14px', padding: '10px 18px', minHeight: 'unset' }}
-              >
-                Get API key
               </Link>
             </div>
           </section>

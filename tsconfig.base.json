@@ -14,9 +14,6 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@agent-market/config": [
-        "packages/config/src"
-      ],
       "@chain-verify/proof-core": [
         "packages/proof-core/src"
       ],

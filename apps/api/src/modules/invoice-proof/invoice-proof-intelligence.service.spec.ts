@@ -1,17 +1,19 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.service.js';
 
 describe('InvoiceProofIntelligenceService.enrichFindings', () => {
   const prisma = {
-    orgVendorBaseline: { findMany: jest.fn().mockResolvedValue([]) },
-    orgVendorMaster: { findMany: jest.fn().mockResolvedValue([]) },
-    fraudIntelSignal: { findMany: jest.fn().mockResolvedValue([]) },
-    fraudIntelOrgReport: { upsert: jest.fn(), count: jest.fn() },
+    orgVendorBaseline: { findMany: vi.fn().mockResolvedValue([]) },
+    orgVendorMaster: { findMany: vi.fn().mockResolvedValue([]) },
+    fraudIntelSignal: { findMany: vi.fn().mockResolvedValue([]) },
+    fraudIntelOrgReport: { upsert: vi.fn(), count: vi.fn() },
   };
 
   const service = new InvoiceProofIntelligenceService(prisma as never);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     prisma.orgVendorBaseline.findMany.mockResolvedValue([]);
     prisma.orgVendorMaster.findMany.mockResolvedValue([]);
     prisma.fraudIntelSignal.findMany.mockResolvedValue([]);

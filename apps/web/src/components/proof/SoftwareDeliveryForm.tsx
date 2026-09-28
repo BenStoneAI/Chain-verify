@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { DEFAULT_API_BASE, AUTH_TOKEN_KEY } from '@/lib/constants';
 import { PROOF_VERIFY_AUTH_PATH, PROOF_VERIFY_DEMO_PATH, resolveProofApiBase } from '@/lib/proof-api';
+import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1317,12 +1318,13 @@ export function SoftwareDeliveryForm() {
         >
           <p className="font-medium text-amber-400 mb-1">Verification quota reached</p>
           <p>{errorMessage}</p>
-          <a
-            href="/proof/checkout?product=verify-api&plan=verify-api-build"
+          <ProofCheckoutButton
+            product="verify-api"
+            planSlug="verify-api-build"
             className="mt-2 inline-block text-sm text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
           >
             Upgrade plan →
-          </a>
+          </ProofCheckoutButton>
         </div>
       )}
 
@@ -1464,26 +1466,12 @@ export function SoftwareDeliveryForm() {
             </div>
           )}
 
-          {/* Proof ID + navigation links */}
+          {/* Proof ID */}
           <div className="rounded-xl border border-white/10 bg-[#0B0E1C] px-4 py-3 space-y-1">
             <p className="text-xs text-white/40">
               Proof ID:{' '}
               <span className="font-mono text-white/60">{result.proof_id}</span>
             </p>
-            <div className="flex items-center gap-4 text-xs">
-              <a
-                href="/console/runs"
-                className="text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
-              >
-                View all runs →
-              </a>
-              <a
-                href="/verify-api/logs"
-                className="text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
-              >
-                Verification logs →
-              </a>
-            </div>
           </div>
 
           {/* Reset */}

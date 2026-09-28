@@ -4,16 +4,18 @@
  *  - Part 2: Approval/review email sending (fail-soft)
  *  - Part 3: Bank-review pattern-match bug fix
  *
- * Note: invoice-proof-scan.runner.ts transitively imports @swarmsync/proof-core which
+ * Note: invoice-proof-scan.runner.ts transitively imports @chain-verify/proof-core which
  * is not resolvable in the Jest module mapper for sub-path imports (the pre-existing
  * runner.spec.ts has the same issue). We mock the runner module so service tests are
  * isolated from that resolution problem.
  */
 
-// Mock the scan runner before any imports so Jest replaces the module.
-jest.mock('./invoice-proof-scan.runner.js', () => ({
-  hashFingerprint: jest.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
-  parseInvoiceScanBody: jest.fn((body: { invoices?: unknown[] }) => ({
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+// Mock the scan runner before any imports so Vitest replaces the module.
+vi.mock('./invoice-proof-scan.runner.js', () => ({
+  hashFingerprint: vi.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
+  parseInvoiceScanBody: vi.fn((body: { invoices?: unknown[] }) => ({
     rows: (body.invoices ?? []).map((inv: Record<string, unknown>) => ({
       invoiceNo: inv.invoiceNo ?? 'INV-0',
       vendor: inv.vendor ?? 'Test Co',
@@ -26,7 +28,7 @@ jest.mock('./invoice-proof-scan.runner.js', () => ({
     poRegister: [],
     seededHistory: [],
   })),
-  runInvoiceScan: jest.fn(() => ({
+  runInvoiceScan: vi.fn(() => ({
     findings: [],
     findingCount: 0,
     rowCount: 1,
@@ -38,68 +40,28 @@ import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.se
 import { InvoiceProofService } from './invoice-proof.service.js';
 
 // ---------------------------------------------------------------------------
-// PART 1 — Consortium distinct-org counting
+// PART 1 — Consortium cross-tenant fraud intel is a deliberate standalone no-op.
+//
+// The cross-organization consortium fraud-intel store belonged to the shared
+// SwarmSync marketplace database (see EXTRACTION.md: "the shared Prisma/
+// database layer... have not been copied"). Chain Verify does not own or
+// query that cross-tenant dataset, so both methods are documented no-ops
+// (see invoice-proof-intelligence.service.ts). These tests assert the honest
+// no-op contract — they replace an earlier version that tested the removed
+// cross-tenant distinct-org-counting behavior, which no longer exists.
 // ---------------------------------------------------------------------------
 
-describe('InvoiceProofIntelligenceService — reportConsortiumSignals', () => {
+describe('InvoiceProofIntelligenceService — consortium fraud intel (standalone no-op)', () => {
   function makeIntelPrisma() {
-    const orgReports: Record<string, Set<string>> = {};
-    const signals: Record<string, { reportCount: number; distinctOrgCount: number }> = {};
-
     return {
-      orgVendorBaseline: { findMany: jest.fn().mockResolvedValue([]) },
-      orgVendorMaster: { findMany: jest.fn().mockResolvedValue([]) },
-      fraudIntelSignal: {
-        findMany: jest.fn().mockImplementation(async (args: {
-          where?: { distinctOrgCount?: { gte?: number } };
-        }) => {
-          const minOrgs = args?.where?.distinctOrgCount?.gte ?? 0;
-          return Object.entries(signals)
-            .filter(([, s]) => s.distinctOrgCount >= minOrgs)
-            .map(([routing, s]) => ({
-              id: `sig-${routing}`,
-              routingNumber: routing,
-              reportCount: s.reportCount,
-              distinctOrgCount: s.distinctOrgCount,
-              confidence: 0.5,
-              status: 'ACTIVE',
-            }));
-        }),
-        upsert: jest.fn().mockImplementation(async (args: {
-          where: { routingNumber: string };
-          create: { reportCount: number; distinctOrgCount: number };
-          update: { reportCount: { increment: number }; distinctOrgCount: number };
-        }) => {
-          const routing = args.where.routingNumber;
-          if (!signals[routing]) {
-            signals[routing] = {
-              reportCount: args.create.reportCount,
-              distinctOrgCount: args.create.distinctOrgCount,
-            };
-          } else {
-            signals[routing].reportCount += args.update.reportCount.increment;
-            signals[routing].distinctOrgCount = args.update.distinctOrgCount;
-          }
-          return signals[routing];
-        }),
-      },
-      fraudIntelOrgReport: {
-        upsert: jest.fn().mockImplementation(async (args: {
-          where: { routingNumber_organizationId: { routingNumber: string; organizationId: string } };
-          create: { routingNumber: string; organizationId: string };
-        }) => {
-          const { routingNumber, organizationId } = args.where.routingNumber_organizationId;
-          if (!orgReports[routingNumber]) orgReports[routingNumber] = new Set();
-          orgReports[routingNumber].add(organizationId);
-        }),
-        count: jest.fn().mockImplementation(async (args: { where: { routingNumber: string } }) => {
-          return orgReports[args.where.routingNumber]?.size ?? 0;
-        }),
-      },
+      orgVendorBaseline: { findMany: vi.fn().mockResolvedValue([]) },
+      orgVendorMaster: { findMany: vi.fn().mockResolvedValue([]) },
+      fraudIntelSignal: { findMany: vi.fn(), upsert: vi.fn() },
+      fraudIntelOrgReport: { upsert: vi.fn(), count: vi.fn() },
     };
   }
 
-  it('same org reporting 5 times → distinctOrgCount stays 1', async () => {
+  it('reportConsortiumSignals never writes to a cross-tenant store', async () => {
     const prisma = makeIntelPrisma();
     const service = new InvoiceProofIntelligenceService(prisma as never);
 
@@ -115,80 +77,21 @@ describe('InvoiceProofIntelligenceService — reportConsortiumSignals', () => {
       await service.reportConsortiumSignals([bankFinding], 'org-alpha');
     }
 
-    // OrgReport upsert called 5 times but the Set deduplicates
-    expect(prisma.fraudIntelOrgReport.upsert).toHaveBeenCalledTimes(5);
-
-    const signalCalls = (prisma.fraudIntelSignal.upsert as jest.Mock).mock.calls;
-    const lastUpdateDistinctOrgCount: number = signalCalls[signalCalls.length - 1][0].update.distinctOrgCount;
-    expect(lastUpdateDistinctOrgCount).toBe(1);
+    expect(prisma.fraudIntelOrgReport.upsert).not.toHaveBeenCalled();
+    expect(prisma.fraudIntelSignal.upsert).not.toHaveBeenCalled();
   });
 
-  it('4 distinct orgs → distinctOrgCount = 4', async () => {
+  it('checkConsortiumSignals always returns no findings (no cross-tenant dataset to query)', async () => {
     const prisma = makeIntelPrisma();
-    const service = new InvoiceProofIntelligenceService(prisma as never);
-
-    const bankFinding = {
-      severity: 'critical' as const,
-      pattern: 'Bank account change (BANK_ACCOUNT_CHANGE)',
-      detail: 'BANK_ACCOUNT_CHANGE — routing 021000021',
-      rows: ['INV-X'],
-      evidence: 'routing=021000021',
-    };
-
-    for (const orgId of ['org-1', 'org-2', 'org-3', 'org-4']) {
-      await service.reportConsortiumSignals([bankFinding], orgId);
-    }
-
-    const signalCalls = (prisma.fraudIntelSignal.upsert as jest.Mock).mock.calls;
-    const lastCall = signalCalls[signalCalls.length - 1][0];
-    expect(lastCall.update.distinctOrgCount).toBe(4);
-    // Raw reportCount should increment once per org call
-    expect(lastCall.update.reportCount).toEqual({ increment: 1 });
-  });
-
-  it('checkConsortiumSignals label exposes both distinctOrgCount and reportCount', async () => {
-    const prisma = {
-      orgVendorBaseline: { findMany: jest.fn().mockResolvedValue([]) },
-      orgVendorMaster: { findMany: jest.fn().mockResolvedValue([]) },
-      fraudIntelSignal: {
-        findMany: jest.fn().mockResolvedValue([
-          {
-            id: 'sig-1',
-            routingNumber: '021000021',
-            reportCount: 7,
-            distinctOrgCount: 4,
-            confidence: 0.85,
-            status: 'ACTIVE',
-          },
-        ]),
-      },
-      fraudIntelOrgReport: { upsert: jest.fn(), count: jest.fn() },
-    };
     const service = new InvoiceProofIntelligenceService(prisma as never);
     const rows = [
       { bank: '021000021', vendor: 'Acme Corp', invoiceNo: 'INV-99', amount: 1000, po: '' },
     ];
+
     const findings = await service.checkConsortiumSignals(rows as never);
 
-    expect(findings).toHaveLength(1);
-    expect(findings[0].detail).toContain('4 distinct InvoiceProof organizations');
-    expect(findings[0].detail).toContain('7 total reports');
-    expect(findings[0].evidence).toContain('distinctOrgCount=4');
-    expect(findings[0].evidence).toContain('reportCount=7');
-  });
-
-  it('checkConsortiumSignals does NOT fire when distinctOrgCount < 3', async () => {
-    const prisma = {
-      orgVendorBaseline: { findMany: jest.fn().mockResolvedValue([]) },
-      orgVendorMaster: { findMany: jest.fn().mockResolvedValue([]) },
-      // Query filters distinctOrgCount >= 3 — returns nothing for signals with < 3 distinct orgs
-      fraudIntelSignal: { findMany: jest.fn().mockResolvedValue([]) },
-      fraudIntelOrgReport: { upsert: jest.fn(), count: jest.fn() },
-    };
-    const service = new InvoiceProofIntelligenceService(prisma as never);
-    const rows = [{ bank: '021000021', vendor: 'Acme', invoiceNo: 'INV-1', amount: 500, po: '' }];
-    const findings = await service.checkConsortiumSignals(rows as never);
     expect(findings).toHaveLength(0);
+    expect(prisma.fraudIntelSignal.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -197,46 +100,59 @@ describe('InvoiceProofIntelligenceService — reportConsortiumSignals', () => {
 // ---------------------------------------------------------------------------
 
 describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
+  afterEach(() => {
+    delete process.env.INVOICE_PROOF_ALERT_EMAIL;
+  });
+
   function makeService(orgOwner: { email: string; orgName: string } | null) {
+    // resolveOrgOwnerEmail reads the alert recipient from an env var in the
+    // standalone build (there is no org-membership/user table to join against
+    // here — see EXTRACTION.md: the shared auth/membership system was not
+    // carried over). The org name still comes from organization.findUnique.
+    if (orgOwner) {
+      process.env.INVOICE_PROOF_ALERT_EMAIL = orgOwner.email;
+    } else {
+      delete process.env.INVOICE_PROOF_ALERT_EMAIL;
+    }
     const prisma = {
-      proofProductEntitlement: { findFirst: jest.fn().mockResolvedValue(null) },
-      proofFreeScan: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn() },
+      proofProductEntitlement: { findFirst: vi.fn().mockResolvedValue(null) },
+      proofFreeScan: { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn() },
       orgVendorMaster: {
-        findMany: jest.fn().mockResolvedValue([]),
-        findFirst: jest.fn().mockResolvedValue(null),
-        update: jest.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
       },
-      orgPoRegister: { findMany: jest.fn().mockResolvedValue([]) },
-      orgInvoiceHistory: { findMany: jest.fn().mockResolvedValue([]), createMany: jest.fn() },
+      orgPoRegister: { findMany: vi.fn().mockResolvedValue([]) },
+      orgInvoiceHistory: { findMany: vi.fn().mockResolvedValue([]), createMany: vi.fn() },
       orgInvoiceScanRun: {
-        create: jest.fn().mockResolvedValue({ id: 'scan-abc' }),
-        update: jest.fn().mockResolvedValue({}),
+        create: vi.fn().mockResolvedValue({ id: 'scan-abc' }),
+        update: vi.fn().mockResolvedValue({}),
       },
-      scanFindingApproval: { createMany: jest.fn() },
+      scanFindingApproval: { createMany: vi.fn() },
       organization: {
-        findUnique: jest.fn().mockImplementation(async () => {
+        findUnique: vi.fn().mockImplementation(async () => {
           if (!orgOwner) return null;
-          return {
-            name: orgOwner.orgName,
-            members: [{ user: { email: orgOwner.email } }],
-          };
+          // Real resolveOrgOwnerEmail only selects { name: true } — the alert
+          // recipient itself comes from INVOICE_PROOF_ALERT_EMAIL (set above),
+          // not an org-membership relation.
+          return { name: orgOwner.orgName };
         }),
       },
     };
 
-    const emailSendSpy = jest.fn().mockResolvedValue(undefined);
+    const emailSendSpy = vi.fn().mockResolvedValue(undefined);
     const emailService = { sendInvoiceProofReviewAlert: emailSendSpy };
 
     const intelligenceService = {
-      enrichFindings: jest.fn().mockResolvedValue([]),
-      reportConsortiumSignals: jest.fn().mockResolvedValue(undefined),
+      enrichFindings: vi.fn().mockResolvedValue([]),
+      reportConsortiumSignals: vi.fn().mockResolvedValue(undefined),
     };
 
     // Real-shaped mocks (not `{} as never`) so scan()'s ProofRecord creation
     // path (see createScanProofRecord) can be exercised end-to-end below.
     const verificationService = {
-      queueVerification: jest.fn().mockResolvedValue({ id: 'vrun-1' }),
-      updateVerificationStatus: jest
+      queueVerification: vi.fn().mockResolvedValue({ id: 'vrun-1' }),
+      updateVerificationStatus: vi
         .fn()
         .mockImplementation(
           async (
@@ -254,7 +170,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
         ),
     };
     const proofService = {
-      createProof: jest.fn().mockResolvedValue({ id: 'proof-xyz', chain_hash: 'abc123hash' }),
+      createProof: vi.fn().mockResolvedValue({ id: 'proof-xyz', chain_hash: 'abc123hash' }),
     };
 
     const service = new InvoiceProofService(
@@ -276,7 +192,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
       orgName: 'Acme Org',
     });
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([
       {
         severity: 'critical',
         pattern: 'Bank account change (BANK_ACCOUNT_CHANGE)',
@@ -307,7 +223,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
       orgName: 'Acme Org',
     });
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([
       { severity: 'high', pattern: 'MISSING_PO_REFERENCE', detail: 'No PO', rows: ['INV-1'] },
     ]);
 
@@ -328,7 +244,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
       orgName: 'Acme Org',
     });
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([
       {
         severity: 'critical',
         pattern: 'Bank account change (BANK_ACCOUNT_CHANGE)',
@@ -354,7 +270,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
       orgName: 'Acme Org',
     });
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([
       { severity: 'medium', pattern: 'ROUND_DOLLAR_AMOUNT', detail: 'Round dollar', rows: ['INV-1'] },
     ]);
 
@@ -375,7 +291,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
       orgName: 'Acme Org',
     });
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([]);
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([]);
 
     await service.scan(
       { invoices: [{ vendor: 'Test Co', invoiceNo: 'INV-1', amount: 1000 }] },
@@ -396,7 +312,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
 
     emailSendSpy.mockRejectedValue(new Error('SMTP unavailable'));
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([
       { severity: 'critical', pattern: 'EXACT_DUPLICATE', detail: 'Dup', rows: ['INV-1'] },
     ]);
 
@@ -420,7 +336,7 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
       null,
     );
 
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([
       {
         severity: 'critical',
         pattern: 'Bank account change (BANK_ACCOUNT_CHANGE)',
@@ -485,10 +401,10 @@ describe('InvoiceProofService — sendReviewAlertIfNeeded (Part 2)', () => {
 
   it('degrades to proofUnavailable (never throws, never fabricates a proof id) when proof creation fails', async () => {
     const { service, intelligenceService, verificationService } = makeService(null);
-    (verificationService.queueVerification as jest.Mock).mockRejectedValue(
+    (verificationService.queueVerification as Mock).mockRejectedValue(
       new Error('proof-chain DB unavailable'),
     );
-    (intelligenceService.enrichFindings as jest.Mock).mockResolvedValue([]);
+    (intelligenceService.enrichFindings as Mock).mockResolvedValue([]);
 
     const result = await service.scan(
       { invoices: [{ vendor: 'Test Co', invoiceNo: 'INV-1', amount: 1000 }] },
@@ -516,12 +432,12 @@ describe('InvoiceProofService.markVendorsForBankReview (Part 3 — pattern bug f
     const updatedStatuses: string[] = [];
     const prisma = {
       orgVendorMaster: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: vi.fn().mockResolvedValue({
           id: 'vendor-1',
           source: 'MANUAL',
           status: 'ACTIVE',
         }),
-        update: jest.fn().mockImplementation(async (args: {
+        update: vi.fn().mockImplementation(async (args: {
           where: { id: string };
           data: { status: string };
         }) => {
@@ -608,8 +524,8 @@ describe('InvoiceProofService.markVendorsForBankReview (Part 3 — pattern bug f
 
 describe('InvoiceProofService.scanPdf — wiring to scan() by extraction confidence (Part 4a)', () => {
   function makeService(extractResult: unknown) {
-    const prisma = { orgVendorMaster: { findFirst: jest.fn(), update: jest.fn() } };
-    const pdfService = { extract: jest.fn().mockResolvedValue(extractResult) };
+    const prisma = { orgVendorMaster: { findFirst: vi.fn(), update: vi.fn() } };
+    const pdfService = { extract: vi.fn().mockResolvedValue(extractResult) };
     const service = new InvoiceProofService(
       prisma as never,
       {} as never,
@@ -634,7 +550,7 @@ describe('InvoiceProofService.scanPdf — wiring to scan() by extraction confide
         charCount: 0,
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanPdf(Buffer.from('%PDF-1.4 test'), null, '127.0.0.1');
 
@@ -656,7 +572,7 @@ describe('InvoiceProofService.scanPdf — wiring to scan() by extraction confide
         charCount: 60,
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanPdf(Buffer.from('%PDF-1.4 test'), null, '127.0.0.1');
 
@@ -687,7 +603,7 @@ describe('InvoiceProofService.scanPdf — wiring to scan() by extraction confide
         charCount: 200,
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan').mockResolvedValue({ scanId: 'scan-1' } as never);
+    const scanSpy = vi.spyOn(service, 'scan').mockResolvedValue({ scanId: 'scan-1' } as never);
 
     const result = await service.scanPdf(Buffer.from('%PDF-1.4 test'), null, '127.0.0.1');
 
@@ -709,7 +625,7 @@ describe('InvoiceProofService.scanPdf — wiring to scan() by extraction confide
         charCount: 200,
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan').mockResolvedValue({
+    const scanSpy = vi.spyOn(service, 'scan').mockResolvedValue({
       scanId: 'scan-1',
       historySkipped: true,
       historySkippedReason: 'PDF extraction confidence 0.78 is below the 0.85 history threshold',
@@ -746,8 +662,8 @@ describe('InvoiceProofService.scanPdf — wiring to scan() by extraction confide
 // ---------------------------------------------------------------------------
 describe('InvoiceProofService.scanPdf — OCR-aware NEEDS_REVIEW branch (Work Item 1)', () => {
   function makeService(extractResult: unknown) {
-    const prisma = { orgVendorMaster: { findFirst: jest.fn(), update: jest.fn() } };
-    const pdfService = { extract: jest.fn().mockResolvedValue(extractResult) };
+    const prisma = { orgVendorMaster: { findFirst: vi.fn(), update: vi.fn() } };
+    const pdfService = { extract: vi.fn().mockResolvedValue(extractResult) };
     const service = new InvoiceProofService(
       prisma as never,
       {} as never,
@@ -771,7 +687,7 @@ describe('InvoiceProofService.scanPdf — OCR-aware NEEDS_REVIEW branch (Work It
         // no extraction_method — matches every pre-Work-Item-1 caller/fixture
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanPdf(Buffer.from('%PDF-1.4 test'), null, '127.0.0.1');
 
@@ -793,7 +709,7 @@ describe('InvoiceProofService.scanPdf — OCR-aware NEEDS_REVIEW branch (Work It
         extraction_method: 'digital_text',
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanPdf(Buffer.from('%PDF-1.4 test'), null, '127.0.0.1');
 
@@ -814,7 +730,7 @@ describe('InvoiceProofService.scanPdf — OCR-aware NEEDS_REVIEW branch (Work It
         extraction_method: 'ocr',
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan').mockResolvedValue({
+    const scanSpy = vi.spyOn(service, 'scan').mockResolvedValue({
       scanId: 'scan-ocr-1',
       findings: [{ pattern: 'Bank account change (BANK_ACCOUNT_CHANGE)', severity: 'critical' }],
     } as never);
@@ -852,7 +768,7 @@ describe('InvoiceProofService.scanPdf — OCR-aware NEEDS_REVIEW branch (Work It
         extraction_method: 'ocr',
       },
     });
-    const scanSpy = jest.spyOn(service, 'scan');
+    const scanSpy = vi.spyOn(service, 'scan');
 
     const result = await service.scanPdf(Buffer.from('%PDF-1.4 test'), null, '127.0.0.1');
 
@@ -864,30 +780,30 @@ describe('InvoiceProofService.scanPdf — OCR-aware NEEDS_REVIEW branch (Work It
 
 describe('InvoiceProofService.scan — OrgInvoiceHistory write respects skipHistoryWrite (Part 4b)', () => {
   function makeScanService() {
-    const historyCreateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const historyCreateMany = vi.fn().mockResolvedValue({ count: 1 });
     const prisma = {
-      proofProductEntitlement: { findFirst: jest.fn().mockResolvedValue(null) },
-      proofFreeScan: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn() },
+      proofProductEntitlement: { findFirst: vi.fn().mockResolvedValue(null) },
+      proofFreeScan: { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn() },
       orgVendorMaster: {
-        findMany: jest.fn().mockResolvedValue([]),
-        findFirst: jest.fn().mockResolvedValue(null),
-        update: jest.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
       },
-      orgPoRegister: { findMany: jest.fn().mockResolvedValue([]) },
-      orgInvoiceHistory: { findMany: jest.fn().mockResolvedValue([]), createMany: historyCreateMany },
-      orgInvoiceScanRun: { create: jest.fn().mockResolvedValue({ id: 'scan-run-1' }) },
-      scanFindingApproval: { createMany: jest.fn() },
-      organization: { findUnique: jest.fn().mockResolvedValue(null) },
+      orgPoRegister: { findMany: vi.fn().mockResolvedValue([]) },
+      orgInvoiceHistory: { findMany: vi.fn().mockResolvedValue([]), createMany: historyCreateMany },
+      orgInvoiceScanRun: { create: vi.fn().mockResolvedValue({ id: 'scan-run-1' }) },
+      scanFindingApproval: { createMany: vi.fn() },
+      organization: { findUnique: vi.fn().mockResolvedValue(null) },
     };
     const intelligenceService = {
-      enrichFindings: jest.fn().mockResolvedValue([]),
-      reportConsortiumSignals: jest.fn().mockResolvedValue(undefined),
+      enrichFindings: vi.fn().mockResolvedValue([]),
+      reportConsortiumSignals: vi.fn().mockResolvedValue(undefined),
     };
     const service = new InvoiceProofService(
       prisma as never,
       {} as never,
       intelligenceService as never,
-      { sendInvoiceProofReviewAlert: jest.fn() } as never,
+      { sendInvoiceProofReviewAlert: vi.fn() } as never,
       {} as never,
       {} as never,
       {} as never,

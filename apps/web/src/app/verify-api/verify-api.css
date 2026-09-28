@@ -1,5 +1,5 @@
 /* ============================================================
-   SwarmSync tokens — VerifyAPI (developer surface, code-forward)
+   Chain Verify tokens — VerifyAPI (developer surface, code-forward)
    All selectors scoped with .va-scope
    ============================================================ */
 
@@ -769,7 +769,7 @@
 }
 
 /* ============================================================
-   Pillars (Why SwarmSync)
+   Pillars (Why Chain Verify)
    ============================================================ */
 .va-scope .pillars {
   display: grid;

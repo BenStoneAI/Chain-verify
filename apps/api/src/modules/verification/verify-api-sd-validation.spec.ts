@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 
-jest.mock('@agent-market/config', () => ({
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@chain-verify/config', () => ({
   verifyApiPlanConfigs: [{ slug: 'free', monthlyRuns: 10, overageCents: null, retentionDays: 7 }],
 }));
 
@@ -26,7 +28,7 @@ describe('buildSoftwareDeliveryValidationError', () => {
 
     expect(result.statusCode).toBe(400);
     expect(result.message).toBe('Invalid software_delivery payload');
-    expect(result.docs).toContain('/docs/verify-api');
+    expect(result.docs).toContain('/verify-api/docs');
     expect(result.example.output.repoOwner).toBeDefined();
     for (const field of ['repoOwner', 'repoName', 'beforeSha', 'afterSha', 'jobStartedAt', 'tier', 'jobType']) {
       expect(result.details.some((d: string) => d.includes(`${field} is required inside output`))).toBe(true);
@@ -37,7 +39,7 @@ describe('buildSoftwareDeliveryValidationError', () => {
     // Fields sent at the top level instead of inside output (the real-world 400 trap).
     const body = {
       source_type: 'software_delivery',
-      repoOwner: 'swarmsync-ai',
+      repoOwner: 'acme-corp',
       repoName: 'atep-spec',
       beforeSha: 'abc',
       afterSha: 'def',

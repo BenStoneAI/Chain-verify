@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 
 import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
-import type { ProofProductSlug } from '@/lib/proof-checkout';
+import type { ProofProductSlug } from '@/lib/stripe-payment-links';
 
 type Props = {
   product: ProofProductSlug;

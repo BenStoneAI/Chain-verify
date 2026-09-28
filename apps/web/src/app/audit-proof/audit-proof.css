@@ -4,7 +4,7 @@
 */
 
 /* ============================================================
-   SwarmSync tokens — AuditProof (slightly cooler, more enterprise)
+   Chain Verify tokens — AuditProof (slightly cooler, more enterprise)
    ============================================================ */
 .ap-scope {
   --bg-base:        #07080D;
@@ -959,7 +959,7 @@
 .ap-scope .why-callout b { color: var(--text-primary); font-weight: 600; }
 
 /* ============================================================
-   Why SwarmSync — pillar row
+   Why Chain Verify — pillar row
    ============================================================ */
 .ap-scope .pillars {
   display: grid;

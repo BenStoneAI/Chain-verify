@@ -4,7 +4,7 @@ import Link from 'next/link';
 import ProductFooter from '@/components/proof/ProductFooter';
 import ProductNav from '@/components/proof/ProductNav';
 import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
-import type { ProofProductSlug } from '@/lib/proof-checkout';
+import type { ProofProductSlug } from '@/lib/stripe-payment-links';
 
 export type MarketingPlan = {
   slug?: string;

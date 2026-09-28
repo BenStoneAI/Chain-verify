@@ -4,20 +4,32 @@
  * Proves the BEC-prevention gate: bank/routing changes through the vendor portal
  * REQUIRE a valid, unexpired, unconsumed OTP sent to the vendor's trusted email.
  *
- * Mock the scan runner to avoid @swarmsync/proof-core resolution issues (same
+ * OTP state is stored inline on VendorPortalToken.verifiedEmail as an encoded
+ * string `otp:<sha256Hash>:<expiryMs>:<attempts>` — there is no separate OTP
+ * table in the standalone Chain Verify schema (see invoice-proof.service.ts's
+ * requestVendorPortalOtp/submitVendorPortalBankUpdate: "keeps OTP state inside
+ * the Chain Verify-owned schema without restoring the old SwarmSync OTP
+ * table"). Audit trail entries are structured Logger.log lines
+ * (logVendorPortalAudit), not database rows — there is no AuditLog model
+ * either, so those assertions spy on the Nest Logger instead of a Prisma
+ * table.
+ *
+ * Mock the scan runner to avoid @chain-verify/proof-core resolution issues (same
  * approach as the sibling invoice-proof.service.spec.ts).
  */
 
-jest.mock('./invoice-proof-scan.runner.js', () => ({
-  hashFingerprint: jest.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
-  parseInvoiceScanBody: jest.fn(() => ({
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+vi.mock('./invoice-proof-scan.runner.js', () => ({
+  hashFingerprint: vi.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
+  parseInvoiceScanBody: vi.fn(() => ({
     rows: [],
     vendorMaster: [],
     vendorMasterExtended: [],
     poRegister: [],
     seededHistory: [],
   })),
-  runInvoiceScan: jest.fn(() => ({
+  runInvoiceScan: vi.fn(() => ({
     findings: [],
     findingCount: 0,
     rowCount: 0,
@@ -26,6 +38,8 @@ jest.mock('./invoice-proof-scan.runner.js', () => ({
 }));
 
 import { createHash } from 'crypto';
+import { Logger } from '@nestjs/common';
+
 import { InvoiceProofService } from './invoice-proof.service.js';
 
 // ---------------------------------------------------------------------------
@@ -45,17 +59,27 @@ function hashCode(code: string): string {
 
 function makePrisma(overrides: {
   vendorContactEmail?: string | null;
-  otpRows?: Array<Record<string, unknown>>;
+  /** Pre-seeds the portal token's encoded OTP state (verifiedEmail column). */
+  verifiedEmail?: string | null;
 } = {}) {
-  const auditLogs: Array<Record<string, unknown>> = [];
-  const createdOtps: Array<Record<string, unknown>> = [];
-  const otpRows = overrides.otpRows ?? [];
   const updatedVendors: Array<Record<string, unknown>> = [];
   const createdVendors: Array<Record<string, unknown>> = [];
 
+  // Mutable in-memory "row" so update() calls are reflected in the next
+  // findFirst() — matches how the real service reads-modify-writes the
+  // encoded OTP state onto this single column across two calls.
+  const portal: Record<string, unknown> = {
+    id: PORTAL_TOKEN_ID,
+    organizationId: ORG_ID,
+    vendorName: VENDOR_NAME,
+    token: PORTAL_TOKEN,
+    expiresAt: new Date(Date.now() + 86400000),
+    verifiedEmail: overrides.verifiedEmail ?? null,
+  };
+
   const prisma = {
     organization: {
-      findUnique: jest.fn().mockImplementation(async (args: { where: { slug?: string; id?: string } }) => {
+      findUnique: vi.fn().mockImplementation(async (args: { where: { slug?: string; id?: string } }) => {
         if (args.where.slug === ORG_SLUG || args.where.id === ORG_ID) {
           return { id: ORG_ID, name: 'Acme Corp', slug: ORG_SLUG };
         }
@@ -63,24 +87,22 @@ function makePrisma(overrides: {
       }),
     },
     vendorPortalToken: {
-      findFirst: jest.fn().mockImplementation(async (args: {
+      findFirst: vi.fn().mockImplementation(async (args: {
         where: { organizationId: string; token: string; expiresAt?: { gt: Date } };
       }) => {
         if (args.where.token === PORTAL_TOKEN && args.where.organizationId === ORG_ID) {
-          return {
-            id: PORTAL_TOKEN_ID,
-            organizationId: ORG_ID,
-            vendorName: VENDOR_NAME,
-            token: PORTAL_TOKEN,
-            expiresAt: new Date(Date.now() + 86400000),
-          };
+          return { ...portal };
         }
         return null;
       }),
-      create: jest.fn(),
+      update: vi.fn().mockImplementation(async (args: { where: { id: string }; data: Record<string, unknown> }) => {
+        Object.assign(portal, args.data);
+        return { ...portal };
+      }),
+      create: vi.fn(),
     },
     orgVendorMaster: {
-      findFirst: jest.fn().mockImplementation(async () => {
+      findFirst: vi.fn().mockImplementation(async () => {
         const email = overrides.vendorContactEmail;
         if (email === undefined) {
           // Default: vendor exists with trusted email
@@ -96,69 +118,37 @@ function makePrisma(overrides: {
         }
         return { id: 'vm-1', contactEmail: email, vendorName: VENDOR_NAME };
       }),
-      update: jest.fn().mockImplementation(async (args: { where: { id: string }; data: Record<string, unknown> }) => {
+      update: vi.fn().mockImplementation(async (args: { where: { id: string }; data: Record<string, unknown> }) => {
         updatedVendors.push(args.data);
         return { id: args.where.id, ...args.data };
       }),
-      create: jest.fn().mockImplementation(async (args: { data: Record<string, unknown> }) => {
+      create: vi.fn().mockImplementation(async (args: { data: Record<string, unknown> }) => {
         createdVendors.push(args.data);
         return { id: 'vm-new', ...args.data };
       }),
-      findMany: jest.fn().mockResolvedValue([]),
-    },
-    vendorPortalOtp: {
-      create: jest.fn().mockImplementation(async (args: { data: Record<string, unknown> }) => {
-        const otp = { id: `otp-${createdOtps.length + 1}`, attempts: 0, consumedAt: null, lockedAt: null, ...args.data };
-        createdOtps.push(otp);
-        return otp;
-      }),
-      findFirst: jest.fn().mockImplementation(async () => {
-        return otpRows.length > 0 ? otpRows[otpRows.length - 1] : null;
-      }),
-      update: jest.fn().mockImplementation(async (args: { where: { id: string }; data: Record<string, unknown> }) => {
-        const idx = otpRows.findIndex((o) => o.id === args.where.id);
-        if (idx >= 0) {
-          const updated = { ...otpRows[idx] };
-          if (args.data.attempts && typeof args.data.attempts === 'object' && 'increment' in (args.data.attempts as Record<string, unknown>)) {
-            updated.attempts = (updated.attempts as number) + ((args.data.attempts as { increment: number }).increment);
-          } else if (args.data.attempts !== undefined) {
-            updated.attempts = args.data.attempts;
-          }
-          if (args.data.consumedAt !== undefined) updated.consumedAt = args.data.consumedAt;
-          if (args.data.lockedAt !== undefined) updated.lockedAt = args.data.lockedAt;
-          otpRows[idx] = updated;
-          return updated;
-        }
-        return { id: args.where.id, ...args.data };
-      }),
-    },
-    auditLog: {
-      create: jest.fn().mockImplementation(async (args: { data: Record<string, unknown> }) => {
-        auditLogs.push(args.data);
-        return args.data;
-      }),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     // Stubs for unused prisma delegates the service constructor may touch
-    proofProductEntitlement: { findFirst: jest.fn().mockResolvedValue(null) },
-    proofFreeScan: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn() },
-    orgPoRegister: { findMany: jest.fn().mockResolvedValue([]) },
-    orgInvoiceHistory: { findMany: jest.fn().mockResolvedValue([]), createMany: jest.fn() },
-    orgInvoiceScanRun: { create: jest.fn().mockResolvedValue({ id: 'scan-1' }) },
-    scanFindingApproval: { createMany: jest.fn() },
+    proofProductEntitlement: { findFirst: vi.fn().mockResolvedValue(null) },
+    proofFreeScan: { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn() },
+    orgPoRegister: { findMany: vi.fn().mockResolvedValue([]) },
+    orgInvoiceHistory: { findMany: vi.fn().mockResolvedValue([]), createMany: vi.fn() },
+    orgInvoiceScanRun: { create: vi.fn().mockResolvedValue({ id: 'scan-1' }) },
+    scanFindingApproval: { createMany: vi.fn() },
   };
 
-  return { prisma, auditLogs, createdOtps, updatedVendors, createdVendors, otpRows };
+  return { prisma, portal, updatedVendors, createdVendors };
 }
 
-function makeService(prisma: unknown, emailOverrides: Partial<{ sendVendorPortalOtp: jest.Mock }> = {}) {
-  const emailSendOtpSpy = emailOverrides.sendVendorPortalOtp ?? jest.fn().mockResolvedValue(undefined);
+function makeService(prisma: unknown, emailOverrides: Partial<{ sendVendorPortalOtp: Mock }> = {}) {
+  const emailSendOtpSpy = emailOverrides.sendVendorPortalOtp ?? vi.fn().mockResolvedValue(undefined);
   const emailService = {
     sendVendorPortalOtp: emailSendOtpSpy,
-    sendInvoiceProofReviewAlert: jest.fn().mockResolvedValue(undefined),
+    sendInvoiceProofReviewAlert: vi.fn().mockResolvedValue(undefined),
   };
   const intelligenceService = {
-    enrichFindings: jest.fn().mockResolvedValue([]),
-    reportConsortiumSignals: jest.fn().mockResolvedValue(undefined),
+    enrichFindings: vi.fn().mockResolvedValue([]),
+    reportConsortiumSignals: vi.fn().mockResolvedValue(undefined),
   };
   const service = new InvoiceProofService(
     prisma as never,
@@ -172,11 +162,24 @@ function makeService(prisma: unknown, emailOverrides: Partial<{ sendVendorPortal
   return { service, emailSendOtpSpy };
 }
 
+/** Parses the `otp:<hash>:<expiryMs>:<attempts>` encoding for assertions. */
+function parseOtpState(verifiedEmail: unknown): { hash: string; expiryMs: number; attempts: number } | null {
+  if (typeof verifiedEmail !== 'string' || !verifiedEmail.startsWith('otp:')) return null;
+  const [, hash, expiryMs, attempts] = verifiedEmail.split(':');
+  return { hash, expiryMs: Number(expiryMs), attempts: Number(attempts) };
+}
+
 // ---------------------------------------------------------------------------
 // TESTS
 // ---------------------------------------------------------------------------
 
 describe('Vendor Portal OTP — BEC prevention gate', () => {
+  const loggerSpy = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+
+  afterEach(() => {
+    loggerSpy.mockClear();
+  });
+
   // ── Core gate: submit WITHOUT OTP must be REJECTED ──
 
   it('REJECTS bank change when no OTP code is provided', async () => {
@@ -188,6 +191,10 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
         bankRoutingNumber: '999999999',
       }),
     ).rejects.toThrow('one-time verification code is required');
+
+    expect(loggerSpy.mock.calls.some((call) => String(call[0]).includes('VENDOR_PORTAL_BANK_CHANGE_BLOCKED'))).toBe(
+      true,
+    );
   });
 
   it('REJECTS bank change when otpCode is empty string', async () => {
@@ -204,16 +211,18 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
 
   // ── Request OTP happy path ──
 
-  it('request-otp creates an OTP record and emails the trusted address (code NOT in response)', async () => {
-    const { prisma, createdOtps } = makePrisma();
+  it('request-otp stores an encoded OTP state on the portal token and emails the trusted address (code NOT in response)', async () => {
+    const { prisma, portal } = makePrisma();
     const { service, emailSendOtpSpy } = makeService(prisma);
 
     const result = await service.requestVendorPortalOtp(ORG_SLUG, PORTAL_TOKEN);
 
-    // OTP created in DB
-    expect(createdOtps).toHaveLength(1);
-    expect(createdOtps[0].codeHash).toBeDefined();
-    expect(createdOtps[0].vendorPortalTokenId).toBe(PORTAL_TOKEN_ID);
+    // OTP state written onto the portal token (no separate OTP table).
+    const otpState = parseOtpState(portal.verifiedEmail);
+    expect(otpState).not.toBeNull();
+    expect(otpState?.hash).toHaveLength(64); // sha256 hex
+    expect(otpState?.attempts).toBe(0);
+    expect(otpState!.expiryMs).toBeGreaterThan(Date.now());
 
     // Email sent to TRUSTED address
     expect(emailSendOtpSpy).toHaveBeenCalledTimes(1);
@@ -225,24 +234,16 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
     expect(result).not.toHaveProperty('otp');
     expect(JSON.stringify(result)).not.toMatch(/\d{6}/);
     expect(result.message).toContain('one-time verification code');
+
+    expect(loggerSpy.mock.calls.some((call) => String(call[0]).includes('VENDOR_PORTAL_OTP_REQUESTED'))).toBe(true);
   });
 
   // ── Valid OTP → bank change APPLIED ──
 
   it('APPLIES bank change when a valid, unexpired, unconsumed OTP is provided', async () => {
     const code = '482917';
-    const { prisma, updatedVendors } = makePrisma({
-      otpRows: [
-        {
-          id: 'otp-valid',
-          vendorPortalTokenId: PORTAL_TOKEN_ID,
-          codeHash: hashCode(code),
-          expiresAt: new Date(Date.now() + 300_000),
-          attempts: 0,
-          consumedAt: null,
-          lockedAt: null,
-        },
-      ],
+    const { prisma, portal, updatedVendors } = makePrisma({
+      verifiedEmail: `otp:${hashCode(code)}:${Date.now() + 300_000}:0`,
     });
     const { service } = makeService(prisma);
 
@@ -259,14 +260,18 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
       bankAccountLast4: '6789',
     });
 
-    // OTP marked consumed
-    expect(prisma.vendorPortalOtp.update).toHaveBeenCalledWith(
+    // OTP state consumed (cleared) so it cannot be replayed
+    expect(portal.verifiedEmail).toBeNull();
+    expect(prisma.vendorPortalToken.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'otp-valid' },
-        data: expect.objectContaining({ consumedAt: expect.any(Date) }),
+        where: { id: PORTAL_TOKEN_ID },
+        data: { verifiedEmail: null },
       }),
     );
 
+    expect(loggerSpy.mock.calls.some((call) => String(call[0]).includes('VENDOR_PORTAL_BANK_CHANGE_ACCEPTED'))).toBe(
+      true,
+    );
     expect(result).toBeDefined();
   });
 
@@ -274,17 +279,7 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
 
   it('BLOCKS bank change when OTP code is wrong', async () => {
     const { prisma } = makePrisma({
-      otpRows: [
-        {
-          id: 'otp-1',
-          vendorPortalTokenId: PORTAL_TOKEN_ID,
-          codeHash: hashCode('123456'),
-          expiresAt: new Date(Date.now() + 300_000),
-          attempts: 0,
-          consumedAt: null,
-          lockedAt: null,
-        },
-      ],
+      verifiedEmail: `otp:${hashCode('123456')}:${Date.now() + 300_000}:0`,
     });
     const { service } = makeService(prisma);
 
@@ -303,7 +298,8 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
 
   it('BLOCKS bank change when OTP is expired', async () => {
     const { prisma } = makePrisma({
-      otpRows: [], // findFirst returns null because expired OTPs are filtered by expiresAt > now
+      // Expiry timestamp already in the past.
+      verifiedEmail: `otp:${hashCode('123456')}:${Date.now() - 1000}:0`,
     });
     const { service } = makeService(prisma);
 
@@ -318,9 +314,8 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
   // ── Reused (consumed) OTP → BLOCKED ──
 
   it('BLOCKS bank change when OTP was already consumed', async () => {
-    const { prisma } = makePrisma({
-      otpRows: [], // consumedAt is not null, so findFirst with consumedAt: null returns nothing
-    });
+    // Consumed OTPs clear verifiedEmail back to null.
+    const { prisma } = makePrisma({ verifiedEmail: null });
     const { service } = makeService(prisma);
 
     await expect(
@@ -334,68 +329,29 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
   // ── Repeated failures → locked ──
 
   it('LOCKS OTP after 5 failed attempts and blocks further use', async () => {
-    const code = '999999';
-    const otpRow = {
-      id: 'otp-lockout',
-      vendorPortalTokenId: PORTAL_TOKEN_ID,
-      codeHash: hashCode('123456'), // correct code is 123456
-      expiresAt: new Date(Date.now() + 300_000),
-      attempts: 4, // 4 prior failures, next will be the 5th
-      consumedAt: null,
-      lockedAt: null,
-    };
-    const { prisma, auditLogs } = makePrisma({ otpRows: [otpRow] });
+    const { prisma, portal } = makePrisma({
+      // 4 prior failures recorded; correct code is 123456, caller supplies a
+      // wrong one for what will be the 5th (lockout) attempt.
+      verifiedEmail: `otp:${hashCode('123456')}:${Date.now() + 300_000}:4`,
+    });
     const { service } = makeService(prisma);
 
     await expect(
       service.submitVendorPortalBankUpdate(ORG_SLUG, PORTAL_TOKEN, {
         bankRoutingNumber: '999999999',
-        otpCode: code, // wrong code, 5th attempt
+        otpCode: '999999', // wrong code, 5th attempt
       }),
     ).rejects.toThrow('Too many failed attempts');
 
-    // Check audit logged the lockout
-    const lockEvent = auditLogs.find((l) => l.event === 'VENDOR_PORTAL_OTP_FAILED');
-    expect(lockEvent).toBeDefined();
-    expect((lockEvent?.metadata as Record<string, unknown>)?.locked).toBe(true);
+    // Locking clears the encoded OTP state entirely so no further attempts
+    // (correct or not) can succeed until a new code is requested.
+    expect(portal.verifiedEmail).toBeNull();
   });
 
-  // ── Audit log rows ──
+  // ── Blocked-without-OTP still logs an audit line ──
 
-  it('creates audit log rows for OTP request, verify, and bank change', async () => {
-    const code = '555123';
-    // First, request OTP
-    const { prisma: prisma1, auditLogs: logs1 } = makePrisma();
-    const { service: svc1 } = makeService(prisma1);
-    await svc1.requestVendorPortalOtp(ORG_SLUG, PORTAL_TOKEN);
-    expect(logs1.some((l) => l.event === 'VENDOR_PORTAL_OTP_REQUESTED')).toBe(true);
-
-    // Then, verify and apply
-    const { prisma: prisma2, auditLogs: logs2 } = makePrisma({
-      otpRows: [
-        {
-          id: 'otp-audit',
-          vendorPortalTokenId: PORTAL_TOKEN_ID,
-          codeHash: hashCode(code),
-          expiresAt: new Date(Date.now() + 300_000),
-          attempts: 0,
-          consumedAt: null,
-          lockedAt: null,
-        },
-      ],
-    });
-    const { service: svc2 } = makeService(prisma2);
-    await svc2.submitVendorPortalBankUpdate(ORG_SLUG, PORTAL_TOKEN, {
-      bankRoutingNumber: '021000021',
-      otpCode: code,
-    });
-
-    expect(logs2.some((l) => l.event === 'VENDOR_PORTAL_OTP_VERIFIED')).toBe(true);
-    expect(logs2.some((l) => l.event === 'VENDOR_PORTAL_BANK_CHANGE_ACCEPTED')).toBe(true);
-  });
-
-  it('creates BANK_CHANGE_BLOCKED audit log when no OTP provided', async () => {
-    const { prisma, auditLogs } = makePrisma();
+  it('logs a BANK_CHANGE_BLOCKED audit line when no OTP is provided', async () => {
+    const { prisma } = makePrisma();
     const { service } = makeService(prisma);
 
     await expect(
@@ -404,14 +360,16 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
       }),
     ).rejects.toThrow();
 
-    expect(auditLogs.some((l) => l.event === 'VENDOR_PORTAL_BANK_CHANGE_BLOCKED')).toBe(true);
+    expect(loggerSpy.mock.calls.some((call) => String(call[0]).includes('VENDOR_PORTAL_BANK_CHANGE_BLOCKED'))).toBe(
+      true,
+    );
   });
 
   // ── Email send failure → FAIL CLOSED ──
 
   it('BLOCKS OTP request when EmailService.sendVendorPortalOtp throws (fail closed)', async () => {
-    const { prisma } = makePrisma();
-    const failingSend = jest.fn().mockRejectedValue(new Error('SMTP connection refused'));
+    const { prisma, portal } = makePrisma();
+    const failingSend = vi.fn().mockRejectedValue(new Error('SMTP connection refused'));
     const { service } = makeService(prisma, { sendVendorPortalOtp: failingSend });
 
     await expect(
@@ -421,12 +379,13 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
     // The code was stored but never delivered — caller gets an error,
     // so they cannot proceed. This is fail-closed.
     expect(failingSend).toHaveBeenCalledTimes(1);
+    expect(parseOtpState(portal.verifiedEmail)).not.toBeNull();
   });
 
   // ── Vendor with no trusted email → BLOCKED ──
 
   it('BLOCKS self-service bank change when vendor has no contactEmail on file', async () => {
-    const { prisma, auditLogs } = makePrisma({ vendorContactEmail: null });
+    const { prisma } = makePrisma({ vendorContactEmail: null });
     const { service, emailSendOtpSpy } = makeService(prisma);
 
     await expect(
@@ -436,8 +395,9 @@ describe('Vendor Portal OTP — BEC prevention gate', () => {
     // No email sent
     expect(emailSendOtpSpy).not.toHaveBeenCalled();
 
-    // Audit logged
-    expect(auditLogs.some((l) => l.event === 'VENDOR_PORTAL_OTP_BLOCKED_NO_EMAIL')).toBe(true);
+    expect(
+      loggerSpy.mock.calls.some((call) => String(call[0]).includes('VENDOR_PORTAL_OTP_BLOCKED_NO_EMAIL')),
+    ).toBe(true);
   });
 
   it('BLOCKS self-service bank change when vendor contactEmail is empty string', async () => {

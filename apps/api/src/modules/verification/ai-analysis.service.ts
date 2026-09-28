@@ -433,8 +433,8 @@ export class AiAnalysisService {
     return this.callProvider('openrouter', this.baseUrl, {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.apiKey}`,
-      'HTTP-Referer': 'https://swarmsync.ai',
-      'X-Title': 'SwarmSync Verification',
+      'HTTP-Referer': 'https://chainverify.org',
+      'X-Title': 'Chain Verify Verification',
     }, this.model, messages);
   }
 

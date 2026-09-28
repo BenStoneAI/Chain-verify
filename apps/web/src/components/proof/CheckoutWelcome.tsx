@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import ProductFooter from '@/components/proof/ProductFooter';
 import ProductNav from '@/components/proof/ProductNav';
-import type { ProofProductSlug } from '@/lib/proof-checkout';
+import type { ProofProductSlug } from '@/lib/stripe-payment-links';
 
 const PRODUCT_COPY: Record<ProofProductSlug, { name: string; next: string; emailSubject: string }> = {
   'verify-api': {

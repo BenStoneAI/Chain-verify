@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'VerifyAPI Docs | SwarmSync',
+  title: 'VerifyAPI Docs | Chain Verify',
   description:
     'Developer documentation for VerifyAPI authentication, verification runs, proof records, and proof exports.',
-  alternates: { canonical: 'https://swarmsync.ai/verify-api/docs' },
+  alternates: { canonical: 'https://chainverify.org/verify-api/docs' },
 };
 
 const endpoints = [
@@ -84,21 +83,6 @@ export default function VerifyApiDocsPage() {
               supplied evidence, then returns a retrievable verification and proof record.
             </p>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/console/settings/api-keys"
-              className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100"
-            >
-              Manage API keys
-            </Link>
-            <Link
-              href="/console/verifications"
-              className="rounded-md border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-200/60 hover:bg-white/10"
-            >
-              View verifications
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -106,7 +90,7 @@ export default function VerifyApiDocsPage() {
         <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h2 className="font-[var(--font-display)] text-2xl font-semibold">Authentication</h2>
           <p className="mt-4 text-sm leading-6 text-slate-300">
-            Production verification requires an authenticated SwarmSync principal. Send JSON and one
+            Production verification requires an authenticated Chain Verify principal. Send JSON and one
             supported credential header:
           </p>
           <pre className="mt-5 overflow-x-auto rounded-md border border-white/10 bg-black/50 p-4 font-mono text-xs leading-6 text-cyan-100">
@@ -120,7 +104,11 @@ x-api-key: <service_account_api_key>
 x-agent-api-key: <agent_api_key>`}
           </pre>
           <p className="mt-4 text-sm leading-6 text-slate-400">
-            Create and rotate keys from the console. Keep production calls on{' '}
+            Contact{' '}
+            <a href="mailto:proof@chainverify.org" className="text-cyan-200 underline underline-offset-2">
+              proof@chainverify.org
+            </a>{' '}
+            to provision or rotate an API key. Keep production calls on{' '}
             <code className="rounded bg-white/10 px-1.5 py-0.5 text-cyan-100">
               POST /api/verify
             </code>

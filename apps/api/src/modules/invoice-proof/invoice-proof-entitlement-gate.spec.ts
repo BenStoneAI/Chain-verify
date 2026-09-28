@@ -1,26 +1,37 @@
 /**
  * InvoiceProofService — checkScanGate entitlement fix (Part 4)
  *
- * Proves that an authenticated user whose membership org holds an ACTIVE
- * INVOICE_PROOF entitlement gets unlimited scans, while users without an
- * entitlement (or with no membership at all) are still free-scan-gated.
- * Anonymous callers remain IP/email-gated, unchanged.
+ * Proves that an authenticated user carrying an explicit organizationId with
+ * an ACTIVE INVOICE_PROOF entitlement gets unlimited scans, while users
+ * without an entitlement (or without an organizationId at all) are still
+ * free-scan-gated. Anonymous callers remain IP/email-gated, unchanged.
  *
- * Note: invoice-proof-scan.runner.ts transitively imports @swarmsync/proof-core
+ * Standalone-build note: resolveEntitledOrgId no longer resolves org
+ * membership via a Prisma join (there is no OrganizationMembership model in
+ * the Chain Verify schema — the shared auth/membership system was not
+ * carried over, see EXTRACTION.md). It only honors an explicit
+ * `user.organizationId`, which the current JWT strategy never sets (see the
+ * doc comment on resolveEntitledOrgId in invoice-proof.service.ts: "currently
+ * always undefined"). These tests exercise that real, current contract
+ * directly rather than the removed membership-lookup behavior.
+ *
+ * Note: invoice-proof-scan.runner.ts transitively imports @chain-verify/proof-core
  * which the Jest module mapper cannot resolve for sub-path imports. We mock it
  * here (same approach as invoice-proof.service.spec.ts) so the service can load.
  */
 
-jest.mock('./invoice-proof-scan.runner.js', () => ({
-  hashFingerprint: jest.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
-  parseInvoiceScanBody: jest.fn(() => ({
+import { describe, expect, it, vi, type Mock } from 'vitest';
+
+vi.mock('./invoice-proof-scan.runner.js', () => ({
+  hashFingerprint: vi.fn((v: string) => Buffer.from(v).toString('hex').slice(0, 64)),
+  parseInvoiceScanBody: vi.fn(() => ({
     rows: [],
     vendorMaster: [],
     vendorMasterExtended: [],
     poRegister: [],
     seededHistory: [],
   })),
-  runInvoiceScan: jest.fn(() => ({
+  runInvoiceScan: vi.fn(() => ({
     findings: [],
     findingCount: 0,
     rowCount: 0,
@@ -34,21 +45,19 @@ import { InvoiceProofService } from './invoice-proof.service.js';
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Build a minimal AuthenticatedUser (JWT never carries organizationId). */
-function makeUser(id: string): Parameters<InvoiceProofService['checkScanGate']>[0] {
-  return { id, email: 'user@test.com', displayName: 'Test', role: 'USER', kind: 'user' };
+/** Build a minimal AuthenticatedUser. organizationId is optional and, per
+ * the current JWT strategy, normally absent. */
+function makeUser(id: string, organizationId?: string): Parameters<InvoiceProofService['checkScanGate']>[0] {
+  return { id, email: 'user@test.com', organizationId };
 }
 
 type PrismaStub = {
-  organizationMembership: {
-    findMany: jest.Mock;
-  };
   proofProductEntitlement: {
-    findFirst: jest.Mock;
+    findFirst: Mock;
   };
   proofFreeScan: {
-    findFirst: jest.Mock;
-    create: jest.Mock;
+    findFirst: Mock;
+    create: Mock;
   };
 };
 
@@ -61,17 +70,13 @@ function makeService(prismaOverrides: Partial<PrismaStub> = {}): {
   prisma: PrismaStub;
 } {
   const prisma: PrismaStub = {
-    organizationMembership: {
-      findMany: jest.fn().mockResolvedValue([]),
-      ...((prismaOverrides.organizationMembership as object) ?? {}),
-    },
     proofProductEntitlement: {
-      findFirst: jest.fn().mockResolvedValue(null),
+      findFirst: vi.fn().mockResolvedValue(null),
       ...((prismaOverrides.proofProductEntitlement as object) ?? {}),
     },
     proofFreeScan: {
-      findFirst: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockResolvedValue(undefined),
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue(undefined),
       ...((prismaOverrides.proofFreeScan as object) ?? {}),
     },
   };
@@ -90,21 +95,18 @@ function makeService(prismaOverrides: Partial<PrismaStub> = {}): {
 }
 
 // ---------------------------------------------------------------------------
-// PART 4 — checkScanGate entitlement via membership org
+// PART 4 — checkScanGate entitlement via an explicit organizationId
 // ---------------------------------------------------------------------------
 
 describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () => {
   // -------------------------------------------------------------------------
-  // Case 1: authed user whose membership org has an ACTIVE INVOICE_PROOF
-  // entitlement → unlimited (allowed: true, recordFreeScan: false)
+  // Case 1: authed user with an explicit organizationId that has an ACTIVE
+  // INVOICE_PROOF entitlement → unlimited (allowed: true, recordFreeScan: false)
   // -------------------------------------------------------------------------
-  it('authed user with entitled membership org → allowed, no free-scan consumed', async () => {
+  it('authed user with an entitled organizationId → allowed, no free-scan consumed', async () => {
     const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([{ organizationId: 'org-entitled' }]),
-      },
       proofProductEntitlement: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: vi.fn().mockResolvedValue({
           id: 'ent-1',
           organizationId: 'org-entitled',
           product: 'INVOICE_PROOF',
@@ -113,7 +115,7 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
       },
     });
 
-    const user = makeUser('user-a');
+    const user = makeUser('user-a', 'org-entitled');
     const result = await service.checkScanGate(user, '1.2.3.4');
 
     expect(result.allowed).toBe(true);
@@ -125,23 +127,20 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
 
   // Repeat call — same result (no free-scan consumed on second call either)
   it('entitled user calling twice → both calls return allowed without consuming a free scan', async () => {
-    const entitlementFindFirst = jest.fn().mockResolvedValue({
+    const entitlementFindFirst = vi.fn().mockResolvedValue({
       id: 'ent-1',
       organizationId: 'org-entitled',
       product: 'INVOICE_PROOF',
       status: 'ACTIVE',
     });
-    const freeScanFindFirst = jest.fn().mockResolvedValue(null);
+    const freeScanFindFirst = vi.fn().mockResolvedValue(null);
 
     const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([{ organizationId: 'org-entitled' }]),
-      },
       proofProductEntitlement: { findFirst: entitlementFindFirst },
-      proofFreeScan: { findFirst: freeScanFindFirst, create: jest.fn() },
+      proofFreeScan: { findFirst: freeScanFindFirst, create: vi.fn() },
     });
 
-    const user = makeUser('user-a');
+    const user = makeUser('user-a', 'org-entitled');
     const first = await service.checkScanGate(user, '1.2.3.4');
     const second = await service.checkScanGate(user, '1.2.3.4');
 
@@ -156,31 +155,27 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
   });
 
   // -------------------------------------------------------------------------
-  // Case 2: authed user with a membership org but NO active entitlement
+  // Case 2: authed user with an organizationId but NO active entitlement
   // → still free-scan-gated (allowed once, then 402 on second call)
   // -------------------------------------------------------------------------
-  it('authed user with membership org but no entitlement → first scan allowed, second gets 402', async () => {
-    // Simulate: no entitlement exists; first scan not yet recorded
+  it('authed user with organizationId but no entitlement → first scan allowed, second gets 402', async () => {
     const freeScanStore: Array<{ userId: string }> = [];
-    const freeScanFindFirst = jest.fn().mockImplementation(async (args: { where: { userId: string } }) => {
+    const freeScanFindFirst = vi.fn().mockImplementation(async (args: { where: { userId: string } }) => {
       return freeScanStore.find((r) => r.userId === args.where.userId) ?? null;
     });
-    const freeScanCreate = jest.fn().mockImplementation(async (args: { data: { userId: string } }) => {
+    const freeScanCreate = vi.fn().mockImplementation(async (args: { data: { userId: string } }) => {
       freeScanStore.push({ userId: args.data.userId });
     });
 
     const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([{ organizationId: 'org-no-ent' }]),
-      },
       proofProductEntitlement: {
-        // No entitlement for any org
-        findFirst: jest.fn().mockResolvedValue(null),
+        // No entitlement for this org
+        findFirst: vi.fn().mockResolvedValue(null),
       },
       proofFreeScan: { findFirst: freeScanFindFirst, create: freeScanCreate },
     });
 
-    const user = makeUser('user-b');
+    const user = makeUser('user-b', 'org-no-ent');
 
     // First scan → allowed, recordFreeScan: true
     const first = await service.checkScanGate(user, '5.5.5.5');
@@ -201,25 +196,21 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
   });
 
   // -------------------------------------------------------------------------
-  // Case 3: authed user with NO membership → still free-scan-gated
+  // Case 3: authed user with NO organizationId → still free-scan-gated, and
+  // the entitlement table is never even queried (there's nothing to resolve).
   // -------------------------------------------------------------------------
-  it('authed user with no org membership → first scan allowed, second gets 402', async () => {
+  it('authed user with no organizationId → first scan allowed, second gets 402, entitlement never queried', async () => {
     const freeScanStore: Array<{ userId: string }> = [];
-    const freeScanFindFirst = jest.fn().mockImplementation(async (args: { where: { userId: string } }) => {
+    const freeScanFindFirst = vi.fn().mockImplementation(async (args: { where: { userId: string } }) => {
       return freeScanStore.find((r) => r.userId === args.where.userId) ?? null;
     });
-    const freeScanCreate = jest.fn().mockImplementation(async (args: { data: { userId: string } }) => {
+    const freeScanCreate = vi.fn().mockImplementation(async (args: { data: { userId: string } }) => {
       freeScanStore.push({ userId: args.data.userId });
     });
+    const entitlementFindFirst = vi.fn().mockResolvedValue(null);
 
     const { service } = makeService({
-      organizationMembership: {
-        // No memberships
-        findMany: jest.fn().mockResolvedValue([]),
-      },
-      proofProductEntitlement: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
+      proofProductEntitlement: { findFirst: entitlementFindFirst },
       proofFreeScan: { findFirst: freeScanFindFirst, create: freeScanCreate },
     });
 
@@ -230,6 +221,7 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
     if (first.allowed) {
       expect(first.recordFreeScan).toBe(true);
     }
+    expect(entitlementFindFirst).not.toHaveBeenCalled();
 
     await service.recordFreeScan(user, '6.6.6.6');
 
@@ -245,13 +237,13 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
   // -------------------------------------------------------------------------
   it('anonymous caller — first scan allowed by IP gate, second denied (403)', async () => {
     const freeScanStore: Array<{ ipHash: string }> = [];
-    const freeScanFindFirst = jest.fn().mockImplementation(async (args: { where: { ipHash?: string } }) => {
+    const freeScanFindFirst = vi.fn().mockImplementation(async (args: { where: { ipHash?: string } }) => {
       if (args.where.ipHash) {
         return freeScanStore.find((r) => r.ipHash === args.where.ipHash) ?? null;
       }
       return null;
     });
-    const freeScanCreate = jest.fn().mockImplementation(async (args: { data: { ipHash: string } }) => {
+    const freeScanCreate = vi.fn().mockImplementation(async (args: { data: { ipHash: string } }) => {
       freeScanStore.push({ ipHash: args.data.ipHash });
     });
 
@@ -275,142 +267,31 @@ describe('InvoiceProofService.checkScanGate — entitlement gate (Part 4)', () =
     if (!second.allowed) {
       expect(second.status).toBe(403);
     }
-
-    // organizationMembership should never have been queried for anonymous calls
-    // (no user object exists to query against)
-  });
-
-  // -------------------------------------------------------------------------
-  // Preferred-org selection: when a user has multiple memberships, the
-  // entitled org is preferred over the earliest org
-  // -------------------------------------------------------------------------
-  it('prefers entitled org over earliest membership org when user has multiple memberships', async () => {
-    const entitlementFindFirst = jest.fn().mockImplementation(
-      async (args: { where: { organizationId: string } }) => {
-        // Only 'org-second' has an entitlement
-        if (args.where.organizationId === 'org-second') {
-          return { id: 'ent-2', organizationId: 'org-second', product: 'INVOICE_PROOF', status: 'ACTIVE' };
-        }
-        return null;
-      },
-    );
-
-    const { service } = makeService({
-      organizationMembership: {
-        // org-first was joined earlier (appears first in asc order)
-        findMany: jest.fn().mockResolvedValue([
-          { organizationId: 'org-first' },
-          { organizationId: 'org-second' },
-        ]),
-      },
-      proofProductEntitlement: { findFirst: entitlementFindFirst },
-    });
-
-    const user = makeUser('user-d');
-    const result = await service.checkScanGate(user, '8.8.8.8');
-
-    expect(result.allowed).toBe(true);
-    if (result.allowed) {
-      expect(result.recordFreeScan).toBe(false);
-      expect(result.organizationId).toBe('org-second');
-    }
   });
 });
 
 // ---------------------------------------------------------------------------
-// PART 5 — resolveOrgId is now async and membership-aware
+// PART 5 — resolveOrgId
 // ---------------------------------------------------------------------------
 
-describe('InvoiceProofService.resolveOrgId — async membership-aware resolution (Part 5)', () => {
+describe('InvoiceProofService.resolveOrgId (Part 5)', () => {
   it('returns undefined when user is null', async () => {
     const { service } = makeService();
     const result = await service.resolveOrgId(null);
     expect(result).toBeUndefined();
   });
 
-  it('returns entitled membership org for a user with an ACTIVE INVOICE_PROOF entitlement', async () => {
-    const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([{ organizationId: 'org-entitled' }]),
-      },
-      proofProductEntitlement: {
-        findFirst: jest.fn().mockResolvedValue({
-          id: 'ent-1',
-          organizationId: 'org-entitled',
-          product: 'INVOICE_PROOF',
-          status: 'ACTIVE',
-        }),
-      },
-    });
-
-    const user = makeUser('user-a');
+  it('returns the explicit user.organizationId when set', async () => {
+    const { service } = makeService();
+    const user = makeUser('user-a', 'org-explicit');
     const result = await service.resolveOrgId(user);
-    // Must match the entitled membership org, not user.id
-    expect(result).toBe('org-entitled');
+    expect(result).toBe('org-explicit');
   });
 
-  it('returns earliest membership org (fallback) when no entitlement exists', async () => {
-    const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([
-          { organizationId: 'org-early' },
-          { organizationId: 'org-late' },
-        ]),
-      },
-      proofProductEntitlement: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-    });
-
-    const user = makeUser('user-b');
-    const result = await service.resolveOrgId(user);
-    // No entitlement → falls back to earliest membership org
-    expect(result).toBe('org-early');
-  });
-
-  it('falls back to user.id when user has no org memberships', async () => {
-    const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([]),
-      },
-      proofProductEntitlement: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-    });
-
+  it('falls back to user.id when user has no organizationId', async () => {
+    const { service } = makeService();
     const user = makeUser('user-no-org');
     const result = await service.resolveOrgId(user);
-    // resolveEntitledOrgId returns undefined → fallback is user.id
     expect(result).toBe('user-no-org');
-  });
-
-  it('prefers entitled org over the earliest membership when multiple memberships exist', async () => {
-    const { service } = makeService({
-      organizationMembership: {
-        findMany: jest.fn().mockResolvedValue([
-          { organizationId: 'org-first' },
-          { organizationId: 'org-entitled' },
-        ]),
-      },
-      proofProductEntitlement: {
-        findFirst: jest.fn().mockImplementation(
-          async (args: { where: { organizationId: string } }) => {
-            if (args.where.organizationId === 'org-entitled') {
-              return {
-                id: 'ent-2',
-                organizationId: 'org-entitled',
-                product: 'INVOICE_PROOF',
-                status: 'ACTIVE',
-              };
-            }
-            return null;
-          },
-        ),
-      },
-    });
-
-    const user = makeUser('user-c');
-    const result = await service.resolveOrgId(user);
-    expect(result).toBe('org-entitled');
   });
 });

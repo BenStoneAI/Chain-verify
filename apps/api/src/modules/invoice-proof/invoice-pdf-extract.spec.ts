@@ -1,4 +1,6 @@
-import { extractInvoiceFieldsFromText } from '@swarmsync/proof-core/invoice-pdf-extract.js';
+import { describe, expect, it } from 'vitest';
+
+import { extractInvoiceFieldsFromText } from '@chain-verify/proof-core/invoice-pdf-extract.js';
 
 const CLEAN_INVOICE = `Acme Industrial Supply
 123 Market Street, Springfield, IL
