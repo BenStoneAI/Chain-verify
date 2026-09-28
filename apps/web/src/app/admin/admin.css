@@ -1,0 +1,322 @@
+/* Chain Verify admin backend. All selectors scoped with .cva- to avoid
+   colliding with the marketing site's site.css / product-marketing.css.
+   Reuses the --cv-* design tokens defined globally in site.css so the admin
+   surface matches the rest of the product instead of inventing a new theme. */
+
+.cva-admin {
+  min-height: 100vh;
+  background: var(--cv-bg);
+  color: var(--cv-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.cva-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--cv-line);
+  position: sticky;
+  top: 0;
+  background: var(--cv-bg);
+  z-index: 10;
+}
+
+.cva-brand {
+  font-weight: 760;
+  letter-spacing: -0.02em;
+  font-size: 17px;
+}
+
+.cva-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Gate (key entry) */
+.cva-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cv-bg);
+  color: var(--cv-text);
+  padding: 20px;
+}
+.cva-gate-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--cv-surface-solid);
+  border: 1px solid var(--cv-line);
+  border-radius: 14px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cva-gate-card h1 {
+  font-size: 19px;
+  margin: 0;
+}
+.cva-gate-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--cv-line);
+  background: var(--cv-surface-2);
+  color: var(--cv-text);
+}
+.cva-hint {
+  font-size: 12px;
+  color: var(--cv-faint);
+}
+.cva-hint code {
+  background: var(--cv-surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* KPI row */
+.cva-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .cva-kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.cva-kpi-card {
+  background: var(--cv-surface-solid);
+  border: 1px solid var(--cv-line);
+  border-radius: 12px;
+  padding: 18px;
+}
+.cva-kpi-card-warn {
+  border-color: var(--cv-danger);
+}
+.cva-kpi-value {
+  font-size: 28px;
+  font-weight: 760;
+  letter-spacing: -0.02em;
+}
+.cva-kpi-label {
+  font-size: 13px;
+  color: var(--cv-muted);
+  margin-top: 4px;
+}
+
+.cva-recent-activity {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.cva-recent-activity code {
+  background: var(--cv-surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Panels */
+.cva-panel {
+  background: var(--cv-surface-solid);
+  border: 1px solid var(--cv-line);
+  border-radius: 14px;
+  padding: 20px;
+}
+.cva-panel h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.cva-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cva-muted {
+  color: var(--cv-muted);
+  font-size: 13px;
+}
+.cva-error {
+  color: var(--cv-danger);
+  font-size: 13px;
+}
+.cva-warning {
+  color: var(--cv-amber);
+  font-size: 13px;
+}
+
+/* Tables */
+.cva-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.cva-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cva-table th {
+  text-align: left;
+  color: var(--cv-muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--cv-line);
+}
+.cva-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--cv-line);
+}
+.cva-table code {
+  background: var(--cv-surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.cva-table-compact td,
+.cva-table-compact th {
+  padding: 6px 8px;
+}
+.cva-empty {
+  text-align: center;
+  color: var(--cv-faint);
+  padding: 20px;
+}
+
+.cva-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.cva-badge-active {
+  background: rgba(82, 224, 208, 0.14);
+  color: var(--cv-ok);
+}
+.cva-badge-revoked {
+  background: rgba(255, 102, 122, 0.14);
+  color: var(--cv-danger);
+}
+
+/* Forms */
+.cva-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cva-inline-form input {
+  flex: 1 1 160px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--cv-line);
+  background: var(--cv-surface-2);
+  color: var(--cv-text);
+  font-size: 13px;
+}
+.cva-inline-confirm {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.cva-inline-confirm input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--cv-line);
+  background: var(--cv-surface-2);
+  color: var(--cv-text);
+  font-size: 12px;
+}
+
+/* Buttons */
+.cva-admin button {
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease;
+}
+.cva-admin button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cva-btn-primary,
+.cva-inline-form button[type='submit'] {
+  background: var(--cv-violet);
+  color: white;
+}
+.cva-btn-secondary {
+  background: var(--cv-surface-2);
+  color: var(--cv-text);
+  border-color: var(--cv-line);
+}
+.cva-btn-danger {
+  background: rgba(255, 102, 122, 0.14);
+  color: var(--cv-danger);
+  border-color: rgba(255, 102, 122, 0.3);
+}
+.cva-gate-card button {
+  background: var(--cv-violet);
+  color: white;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.cva-keys-panel {
+  padding: 4px 0;
+}
+
+/* Modal */
+.cva-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.cva-modal {
+  background: var(--cv-surface-solid);
+  border: 1px solid var(--cv-line);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+}
+.cva-modal h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.cva-key-display {
+  display: block;
+  word-break: break-all;
+  background: var(--cv-surface-2);
+  border: 1px solid var(--cv-line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  font-size: 13px;
+  user-select: all;
+}
+.cva-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { Injectable, Logger, Module } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import { ProofEntitlementStatus, ProofProductType } from '@prisma/client';
@@ -6,6 +5,7 @@ import { PrismaService } from '../database/prisma.service.js';
 import { DatabaseModule } from '../database/database.module.js';
 import { ConduitBrowserAdapter } from './conduit-browser.adapter.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
+import { sha256Hex } from '../../common/utils/api-key-hash.js';
 import { BROWSER_INTAKE, IDENTITY_CONTEXT, OUTBOUND_EMAIL, PROOF_BILLING, type BrowserActionResult, type BrowserIntakePort, type IdentityContextPort, type OutboundEmailPort, type ProofBillingPort } from './ports.js';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class HttpBrowserIntakeAdapter implements BrowserIntakePort {
 @Injectable()
 export class ApiKeyIdentityAdapter implements IdentityContextPort {
  constructor(private readonly prisma:PrismaService){}
- async currentUser(request:any){ const auth=String(request?.headers?.authorization||''); const key=auth.startsWith('Bearer ')?auth.slice(7).trim():String(request?.headers?.['x-chain-verify-api-key']||''); if(!key)return null; const apiKeyHash=createHash('sha256').update(key).digest('hex'); const row=await this.prisma.apiIdentity.findFirst({where:{apiKeyHash,active:true}}); if(!row)return null; await this.prisma.apiIdentity.update({where:{id:row.id},data:{lastUsedAt:new Date()}}); return {id:row.id,organizationId:row.organizationId} as any; }
+ async currentUser(request:any){ const auth=String(request?.headers?.authorization||''); const key=auth.startsWith('Bearer ')?auth.slice(7).trim():String(request?.headers?.['x-chain-verify-api-key']||''); if(!key)return null; const apiKeyHash=sha256Hex(key); const row=await this.prisma.apiIdentity.findFirst({where:{apiKeyHash,active:true}}); if(!row)return null; await this.prisma.apiIdentity.update({where:{id:row.id},data:{lastUsedAt:new Date()}}); return {id:row.id,organizationId:row.organizationId} as any; }
 }
 
 @Injectable()

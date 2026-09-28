@@ -428,3 +428,35 @@ model ApiIdentity {
   @@index([organizationId, active])
   @@map("api_identities")
 }
+
+// Platform-level admin credential — NOT org-scoped. Distinct from ApiIdentity
+// (customer-facing, per-organization API keys). One admin key per human
+// operator; see apps/api/scripts/create-admin-key.ts to mint the first one.
+model AdminIdentity {
+  id String @id @default(cuid())
+  label String
+  apiKeyHash String @unique
+  active Boolean @default(true)
+  lastUsedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  auditLogs AdminAuditLog[]
+  @@index([active])
+  @@map("admin_identities")
+}
+
+// Append-only audit trail for every admin mutation. Never updated or deleted
+// after creation — each row is written in the same transaction as the
+// mutation it describes (see AdminService.recordAuditLog).
+model AdminAuditLog {
+  id String @id @default(cuid())
+  adminIdentityId String
+  adminIdentity AdminIdentity @relation(fields: [adminIdentityId], references: [id], onDelete: Restrict)
+  action String
+  reason String
+  metadata Json @default("{}")
+  createdAt DateTime @default(now())
+  @@index([adminIdentityId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@map("admin_audit_logs")
+}
