@@ -29,7 +29,7 @@ export interface AdminOverview {
   totalOrganizations: number;
   totalActiveApiKeys: number;
   verificationRunsThisMonth: number;
-  dormantOrganizations: number;
+  zeroUsageOrganizations: number;
   recentAuditLog: AdminAuditEntry[];
 }
 

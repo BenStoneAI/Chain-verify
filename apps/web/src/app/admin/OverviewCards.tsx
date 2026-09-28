@@ -11,9 +11,9 @@ export function OverviewCards({ overview }: OverviewCardsProps) {
     { label: 'Active API keys', value: overview.totalActiveApiKeys },
     { label: 'Verification runs this month', value: overview.verificationRunsThisMonth },
     {
-      label: 'Dormant organizations',
-      value: overview.dormantOrganizations,
-      warn: overview.dormantOrganizations > 0,
+      label: 'Zero-usage organizations (24h+)',
+      value: overview.zeroUsageOrganizations,
+      warn: overview.zeroUsageOrganizations > 0,
     },
   ];
 

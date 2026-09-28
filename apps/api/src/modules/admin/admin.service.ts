@@ -14,6 +14,10 @@ const ORG_API_KEY_PREFIX = 'cv_live_';
 const DEFAULT_AUDIT_LOG_PAGE_SIZE = 50;
 const MAX_AUDIT_LOG_PAGE_SIZE = 200;
 
+// A freshly created org hasn't had a chance to be used yet — don't count it
+// as a zero-usage problem until it's had this long to actually be used.
+const ZERO_USAGE_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
+
 // Every ApiIdentity read that can flow back into an API response must use
 // this select — apiKeyHash must never leave the server, even as a hash (it's
 // the sole credential check; leaking it is equivalent to leaking the key).
@@ -206,12 +210,13 @@ export class AdminService {
   /** "Is anything on fire" landing view. */
   async getOverview() {
     const periodStart = startOfCurrentMonthUtc();
-    const [totalOrganizations, totalActiveApiKeys, verificationRunsThisMonth, orgIdRows, usageOrgIdRows, recentAuditLog] =
+    const gracePeriodCutoff = new Date(Date.now() - ZERO_USAGE_GRACE_PERIOD_MS);
+    const [totalOrganizations, totalActiveApiKeys, verificationRunsThisMonth, orgRows, usageOrgIdRows, recentAuditLog] =
       await Promise.all([
         this.prisma.organization.count(),
         this.prisma.apiIdentity.count({ where: { active: true } }),
         this.prisma.verificationRun.count({ where: { createdAt: { gte: periodStart } } }),
-        this.prisma.organization.findMany({ select: { id: true } }),
+        this.prisma.organization.findMany({ select: { id: true, createdAt: true } }),
         this.prisma.verificationRun.findMany({ distinct: ['orgId'], select: { orgId: true } }),
         this.prisma.adminAuditLog.findMany({
           orderBy: { createdAt: 'desc' },
@@ -220,18 +225,22 @@ export class AdminService {
         }),
       ]);
 
-    // Dormant = a real organization with zero verification runs ever (not just
-    // this month). The 'anonymous' sentinel orgId used by unauthenticated runs
-    // never matches a real Organization.id, so it can't distort this count.
-    const orgIdSet = new Set(orgIdRows.map((row) => row.id));
+    // Zero-usage = a real organization with zero verification runs ever (not
+    // just this month), excluding orgs created within the grace period — a
+    // brand-new org hasn't had a chance to be used yet and isn't a problem.
+    // The 'anonymous' sentinel orgId used by unauthenticated runs never
+    // matches a real Organization.id, so it can't distort this count.
+    const orgIdSet = new Set(orgRows.map((row) => row.id));
     const orgsWithUsage = new Set(usageOrgIdRows.map((row) => row.orgId).filter((id) => orgIdSet.has(id)));
-    const dormantOrganizations = Math.max(totalOrganizations - orgsWithUsage.size, 0);
+    const zeroUsageOrganizations = orgRows.filter(
+      (org) => !orgsWithUsage.has(org.id) && org.createdAt < gracePeriodCutoff,
+    ).length;
 
     return {
       totalOrganizations,
       totalActiveApiKeys,
       verificationRunsThisMonth,
-      dormantOrganizations,
+      zeroUsageOrganizations,
       recentAuditLog: recentAuditLog.map((entry) => ({
         id: entry.id,
         action: entry.action,
