@@ -2299,7 +2299,7 @@ export function invoiceProofDashboardFields(riskLevel: string, issuesFound: unkn
 }
 
 @ApiTags('Verify API')
-@Controller('api')
+@Controller()
 @UseGuards(VerifyApiAuthGuard)
 export class VerifyApiController {
   private readonly logger = new Logger(VerifyApiController.name);
