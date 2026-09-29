@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ChainVerifyMark } from '@/components/brand/ChainVerifyMark';
 import { ThemeToggle } from '@/components/brand/ThemeToggle';
 import { ProofCheckoutButton } from '@/components/proof/ProofCheckoutButton';
+import { SpatialProofHorizon } from '@/components/proof/SpatialProofHorizon';
 
 const offers = [
   {
@@ -57,8 +58,9 @@ export default function HomePage() {
         </Link>
         <nav aria-label="Primary">
           <Link href="#products">Products</Link>
-          <Link href="#how-it-works">How it works</Link>
+          <Link href="#proof-pipeline">3D Proof Engine</Link>
           <Link href="#proof">Proof model</Link>
+          <Link href="#how-it-works">How it works</Link>
         </nav>
         <div className="cv-home-nav-actions">
           <ThemeToggle />
@@ -85,6 +87,9 @@ export default function HomePage() {
           <span>✓ Independent · Reviewable · Exportable</span>
         </div>
       </section>
+
+      {/* Live 3D Spatial Verification Engine */}
+      <SpatialProofHorizon />
 
       <section id="products" className="cv-offer-section">
         <div className="cv-offer-heading">
