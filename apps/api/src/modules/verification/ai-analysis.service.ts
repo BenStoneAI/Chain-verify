@@ -300,26 +300,31 @@ ${outputJson}`;
   }
 }
 
-// Provider identifiers used only for server-side logging (never returned to callers,
-// never contain secret values).
-type AiProvider = 'openrouter' | 'openai-fallback';
+// Provider identifier used only for server-side logging (never returned to callers,
+// never contains secret values).
+type AiProvider = 'swarmsync-routing';
 
 // A flat (non-discriminated) result shape is used deliberately: under this project's
 // "strict": false tsconfig, TypeScript does not narrow a discriminated union
 // (`{ ok: true; result } | { ok: false; status? }`) across statements the way it does
-// under strict mode, which produced false compile errors on `primary.status` after an
-// `if (primary.ok) { return ... }` guard. Keeping every field present (optional) on one
-// type sidesteps that and is checked explicitly (`ok && result`) at each call site.
+// under strict mode. Keeping every field present (optional) on one type sidesteps that
+// and is checked explicitly (`ok && result`) at each call site.
 interface ProviderCallResult {
   ok: boolean;
   result?: AiAnalysisResult;
   status?: number;
 }
 
-// Statuses on which we attempt the OpenAI direct fallback: insufficient credit (402),
-// rate limiting (429), and upstream/server errors (>=500).
-function isFallbackEligibleStatus(status: number): boolean {
-  return status === 402 || status === 429 || status >= 500;
+// SWARMSYNC_ROUTING_BASE_ENDPOINT is documented as "POST <url>" (a human-readable
+// method+URL pair, not a bare path) — strip a leading HTTP-method token if present.
+// Falls back to SWARMSYNC_ROUTING_BASE_URL + /chat/completions (the router's
+// documented OpenAI-compatible route) when the endpoint var is unset or unparsable.
+function resolveSwarmSyncRoutingUrl(): string {
+  const endpoint = (process.env['SWARMSYNC_ROUTING_BASE_ENDPOINT'] ?? '').trim();
+  const endpointMatch = endpoint.match(/https?:\/\/\S+/);
+  if (endpointMatch) return endpointMatch[0];
+  const baseUrl = (process.env['SWARMSYNC_ROUTING_BASE_URL'] ?? '').replace(/\/+$/, '');
+  return baseUrl ? `${baseUrl}/chat/completions` : '';
 }
 
 function parseAiResponseBody(data: unknown): AiAnalysisResult {
@@ -364,28 +369,27 @@ function parseAiResponseBody(data: unknown): AiAnalysisResult {
 @Injectable()
 export class AiAnalysisService {
   private readonly logger = new Logger(AiAnalysisService.name);
-  private readonly apiKey = process.env['OPENROUTER_API_KEY'] ?? '';
-  private readonly openaiApiKey = process.env['OPENAI_API_KEY'] ?? '';
-  private readonly baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  private readonly openaiUrl = 'https://api.openai.com/v1/chat/completions';
-  private readonly model = 'openai/gpt-4o-mini';
-  private readonly openaiModel = 'gpt-4o-mini';
+  // SwarmSync's own Router V2 (owned by this org — not a third-party AI vendor key).
+  // OpenAI-compatible POST /v1/chat/completions; model 'auto' lets the router pick the
+  // best model for the request, including its high_stakes_audit routing dimension that
+  // specifically targets Audit-Proof/Invoice-Proof/Verify-API traffic like this.
+  private readonly apiKey = process.env['SWARMSYNC_ROUTING_API'] ?? '';
+  private readonly baseUrl = resolveSwarmSyncRoutingUrl();
+  private readonly model = 'auto';
   private readonly maxTokens = 1200;
 
-  // Configured if EITHER provider has a key set — analyze() picks whichever is
-  // available and falls back OpenRouter -> OpenAI on transient upstream failures.
   isConfigured(): boolean {
-    return this.apiKey.length > 0 || this.openaiApiKey.length > 0;
+    return this.apiKey.length > 0 && this.baseUrl.length > 0;
   }
 
   async analyze(task: string | undefined, output: unknown): Promise<AiAnalysisResult> {
     if (!this.isConfigured()) {
-      // Fail-closed: no key on either provider means we cannot verify — return
-      // AI_UNAVAILABLE so the controller returns 503 rather than a false-pass
+      // Fail-closed: no SwarmSync routing key/URL configured means we cannot verify —
+      // return AI_UNAVAILABLE so the controller returns 503 rather than a false-pass
       // (PRB-LLM-FAIL-OPEN).
       this.logger.error(
-        'Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is set — AI analysis unavailable ' +
-          '(fail-closed). Set one of these env vars to enable verification.',
+        'SWARMSYNC_ROUTING_API / SWARMSYNC_ROUTING_BASE_URL is not set — AI analysis ' +
+          'unavailable (fail-closed).',
       );
       return AI_UNAVAILABLE;
     }
@@ -395,31 +399,9 @@ export class AiAnalysisService {
       { role: 'user', content: buildUserPrompt(task, output) },
     ];
 
-    if (this.apiKey.length > 0) {
-      const primary = await this.callOpenRouter(messages);
-      if (primary.ok && primary.result) {
-        this.logger.log('AI analysis succeeded via provider=openrouter');
-        return primary.result;
-      }
-
-      if (primary.status !== undefined && isFallbackEligibleStatus(primary.status) && this.openaiApiKey.length > 0) {
-        const fallback = await this.callOpenAi(messages);
-        if (fallback.ok && fallback.result) {
-          this.logger.log('AI analysis succeeded via provider=openai-fallback');
-          return fallback.result;
-        }
-      }
-
-      // Either not fallback-eligible, no OpenAI key configured, or the fallback
-      // also failed — fail closed rather than fabricate a pass.
-      this.logger.error('AI analysis failed on all available providers — returning AI_UNAVAILABLE (fail-closed)');
-      return AI_UNAVAILABLE;
-    }
-
-    // Only OPENAI_API_KEY is configured — call it directly as the primary provider.
-    const direct = await this.callOpenAi(messages);
+    const direct = await this.callSwarmSyncRouting(messages);
     if (direct.ok && direct.result) {
-      this.logger.log('AI analysis succeeded via provider=openai-fallback');
+      this.logger.log('AI analysis succeeded via provider=swarmsync-routing');
       return direct.result;
     }
 
@@ -427,24 +409,13 @@ export class AiAnalysisService {
     return AI_UNAVAILABLE;
   }
 
-  private async callOpenRouter(
+  private async callSwarmSyncRouting(
     messages: Array<{ role: string; content: string }>,
   ): Promise<ProviderCallResult> {
-    return this.callProvider('openrouter', this.baseUrl, {
+    return this.callProvider('swarmsync-routing', this.baseUrl, {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.apiKey}`,
-      'HTTP-Referer': 'https://chainverify.org',
-      'X-Title': 'Chain Verify Verification',
     }, this.model, messages);
-  }
-
-  private async callOpenAi(
-    messages: Array<{ role: string; content: string }>,
-  ): Promise<ProviderCallResult> {
-    return this.callProvider('openai-fallback', this.openaiUrl, {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.openaiApiKey}`,
-    }, this.openaiModel, messages);
   }
 
   private async callProvider(
