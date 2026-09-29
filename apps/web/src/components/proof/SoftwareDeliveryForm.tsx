@@ -694,7 +694,7 @@ export function SoftwareDeliveryForm() {
           <p className="font-medium text-yellow-400 mb-1">Authentication required</p>
           <p>{errorMessage}</p>
           <a
-            href="/login?redirect=/verify-api"
+            href="/verify-api"
             className="mt-2 inline-block text-sm text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
           >
             Sign in →

@@ -1078,7 +1078,7 @@ export default function InvoiceProofClient() {
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '6px',
-                      boxShadow: isPilot ? 'var(--shadow-glow-purple)' : undefined,
+                      boxShadow: isPilot ? 'var(--shadow-glow-cyan)' : undefined,
                     }}
                   >
                     <div
@@ -1155,7 +1155,7 @@ export default function InvoiceProofClient() {
                       </ProofCheckoutButton>
                       {!isPilot && (
                         <Link
-                          href="/start/invoice-proof"
+                          href="/invoice-proof"
                           style={{
                             display: 'block',
                             textAlign: 'center',

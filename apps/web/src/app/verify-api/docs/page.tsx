@@ -156,7 +156,7 @@ Content-Type: application/json
       <section className="mx-auto w-full max-w-6xl px-6 pb-16 md:px-10">
         <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-end">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.22em] text-violet-200">
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-cyan-200">
               Endpoints
             </p>
             <h2 className="mt-2 font-[var(--font-display)] text-3xl font-semibold">

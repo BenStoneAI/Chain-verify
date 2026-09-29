@@ -4,9 +4,16 @@ import './product-marketing.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chainverify.org'),
-  applicationName: 'ChainVerify',
-  icons: { icon: '/chainverify-icon.svg', shortcut: '/chainverify-icon.svg', apple: '/chainverify-icon.svg' },
-  title: { default: 'ChainVerify — Independent Proof for AI Work', template: '%s | ChainVerify' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/chainverify-icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
   description: 'Independent verification for AI outputs, software delivery, agent activity, and invoice risk — with structured proof records you can review and export.',
   alternates: { canonical: '/' },
   keywords: ['AI verification API','AI audit trail','software delivery verification','invoice fraud detection','AI governance evidence','agent audit trail'],

@@ -254,7 +254,7 @@
 }
 .cva-btn-primary,
 .cva-inline-form button[type='submit'] {
-  background: var(--cv-violet);
+  background: var(--cv-cyan); color: #0a0a0f;
   color: white;
 }
 .cva-btn-secondary {
@@ -268,7 +268,7 @@
   border-color: rgba(255, 102, 122, 0.3);
 }
 .cva-gate-card button {
-  background: var(--cv-violet);
+  background: var(--cv-cyan); color: #0a0a0f;
   color: white;
   border-radius: 8px;
   padding: 10px;

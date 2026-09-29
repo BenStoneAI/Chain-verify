@@ -44,7 +44,7 @@
   --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
   --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.70), 0 1px 0 rgba(255,255,255,0.04) inset;
-  --shadow-glow-purple: 0 0 50px rgba(34, 211, 238, 0.18);
+  --shadow-glow-cyan: 0 0 50px rgba(34, 211, 238, 0.18);
 
   font-family: var(--font-display);
   background: var(--bg-base);
@@ -509,7 +509,7 @@
 .ap-scope .problem-card.accent {
   background: linear-gradient(180deg, rgba(34,211,238,0.08), rgba(34,211,238,0.015));
   border-color: var(--accent-wire);
-  box-shadow: var(--shadow-glow-purple);
+  box-shadow: var(--shadow-glow-cyan);
 }
 .ap-scope .problem-card.accent .tag { color: var(--accent-soft); }
 .ap-scope .problem-card .stat {
@@ -1071,7 +1071,7 @@
 .ap-scope .tier.featured {
   background: linear-gradient(180deg, rgba(34,211,238,0.10), rgba(34,211,238,0.02));
   border-color: var(--accent-wire);
-  box-shadow: var(--shadow-glow-purple);
+  box-shadow: var(--shadow-glow-cyan);
 }
 .ap-scope .tier .tname {
   font-family: var(--font-mono);

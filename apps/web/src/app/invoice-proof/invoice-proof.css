@@ -36,7 +36,7 @@
     --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.2);
     --shadow-card:  0 20px 60px rgba(0, 0, 0, 0.50), 0 1px 0 rgba(255,255,255,0.03) inset;
     --shadow-lift:  0 30px 80px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255,255,255,0.04) inset;
-    --shadow-glow-purple: 0 0 40px rgba(255, 180, 92, 0.22);
+    --shadow-glow-amber: 0 0 40px rgba(255, 180, 92, 0.22);
   }
 
 .ip-scope, .ip-scope * { box-sizing: border-box; }
@@ -119,7 +119,7 @@
     width: 28px; height: 28px; border-radius: 7px;
     background:
       radial-gradient(60% 60% at 35% 30%, rgba(255,255,255,0.16), transparent 70%),
-      linear-gradient(135deg, var(--accent) 0%, #5B3FE0 100%);
+      linear-gradient(135deg, var(--accent) 0%, #0D9488 100%);
     box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(255,180,92,0.35);
     position: relative;
   }
@@ -581,7 +581,7 @@
 .ip-scope .problem-card.accent {
     background: linear-gradient(180deg, rgba(255,180,92,0.10), rgba(255,180,92,0.02));
     border-color: var(--accent-wire);
-    box-shadow: var(--shadow-glow-purple);
+    box-shadow: var(--shadow-glow-amber);
   }
 
 .ip-scope .problem-card.accent .tag { color: var(--accent-soft); }
@@ -970,7 +970,7 @@
 .ip-scope .related-card p { margin: 0; font-size: .875rem; color: var(--lo); }
 .ip-scope .related-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ip-scope .related-icon.audit { background: rgba(34,211,238,.12); color: #22d3ee; }
-.ip-scope .related-icon.verify { background: rgba(139,92,246,.12); color: #8b5cf6; }
+.ip-scope .related-icon.verify { background: rgba(0,229,255,.12); color: #00e5ff; }
 .ip-scope .related-arrow { margin-left: auto; color: var(--lo); font-size: 1.2rem; }
 
 

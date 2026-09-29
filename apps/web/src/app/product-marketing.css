@@ -1,6 +1,6 @@
 /* ChainVerify conversion architecture — shared marketing pages */
 .pm-page{
-  --pm-accent:#8b5cf6;--pm-accent-soft:#c4b5fd;--pm-accent-rgb:139,92,246;
+  --pm-accent:#14b8a6;--pm-accent-soft:#67e8f9;--pm-accent-rgb:20, 184, 166;
   width:100%;min-height:100vh;padding-top:86px;
   background:radial-gradient(900px 540px at 72% 0%,rgba(var(--pm-accent-rgb),.10),transparent 64%),linear-gradient(180deg,#07080d 0%,#090b12 36%,#07080d 100%);
   color:#f8fafc;
@@ -17,7 +17,7 @@
 .pm-hero-actions{display:flex;gap:11px;flex-wrap:wrap}
 .pm-btn{min-height:48px;border-radius:12px;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12);font-weight:750;font-size:13px;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s,background .2s}
 .pm-btn:disabled{opacity:.68;cursor:wait}
-.pm-btn-primary,.pm-plan-cta{background:linear-gradient(100deg,var(--pm-accent),#5d63ff);border-color:rgba(var(--pm-accent-rgb),.55);color:#fff;box-shadow:0 14px 38px rgba(var(--pm-accent-rgb),.22)}
+.pm-btn-primary,.pm-plan-cta{background:linear-gradient(100deg,var(--pm-accent),#0d9488);border-color:rgba(var(--pm-accent-rgb),.55);color:#fff;box-shadow:0 14px 38px rgba(var(--pm-accent-rgb),.22)}
 .pm-invoice-proof .pm-btn-primary,.pm-invoice-proof .pm-plan-cta{background:linear-gradient(100deg,#ff9c4a,#f97316);color:#170b02}
 .pm-btn:hover{transform:translateY(-2px)}
 .pm-btn-primary:hover,.pm-plan-cta:hover{box-shadow:0 20px 48px rgba(var(--pm-accent-rgb),.31)}
