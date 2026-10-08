@@ -300,10 +300,6 @@ ${outputJson}`;
   }
 }
 
-// Provider identifier used only for server-side logging (never returned to callers,
-// never contains secret values).
-type AiProvider = 'swarmsync-routing';
-
 // A flat (non-discriminated) result shape is used deliberately: under this project's
 // "strict": false tsconfig, TypeScript does not narrow a discriminated union
 // (`{ ok: true; result } | { ok: false; status? }`) across statements the way it does
@@ -315,24 +311,14 @@ interface ProviderCallResult {
   status?: number;
 }
 
-// SWARMSYNC_ROUTING_BASE_ENDPOINT is documented as "POST <url>" (a human-readable
-// method+URL pair, not a bare path) — strip a leading HTTP-method token if present.
-// Falls back to SWARMSYNC_ROUTING_BASE_URL + /chat/completions (the router's
-// documented OpenAI-compatible route) when the endpoint var is unset or unparsable.
-function resolveSwarmSyncRoutingUrl(): string {
-  const endpoint = (process.env['SWARMSYNC_ROUTING_BASE_ENDPOINT'] ?? '').trim();
-  const endpointMatch = endpoint.match(/https?:\/\/\S+/);
-  if (endpointMatch) return endpointMatch[0];
-  const baseUrl = (process.env['SWARMSYNC_ROUTING_BASE_URL'] ?? '').replace(/\/+$/, '');
-  return baseUrl ? `${baseUrl}/chat/completions` : '';
-}
+const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_VERSION = '2023-06-01';
 
 function parseAiResponseBody(data: unknown): AiAnalysisResult {
-  const parsed =
-    (JSON.parse(
-      ((data as { choices?: Array<{ message?: { content?: string } }> }).choices?.[0]?.message
-        ?.content) ?? '{}',
-    ) as Partial<AiAnalysisResult>) ?? {};
+  const text = (data as { content?: Array<{ type?: string; text?: string }> }).content?.find(
+    (block) => block.type === 'text',
+  )?.text ?? '{}';
+  const parsed = (JSON.parse(text) as Partial<AiAnalysisResult>) ?? {};
 
   const issues: AiIssue[] = (parsed.issues ?? [])
     .filter(
@@ -369,80 +355,56 @@ function parseAiResponseBody(data: unknown): AiAnalysisResult {
 @Injectable()
 export class AiAnalysisService {
   private readonly logger = new Logger(AiAnalysisService.name);
-  // SwarmSync's own Router V2 (owned by this org — not a third-party AI vendor key).
-  // OpenAI-compatible POST /v1/chat/completions; model 'auto' lets the router pick the
-  // best model for the request, including its high_stakes_audit routing dimension that
-  // specifically targets Audit-Proof/Invoice-Proof/Verify-API traffic like this.
-  private readonly apiKey = process.env['SWARMSYNC_ROUTING_API'] ?? '';
-  private readonly baseUrl = resolveSwarmSyncRoutingUrl();
-  private readonly model = 'auto';
+  // First-party Anthropic key (direct to api.anthropic.com) — bypasses SwarmSync's
+  // Router V2, which was failing direct-provider dispatch in production.
+  private readonly apiKey = process.env['ANTHROPIC_API_KEY'] ?? '';
+  private readonly model = process.env['ANTHROPIC_MODEL'] ?? 'claude-sonnet-4-5-20250929';
   private readonly maxTokens = 1200;
 
   isConfigured(): boolean {
-    return this.apiKey.length > 0 && this.baseUrl.length > 0;
+    return this.apiKey.length > 0;
   }
 
   async analyze(task: string | undefined, output: unknown): Promise<AiAnalysisResult> {
     if (!this.isConfigured()) {
-      // Fail-closed: no SwarmSync routing key/URL configured means we cannot verify —
+      // Fail-closed: no Anthropic key configured means we cannot verify —
       // return AI_UNAVAILABLE so the controller returns 503 rather than a false-pass
       // (PRB-LLM-FAIL-OPEN).
-      this.logger.error(
-        'SWARMSYNC_ROUTING_API / SWARMSYNC_ROUTING_BASE_URL is not set — AI analysis ' +
-          'unavailable (fail-closed).',
-      );
+      this.logger.error('ANTHROPIC_API_KEY is not set — AI analysis unavailable (fail-closed).');
       return AI_UNAVAILABLE;
     }
 
-    const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: buildUserPrompt(task, output) },
-    ];
-
-    const direct = await this.callSwarmSyncRouting(messages);
-    if (direct.ok && direct.result) {
-      this.logger.log('AI analysis succeeded via provider=swarmsync-routing');
-      return direct.result;
+    const result = await this.callAnthropic(buildUserPrompt(task, output));
+    if (result.ok && result.result) {
+      this.logger.log('AI analysis succeeded via provider=anthropic-direct');
+      return result.result;
     }
 
-    this.logger.error('AI analysis failed on all available providers — returning AI_UNAVAILABLE (fail-closed)');
+    this.logger.error('AI analysis failed — returning AI_UNAVAILABLE (fail-closed)');
     return AI_UNAVAILABLE;
   }
 
-  private async callSwarmSyncRouting(
-    messages: Array<{ role: string; content: string }>,
-  ): Promise<ProviderCallResult> {
-    return this.callProvider('swarmsync-routing', this.baseUrl, {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.apiKey}`,
-    }, this.model, messages);
-  }
-
-  private async callProvider(
-    provider: AiProvider,
-    url: string,
-    headers: Record<string, string>,
-    model: string,
-    messages: Array<{ role: string; content: string }>,
-  ): Promise<ProviderCallResult> {
+  private async callAnthropic(userPrompt: string): Promise<ProviderCallResult> {
     try {
-      const res = await fetch(url, {
+      const res = await fetch(ANTHROPIC_MESSAGES_URL, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': ANTHROPIC_VERSION,
+        },
         body: JSON.stringify({
-          model,
-          response_format: { type: 'json_object' },
-          messages,
+          model: this.model,
           max_tokens: this.maxTokens,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userPrompt }],
         }),
         signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
         const body = await res.text();
-        this.logger.error(
-          `${provider} AI analysis error ${res.status}: ${body.slice(0, 300)}`,
-        );
+        this.logger.error(`anthropic-direct AI analysis error ${res.status}: ${body.slice(0, 300)}`);
         return { ok: false, result: undefined, status: res.status };
       }
 
@@ -450,7 +412,7 @@ export class AiAnalysisService {
       const result = parseAiResponseBody(data);
       return { ok: true, result, status: res.status };
     } catch (err) {
-      this.logger.error(`${provider} AI analysis request failed: ${String(err)}`);
+      this.logger.error(`anthropic-direct AI analysis request failed: ${String(err)}`);
       return { ok: false, result: undefined, status: undefined };
     }
   }
