@@ -314,11 +314,18 @@ interface ProviderCallResult {
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 
+// Claude sometimes wraps JSON in a ```json ... ``` fence despite the system prompt's
+// "respond ONLY with valid JSON" instruction — strip any surrounding fence before parsing.
+function stripJsonFence(text: string): string {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  return fenced ? fenced[1] : text;
+}
+
 function parseAiResponseBody(data: unknown): AiAnalysisResult {
   const text = (data as { content?: Array<{ type?: string; text?: string }> }).content?.find(
     (block) => block.type === 'text',
   )?.text ?? '{}';
-  const parsed = (JSON.parse(text) as Partial<AiAnalysisResult>) ?? {};
+  const parsed = (JSON.parse(stripJsonFence(text)) as Partial<AiAnalysisResult>) ?? {};
 
   const issues: AiIssue[] = (parsed.issues ?? [])
     .filter(
