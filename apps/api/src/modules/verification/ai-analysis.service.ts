@@ -26,8 +26,11 @@ export const AI_UNAVAILABLE: AiAnalysisResult = {
   llm_unavailable: true,
 };
 
-const SYSTEM_PROMPT = `You are a fraud-detection and verification analyst. Analyze the submitted payload for semantic issues,
-fraud signals, logical inconsistencies, and risk factors.
+const SYSTEM_PROMPT = `You are a verification analyst. Analyze the submitted payload for semantic issues,
+logical inconsistencies, and risk factors relevant to its stated task. Apply invoice, vendor, bank,
+payment, and fraud controls only to invoice or payment tasks, or when those fields are explicitly
+present in the payload. Do not require fields from a different domain. Report missing fields only
+when the task, supplied rules, or payload explicitly establishes that they are required.
 
 Respond ONLY with valid JSON in this exact shape:
 {
@@ -288,12 +291,13 @@ Payload:
 ${outputJson}`;
 
     default:
-      return `Verify this submission for issues, inconsistencies, or missing required information.
+      return `Verify this ${task ?? 'general'} submission for issues and inconsistencies.
 
 Check:
-- Are required fields present and non-empty?
+- Are fields explicitly required by this task or the submitted data present and non-empty?
 - Are there internal contradictions in the data?
 - Are there any suspicious or anomalous values?
+- Do not apply invoice, vendor, bank, payment, or fraud requirements to a generic API output.
 
 Payload:
 ${outputJson}`;
