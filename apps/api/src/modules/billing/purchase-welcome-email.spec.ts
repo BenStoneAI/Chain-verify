@@ -23,13 +23,13 @@ describe('renderPurchaseWelcomeEmail', () => {
     expect(html).not.toContain('.svg');
   });
 
-  it('includes plan, monthly limit, welcome URL, docs and support in html and text', () => {
+  it('includes plan, monthly limit, welcome URL, docs and the reply line in html and text', () => {
     const { subject, html, text } = renderPurchaseWelcomeEmail(base);
     expect(subject).toContain('Agent Gate Build');
     for (const body of [html, text]) {
       expect(body).toContain('Your Agent Gate Build plan is active');
       expect(body).toContain('5,000');
-      expect(body).toContain('proof@chainverify.org');
+      expect(body).toContain('Just reply to this email');
       expect(body).toContain('ChainVerify — independent proof for AI work');
     }
     expect(html).toContain('href="https://www.chainverify.org/agent-gate/welcome?plan=agent-gate-build&amp;session_id=cs_live_abc"');
@@ -59,6 +59,13 @@ describe('renderPurchaseWelcomeEmail', () => {
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt; &amp; &quot;Co&quot;');
     expect(html).not.toContain('"><img src=x');
     expect(html).toContain('a=1&amp;b=&quot;2&quot;');
+  });
+
+  it('never lists an address in the body; replies go through the reply-to header', () => {
+    const { html, text } = renderPurchaseWelcomeEmail({ ...base, supportEmail: 'private-inbox@example.com' });
+    expect(html).not.toContain('private-inbox@example.com');
+    expect(text).not.toContain('private-inbox@example.com');
+    expect(text).toContain('Just reply to this email');
   });
 
   it('keeps header-injection characters out of the subject', () => {

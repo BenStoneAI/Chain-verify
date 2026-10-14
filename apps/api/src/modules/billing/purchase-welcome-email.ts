@@ -74,7 +74,7 @@ export function renderPurchaseWelcomeEmail(input: PurchaseWelcomeEmailInput): Re
     keyNotice ? p(e(keyNotice)) : '',
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px 0;"><tr><td align="center" bgcolor="${BUTTON_BG}" style="border-radius:6px;background-color:${BUTTON_BG};"><a href="${e(input.welcomeUrl)}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;line-height:20px;color:#FFFFFF;text-decoration:none;border-radius:6px;">Open your welcome page</a></td></tr></table>`,
     p(`Read the <a href="${e(input.docsUrl)}" target="_blank" style="color:#0E7490;text-decoration:underline;">documentation</a> to get started.`),
-    p(`Questions? Reply to this email or write to <a href="mailto:${e(input.supportEmail)}" style="color:#0E7490;text-decoration:underline;">${e(input.supportEmail)}</a>.`),
+    p(`Questions? Just reply to this email.`),
   ].filter(Boolean).join('\n');
 
   const html = `<!DOCTYPE html>
@@ -119,7 +119,7 @@ ${bodyRows}
     '',
     `Documentation: ${input.docsUrl}`,
     '',
-    `Questions? Reply to this email or write to ${input.supportEmail}.`,
+    `Questions? Just reply to this email.`,
     '',
     '--',
     FOOTER_TEXT,
