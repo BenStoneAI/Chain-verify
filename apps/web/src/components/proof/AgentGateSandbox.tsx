@@ -101,7 +101,7 @@ const RULES_BY_TYPE: Record<VerificationType, string[]> = {
   ],
 };
 
-export function buildVerifyApiSandboxPayload(content: string, verType: VerificationType) {
+export function buildAgentGateSandboxPayload(content: string, verType: VerificationType) {
   let parsedPayload: Record<string, unknown> | null = null;
   let parsedOutput: unknown;
   try {
@@ -139,7 +139,7 @@ const SANDBOX_MODE_LABELS: Record<SandboxMode, string> = {
   software_delivery: 'Software delivery',
 };
 
-export function VerifyAPISandbox() {
+export function AgentGateSandbox() {
   const [sandboxMode, setSandboxMode] = useState<SandboxMode>('freeform');
 
   const [content, setContent] = useState('');
@@ -160,9 +160,9 @@ export function VerifyAPISandbox() {
     setErrorState(null);
     try {
       if (format === 'json') {
-        downloadJSONBlob(currentResult, `verify-api-proof-${currentResult.proof_id}`);
+        downloadJSONBlob(currentResult, `agent-gate-proof-${currentResult.proof_id}`);
       } else {
-        downloadPDFPrint(currentResult, 'VerifyAPI Proof Report');
+        downloadPDFPrint(currentResult, 'Agent Gate Proof Report');
       }
     } catch (err) {
       setErrorState(err instanceof Error ? err.message : `Failed to download ${format.toUpperCase()}.`);
@@ -186,7 +186,7 @@ export function VerifyAPISandbox() {
     try {
       const apiBase = resolveProofApiBase();
 
-      const payload = buildVerifyApiSandboxPayload(content, verType);
+      const payload = buildAgentGateSandboxPayload(content, verType);
 
       const res = await fetch(`${apiBase}${PROOF_VERIFY_DEMO_PATH}`, {
         method: 'POST',
@@ -500,4 +500,4 @@ export function VerifyAPISandbox() {
   );
 }
 
-export default VerifyAPISandbox;
+export default AgentGateSandbox;

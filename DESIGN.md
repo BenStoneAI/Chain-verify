@@ -52,7 +52,7 @@ The shared environment uses:
 
 ### Brand Identity Spectrum
 - **Electric Cyan `#00E5FF`**: main accent, C highlight, primary commercial CTAs.
-- **Bright Teal `#14B8A6`**: mid-gradient, hover states, VerifyAPI accent.
+- **Bright Teal `#14B8A6`**: mid-gradient, hover states, Agent Gate accent.
 - **Deep Teal `#0D9488`**: gradient depth, secondary accents.
 - **Ice Cyan `#67E8F9`**: true verified states and luminous highlights.
 - **Emerald `#10B981`**: true confirmed/success states only.
@@ -66,6 +66,6 @@ Applied to:
 4. Primary CTAs and verified-state moments
 
 ### Semantic Product Accents
-- **VerifyAPI**: Bright Teal `#14B8A6`
+- **Agent Gate**: Bright Teal `#14B8A6`
 - **AuditProof**: Soft Cyan `#22D3EE`
 - **InvoiceProof**: Warm Amber `#FFB45C`

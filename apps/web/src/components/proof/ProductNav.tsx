@@ -14,7 +14,7 @@ export interface ProductNavProps {
 }
 
 const PRODUCTS = [
-  { id: 'verify-api' as const, label: 'VerifyAPI', description: 'Verify AI outputs before users rely on them.', href: '/verify-api' },
+  { id: 'verify-api' as const, label: 'Agent Gate', description: 'Verify software delivery with diff, CI, and deploy evidence.', href: '/agent-gate' },
   { id: 'audit-proof' as const, label: 'AuditProof', description: 'Audit-ready proof for AI agent work.', href: '/audit-proof' },
   { id: 'invoice-proof' as const, label: 'InvoiceProof', description: 'AI invoice review your finance team can prove.', href: '/invoice-proof' },
 ];
@@ -22,7 +22,7 @@ const PRODUCTS = [
 const PRODUCT_CTA = {
   'invoice-proof': { label: 'Start pilot – $750', planSlug: 'invoiceproof-pilot' },
   'audit-proof': { label: 'Start pilot – $2,500', planSlug: 'auditproof-pilot' },
-  'verify-api': { label: 'Start Build – $99/mo', planSlug: 'verify-api-build' },
+  'verify-api': { label: 'Start Build – $99/mo', planSlug: 'agent-gate-build' },
 } as const;
 
 export function ProductNav({ currentProduct, pageAnchors = [] }: ProductNavProps) {

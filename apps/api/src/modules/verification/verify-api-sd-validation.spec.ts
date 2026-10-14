@@ -28,7 +28,7 @@ describe('buildSoftwareDeliveryValidationError', () => {
 
     expect(result.statusCode).toBe(400);
     expect(result.message).toBe('Invalid software_delivery payload');
-    expect(result.docs).toContain('/verify-api/docs');
+    expect(result.docs).toContain('/agent-gate/docs');
     expect(result.example.output.repoOwner).toBeDefined();
     for (const field of ['repoOwner', 'repoName', 'beforeSha', 'afterSha', 'jobStartedAt', 'tier', 'jobType']) {
       expect(result.details.some((d: string) => d.includes(`${field} is required inside output`))).toBe(true);

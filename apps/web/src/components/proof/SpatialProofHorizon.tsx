@@ -37,7 +37,7 @@ const STAGES = [
     title: 'Verify It From Multiple Sources',
     body1: "ChainVerify doesn't rely on a single check.",
     body2: 'It compares evidence across different systems — such as AI activity, invoices and accounting records, browser evidence, and audit records — to make sure the information agrees. Those independent checks come together to create one trusted result.',
-    pills: ['AI Activity · VerifyAPI', 'Invoices · InvoiceProof', 'Audit Records · AuditProof', 'Browser Evidence'],
+    pills: ['Software Delivery · Agent Gate', 'Invoices · InvoiceProof', 'Audit Records · AuditProof', 'Browser Evidence'],
     pillClass: 'cv-pill-cyan',
     name: 'CROSS-CHECK',
   },

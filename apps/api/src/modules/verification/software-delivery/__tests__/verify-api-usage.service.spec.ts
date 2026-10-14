@@ -45,6 +45,18 @@ describe('VerifyApiUsageService', () => {
     ).rejects.toBeInstanceOf(HttpException);
   });
 
+  it('names Agent Gate (not Verify API) in the quota-exceeded message', async () => {
+    mockFindUnique.mockResolvedValue({ count: 50 });
+    await expect(
+      service.assertWithinLimit('org-1', SOFTWARE_DELIVERY_USAGE_PRODUCT, 50),
+    ).rejects.toThrow('Upgrade your Agent Gate plan for higher limits.');
+
+    mockUpsert.mockResolvedValue({ count: 51 });
+    await expect(
+      service.reserve('org-1', SOFTWARE_DELIVERY_USAGE_PRODUCT, 50),
+    ).rejects.toThrow('Upgrade your Agent Gate plan for higher limits.');
+  });
+
   it('reserve atomically claims a unit and allows it when under the limit', async () => {
     mockUpsert.mockResolvedValue({ count: 50 });
     await expect(

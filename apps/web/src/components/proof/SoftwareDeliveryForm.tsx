@@ -147,7 +147,7 @@ interface DocumentDeliveryResult {
 }
 
 // ---------------------------------------------------------------------------
-// Shared style tokens (match VerifyAPISandbox)
+// Shared style tokens (match AgentGateSandbox)
 // ---------------------------------------------------------------------------
 
 const LABEL_CLASS = 'block text-xs font-medium text-white/60 mb-1.5';
@@ -160,7 +160,7 @@ const TEXTAREA_CLASS =
 const SECTION_TITLE_CLASS = 'text-xs font-semibold text-white/40 uppercase tracking-widest mb-3';
 
 // ---------------------------------------------------------------------------
-// Spinner (reused from VerifyAPISandbox pattern)
+// Spinner (reused from AgentGateSandbox pattern)
 // ---------------------------------------------------------------------------
 
 function Spinner() {
@@ -694,7 +694,7 @@ export function SoftwareDeliveryForm() {
           <p className="font-medium text-yellow-400 mb-1">Authentication required</p>
           <p>{errorMessage}</p>
           <a
-            href="/verify-api"
+            href="/agent-gate"
             className="mt-2 inline-block text-sm text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
           >
             Sign in →
@@ -1320,7 +1320,7 @@ export function SoftwareDeliveryForm() {
           <p>{errorMessage}</p>
           <ProofCheckoutButton
             product="verify-api"
-            planSlug="verify-api-build"
+            planSlug="agent-gate-build"
             className="mt-2 inline-block text-sm text-[#7C5CFF] hover:opacity-80 underline underline-offset-2"
           >
             Upgrade plan →

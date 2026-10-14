@@ -33,7 +33,7 @@ export class VerifyApiUsageService {
     const used = await this.getMonthlyCount(orgId, product);
     if (used >= limit) {
       throw new HttpException(
-        `Monthly software delivery verification limit reached (${used}/${limit}). Upgrade your Verify API plan for higher limits.`,
+        `Monthly software delivery verification limit reached (${used}/${limit}). Upgrade your Agent Gate plan for higher limits.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -51,7 +51,7 @@ export class VerifyApiUsageService {
     const used = await this.increment(orgId, product);
     if (limit !== null && used > limit) {
       throw new HttpException(
-        `Monthly software delivery verification limit reached (${limit}/${limit}). Upgrade your Verify API plan for higher limits.`,
+        `Monthly software delivery verification limit reached (${limit}/${limit}). Upgrade your Agent Gate plan for higher limits.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }

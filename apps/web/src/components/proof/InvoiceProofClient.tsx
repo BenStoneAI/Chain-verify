@@ -1027,7 +1027,7 @@ export default function InvoiceProofClient() {
 
             <div style={{ marginTop: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <Link
-                href="/verify-api/docs"
+                href="/agent-gate/docs"
                 className="btn btn-secondary"
                 style={{ fontSize: '14px', padding: '10px 18px', minHeight: 'unset' }}
               >
@@ -1287,8 +1287,8 @@ export default function InvoiceProofClient() {
               </Link>
               <Link
                 className="related-card"
-                href="/verify-api"
-                aria-label="Explore VerifyAPI — Verify AI outputs before your users rely on them"
+                href="/agent-gate"
+                aria-label="Explore Agent Gate — Verify software delivery before your users rely on it"
               >
                 <div className="related-icon verify" aria-hidden="true">
                   <svg
@@ -1303,8 +1303,8 @@ export default function InvoiceProofClient() {
                   </svg>
                 </div>
                 <div>
-                  <h4>VerifyAPI</h4>
-                  <p>Verify AI outputs before your users rely on them.</p>
+                  <h4>Agent Gate</h4>
+                  <p>Verify software delivery before your users rely on it.</p>
                 </div>
                 <span className="related-arrow" aria-hidden="true">
                   →

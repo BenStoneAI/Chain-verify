@@ -1,4 +1,8 @@
-import { getStripePaymentLink, type ProofProductSlug } from '@/lib/stripe-payment-links';
+import {
+  getProofProductRoute,
+  getStripePaymentLink,
+  type ProofProductSlug,
+} from '@/lib/stripe-payment-links';
 
 type Props = {
   product: ProofProductSlug;
@@ -17,10 +21,11 @@ export function ProofCheckoutButton({
   children,
   className,
 }: Props) {
+  const route = getProofProductRoute(product);
   const href =
     planSlug === 'free'
-      ? `/${product}#proof`
-      : getStripePaymentLink(planSlug) ?? `/${product}#plans`;
+      ? `${route}#proof`
+      : getStripePaymentLink(planSlug) ?? `${route}#plans`;
 
   return (
     <a

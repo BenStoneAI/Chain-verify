@@ -11,7 +11,7 @@ export type ProofMarketingLabel =
 
 export type ProofProductMarketing = {
   slug: ProofProductSlug;
-  name: 'InvoiceProof' | 'AuditProof' | 'VerifyAPI';
+  name: 'InvoiceProof' | 'AuditProof' | 'Agent Gate';
   route: string;
   startRoute: string;
   accent: string;
@@ -134,22 +134,22 @@ export const proofProductMarketing: Record<ProofProductSlug, ProofProductMarketi
   },
   'verify-api': {
     slug: 'verify-api',
-    name: 'VerifyAPI',
-    route: '/verify-api',
-    startRoute: '/start/verify-api',
+    name: 'Agent Gate',
+    route: '/agent-gate',
+    startRoute: '/start/agent-gate',
     accent: '#00f5ff',
-    claim: 'Verify AI output before users rely on it.',
-    shortClaim: 'Validate output and software-delivery claims.',
+    claim: 'Verify software delivery before users rely on it.',
+    shortClaim: 'Validate software-delivery claims with CI, deploy, and diff evidence.',
     description:
-      'Checks AI outputs and software-delivery claims against rules, evidence, and acceptance criteria before teams approve or release work.',
+      'Runs 49 repository, CI, deploy, security, and test checks against software-delivery claims and supplied evidence, with per-check evidence and signed proof records, before teams approve or release work.',
     primaryBuyer: 'Engineering, Product',
     buyers: 'Platform Engineers, Product Teams, CTO Offices, Enterprise SaaS Vendors',
-    inputType: 'LLM output, delivery statements, rules, and optional evidence',
-    keyFeature: 'Risk scoring, issue detection, and software-delivery validation',
+    inputType: 'Delivery statements, commits, CI and deploy references, rules, and optional evidence',
+    keyFeature: 'Per-check results, evidence citations, and software-delivery validation',
     integration: 'REST API and product sandbox',
     proofFormat: 'JSON verdict with proof ID and evidence summary',
     timeToPilot: 'Prototype integration; production use depends on workflow scope',
-    cta: 'Start VerifyAPI',
+    cta: 'Start Agent Gate',
     sample: {
       label: 'Backend-driven',
       statusLabel: 'Backend result',

@@ -1,17 +1,19 @@
 import Link from 'next/link';
 import { ChainVerifyMark } from '@/components/brand/ChainVerifyMark';
+import { getProofProductRoute, type ProofProductSlug } from '@/lib/stripe-payment-links';
 
 export interface ProductFooterProps {
-  currentProduct?: 'invoice-proof' | 'audit-proof' | 'verify-api';
+  currentProduct?: ProofProductSlug;
 }
 
 const columns = [
-  { heading: 'Products', links: [['VerifyAPI','/verify-api'],['AuditProof','/audit-proof'],['InvoiceProof','/invoice-proof']] },
-  { heading: 'Explore', links: [['How it works','/#how-it-works'],['Proof model','/#proof'],['VerifyAPI demo','/verify-api#proof']] },
+  { heading: 'Products', links: [['Agent Gate','/agent-gate'],['AuditProof','/audit-proof'],['InvoiceProof','/invoice-proof']] },
+  { heading: 'Explore', links: [['How it works','/#how-it-works'],['Proof model','/#proof'],['Agent Gate demo','/agent-gate#proof']] },
   { heading: 'Company', links: [['Contact','/contact'],['Security','/security'],['Privacy','/privacy']] },
 ];
 
 export function ProductFooter({ currentProduct }: ProductFooterProps) {
+  const currentRoute = currentProduct ? getProofProductRoute(currentProduct) : null;
   return (
     <footer className="cv-footer">
       <div className="cv-footer-top">
@@ -26,7 +28,7 @@ export function ProductFooter({ currentProduct }: ProductFooterProps) {
             <div key={column.heading}>
               <h2>{column.heading}</h2>
               {column.links.map(([label,href]) => (
-                <Link key={href} href={href} className={href === `/${currentProduct}` ? 'is-current' : ''}>{label}</Link>
+                <Link key={href} href={href} className={href === currentRoute ? 'is-current' : ''}>{label}</Link>
               ))}
             </div>
           ))}

@@ -23,7 +23,7 @@ export function StandardPageShell({
           <span>ChainVerify</span>
         </Link>
         <nav aria-label="Primary">
-          <Link href="/verify-api">VerifyAPI</Link>
+          <Link href="/agent-gate">Agent Gate</Link>
           <Link href="/audit-proof">AuditProof</Link>
           <Link href="/invoice-proof">InvoiceProof</Link>
         </nav>

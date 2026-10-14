@@ -13,7 +13,7 @@ export default function ContactPage() {
     <StandardPageShell
       eyebrow="CONTACT"
       title="Talk to ChainVerify."
-      intro="Questions about VerifyAPI, AuditProof, InvoiceProof, a pilot, billing, security, or privacy? Use the address below and include the product or workflow you are asking about."
+      intro="Questions about Agent Gate, AuditProof, InvoiceProof, a pilot, billing, security, or privacy? Use the address below and include the product or workflow you are asking about."
     >
       <div className="cv-standard-grid">
         <article>

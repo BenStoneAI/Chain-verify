@@ -8,14 +8,14 @@ import { SpatialProofHorizon } from '@/components/proof/SpatialProofHorizon';
 const offers = [
   {
     product: 'verify-api' as const,
-    name: 'VerifyAPI',
+    name: 'Agent Gate',
     eyebrow: 'AI + SOFTWARE DELIVERY',
     price: '$99/mo',
-    plan: 'verify-api-build',
-    cta: 'Start VerifyAPI — $99/mo',
-    title: 'Verify AI output before users rely on it.',
-    body: 'Check output and delivery claims against rules, tests, CI, evidence, and acceptance criteria.',
-    href: '/verify-api',
+    plan: 'agent-gate-build',
+    cta: 'Start Agent Gate — $99/mo',
+    title: 'Verify software delivery before users rely on it.',
+    body: 'Run 49 repository, CI, deploy, security, and test checks against the delivery claim, with per-check evidence and a signed proof record.',
+    href: '/agent-gate',
     bullets: ['5,000 runs / month', 'Proof ID every run', '90-day retention'],
   },
   {
@@ -76,8 +76,8 @@ export default function HomePage() {
           into structured evidence your team can review before it makes a decision.
         </p>
         <div className="cv-hero-actions cv-conversion-actions">
-          <ProofCheckoutButton product="verify-api" planSlug="verify-api-build" className="cv-button cv-button-primary">
-            Start VerifyAPI — $99/mo <span>→</span>
+          <ProofCheckoutButton product="verify-api" planSlug="agent-gate-build" className="cv-button cv-button-primary">
+            Start Agent Gate — $99/mo <span>→</span>
           </ProofCheckoutButton>
           <Link href="#products" className="cv-button cv-button-secondary">Compare proof products</Link>
         </div>
@@ -156,8 +156,8 @@ export default function HomePage() {
         <h2>When the work matters,<br/>put proof in the path.</h2>
         <p>Start with the smallest paid plan or pilot that matches the decision you need to trust.</p>
         <div className="cv-hero-actions">
-          <ProofCheckoutButton product="verify-api" planSlug="verify-api-build" className="cv-button cv-button-primary">
-            Start VerifyAPI — $99/mo
+          <ProofCheckoutButton product="verify-api" planSlug="agent-gate-build" className="cv-button cv-button-primary">
+            Start Agent Gate — $99/mo
           </ProofCheckoutButton>
           <Link href="#products" className="cv-button cv-button-secondary">Compare products</Link>
         </div>
@@ -166,7 +166,7 @@ export default function HomePage() {
       <footer className="cv-home-footer">
         <div className="cv-brand"><ChainVerifyMark className="cv-brand-mark"/><span>ChainVerify</span></div>
         <p>Independent verification for AI work and high-stakes workflows.</p>
-        <div><Link href="/verify-api">VerifyAPI</Link><Link href="/audit-proof">AuditProof</Link><Link href="/invoice-proof">InvoiceProof</Link><Link href="/contact">Contact</Link><Link href="/security">Security</Link><Link href="/privacy">Privacy</Link></div>
+        <div><Link href="/agent-gate">Agent Gate</Link><Link href="/audit-proof">AuditProof</Link><Link href="/invoice-proof">InvoiceProof</Link><Link href="/contact">Contact</Link><Link href="/security">Security</Link><Link href="/privacy">Privacy</Link></div>
       </footer>
     </main>
   );

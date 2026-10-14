@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'VerifyAPI Docs | Chain Verify',
+  title: 'Agent Gate Docs | Chain Verify',
   description:
-    'Developer documentation for VerifyAPI authentication, verification runs, proof records, and proof exports.',
-  alternates: { canonical: 'https://chainverify.org/verify-api/docs' },
+    'Developer documentation for Agent Gate authentication, verification runs, proof records, and proof exports.',
+  alternates: { canonical: 'https://chainverify.org/agent-gate/docs' },
 };
 
 const endpoints = [
@@ -66,21 +66,22 @@ const endpoints = [
   },
 ];
 
-export default function VerifyApiDocsPage() {
+export default function AgentGateDocsPage() {
   return (
     <main className="min-h-screen bg-[#03050a] text-white">
       <section className="border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(124,92,255,0.22),transparent_34rem)]">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16 md:px-10 lg:py-20">
           <div className="max-w-3xl">
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.22em] text-cyan-200">
-              VerifyAPI developer docs
+              Agent Gate developer docs
             </p>
             <h1 className="font-[var(--font-display)] text-4xl font-semibold leading-tight md:text-6xl">
               Verify AI outputs and retrieve proof records.
             </h1>
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              VerifyAPI accepts structured model output, evaluates it against named rules and
-              supplied evidence, then returns a retrievable verification and proof record.
+              Agent Gate accepts structured model output and software-delivery claims, evaluates
+              them against named rules and supplied evidence, then returns a retrievable
+              verification and proof record.
             </p>
           </div>
         </div>

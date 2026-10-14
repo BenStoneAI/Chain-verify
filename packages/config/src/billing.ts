@@ -17,9 +17,19 @@ const freePlan = {
 
 export const billingPlanConfigs = [freePlan];
 
-// Metered overage is gated at runtime by VERIFY_API_METERED_OVERAGE_ENABLED.
+// Agent Gate usage plans (formerly VerifyAPI). The `agent-gate-*` slugs are
+// canonical; the legacy `verify-api-*` slugs are kept as lookup aliases with
+// identical limits so existing entitlements, usage rows and Stripe metadata
+// that carry the old slug keep resolving to the same quota and retention.
+// Metered overage is gated at runtime by VERIFY_API_METERED_OVERAGE_ENABLED
+// (env var name intentionally unchanged).
 export const verifyApiPlanConfigs = [
   { slug: 'free', name: 'Free', monthlyRuns: 500, retentionDays: 30, overageCents: null },
+  { slug: 'agent-gate-build', name: 'Build', monthlyRuns: 5000, retentionDays: 90, overageCents: null },
+  { slug: 'agent-gate-scale', name: 'Scale', monthlyRuns: 50000, retentionDays: 1095, overageCents: 1 },
+  { slug: 'agent-gate-production', name: 'Production', monthlyRuns: 250000, retentionDays: 2555, overageCents: 0.8 },
+  { slug: 'agent-gate-enterprise', name: 'Enterprise', monthlyRuns: null, retentionDays: null, overageCents: null },
+  // Legacy aliases (same limits as the canonical entries above).
   { slug: 'verify-api-build', name: 'Build', monthlyRuns: 5000, retentionDays: 90, overageCents: null },
   { slug: 'verify-api-scale', name: 'Scale', monthlyRuns: 50000, retentionDays: 1095, overageCents: 1 },
   { slug: 'verify-api-production', name: 'Production', monthlyRuns: 250000, retentionDays: 2555, overageCents: 0.8 },
@@ -40,7 +50,7 @@ export const invoiceProofPlanConfigs = [
   { slug: 'invoiceproof-verify', name: 'Verify', monthlyInvoices: 500 },
   { slug: 'invoiceproof-protect', name: 'Protect', monthlyInvoices: 2500 },
   { slug: 'invoiceproof-govern', name: 'Govern', monthlyInvoices: 10000 },
-  // Mirrors verify-api-enterprise / auditproof-enterprise: monthlyInvoices: null
+  // Mirrors agent-gate-enterprise / auditproof-enterprise: monthlyInvoices: null
   // is the canonical "no cap" value (see resolveProofQuota in
   // apps/api/src/modules/billing/proof-billing.service.ts).
   { slug: 'invoiceproof-enterprise', name: 'Enterprise', monthlyInvoices: null },

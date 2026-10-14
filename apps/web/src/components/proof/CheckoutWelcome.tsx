@@ -3,12 +3,16 @@ import Link from 'next/link';
 import ProductFooter from '@/components/proof/ProductFooter';
 import ProductNav from '@/components/proof/ProductNav';
 import PurchaseActivationForm from '@/components/proof/PurchaseActivationForm';
-import type { ProofProductSlug } from '@/lib/stripe-payment-links';
+import {
+  getProofPlanDisplayName,
+  getProofProductRoute,
+  type ProofProductSlug,
+} from '@/lib/stripe-payment-links';
 
 const PRODUCT_COPY: Record<ProofProductSlug, { name: string; next: string }> = {
   'verify-api': {
-    name: 'VerifyAPI',
-    next: 'Verify the Stripe purchase and connect it to your API onboarding.',
+    name: 'Agent Gate',
+    next: 'Verify the Stripe purchase and connect it to your Agent Gate onboarding.',
   },
   'audit-proof': {
     name: 'AuditProof',
@@ -46,7 +50,7 @@ export function CheckoutWelcome({
 
           <div className="pm-welcome-card">
             <div><span>Product</span><strong>{copy.name}</strong></div>
-            <div><span>Plan</span><strong>{plan || 'Purchased plan'}</strong></div>
+            <div><span>Plan</span><strong>{plan ? getProofPlanDisplayName(plan) : 'Purchased plan'}</strong></div>
             <div><span>Next step</span><strong>{copy.next}</strong></div>
             {sessionId ? <div><span>Checkout reference</span><code>{sessionId}</code></div> : null}
           </div>
@@ -61,7 +65,7 @@ export function CheckoutWelcome({
           )}
 
           <div className="pm-welcome-actions pm-welcome-back">
-            <Link className="pm-btn pm-btn-secondary" href={'/' + product}>Back to {copy.name}</Link>
+            <Link className="pm-btn pm-btn-secondary" href={getProofProductRoute(product)}>Back to {copy.name}</Link>
           </div>
 
           <p className="pm-welcome-note">

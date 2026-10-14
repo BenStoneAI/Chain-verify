@@ -1,7 +1,7 @@
 # Chain Verify extraction status
 
 ## Current state
-Chain Verify now contains the three product surfaces, proof kernel, product configuration, InvoiceProof backend code, VerifyAPI backend code, billing code, and the immediate shared UI components used by the product pages.
+Chain Verify now contains the three product surfaces, proof kernel, product configuration, InvoiceProof backend code, Agent Gate (formerly VerifyAPI) backend code, billing code, and the immediate shared UI components used by the product pages.
 
 ## Deliberately not copied
 The full SwarmSync marketplace, agent network, general authentication system, shared Prisma/database layer, and unrelated billing/platform code have not been copied.

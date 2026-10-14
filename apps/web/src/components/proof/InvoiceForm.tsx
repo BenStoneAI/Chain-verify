@@ -684,7 +684,7 @@ export function InvoiceForm() {
             Demo results reflect field-presence checks only. Risk differentiation (vendor history,
             bank-detail changes, duplicate detection) requires submitting an{' '}
             <code className="text-white/60">evidence</code> array via the API.{' '}
-            <a href="/verify-api" className="text-[#FFB45C] hover:underline">
+            <a href="/agent-gate" className="text-[#FFB45C] hover:underline">
               Learn more →
             </a>
           </div>

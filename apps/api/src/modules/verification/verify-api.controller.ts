@@ -115,7 +115,7 @@ const DEMO_PER_IP_MONTHLY_LIMIT = 50;
 // available so staging / preview builds can substitute a non-prod upgrade URL
 // without recompiling (HKO HK-4).
 const DEMO_QUOTA_UPGRADE_URL =
-  process.env.CHAIN_VERIFY_UPGRADE_URL ?? 'https://chainverify.org/verify-api#plans';
+  process.env.CHAIN_VERIFY_UPGRADE_URL ?? 'https://chainverify.org/agent-gate#plans';
 
 // In-process Map used as fallback when REDIS_URL is not configured.
 const demoIpCounters = new Map<string, { count: number; periodKey: string }>();
@@ -2002,7 +2002,7 @@ function buildSoftwareDeliveryValidationError(
     message: 'Invalid software_delivery payload',
     details,
     example: SOFTWARE_DELIVERY_EXAMPLE,
-    docs: 'https://chainverify.org/verify-api/docs#software-delivery-verification',
+    docs: 'https://chainverify.org/agent-gate/docs#software-delivery-verification',
   };
 }
 
@@ -2086,7 +2086,7 @@ function assertDemoSoftwareDeliveryAllowed(
     repoName !== DEMO_SOFTWARE_DELIVERY_REPO.name
   ) {
     throw new HttpException(
-      `Unauthenticated software_delivery verification is limited to the Chain Verify VerifyAPI investor demo repository (${DEMO_SOFTWARE_DELIVERY_REPO.owner}/${DEMO_SOFTWARE_DELIVERY_REPO.name}). Sign in to verify your own repositories.`,
+      `Unauthenticated software_delivery verification is limited to the Chain Verify Agent Gate investor demo repository (${DEMO_SOFTWARE_DELIVERY_REPO.owner}/${DEMO_SOFTWARE_DELIVERY_REPO.name}). Sign in to verify your own repositories.`,
       HttpStatus.FORBIDDEN,
     );
   }
@@ -2150,7 +2150,10 @@ function setDemoSoftwareDeliveryCache(key: string, response: Record<string, unkn
 function parseOptionalProofProduct(raw: string | undefined): ProofProduct | undefined {
   if (!raw) return undefined;
   const normalized = raw.trim().toLowerCase();
-  if (normalized === 'all' || normalized === 'verify-api') return undefined;
+  // 'verify-api' is the legacy product key and stays accepted for existing consumers.
+  if (normalized === 'all' || normalized === 'verify-api' || normalized === 'agent-gate') {
+    return undefined;
+  }
   const slugMap: Record<string, ProofProduct> = {
     'invoice-proof': ProofProduct.INVOICE_AUDIT,
     invoiceproof: ProofProduct.INVOICE_AUDIT,
@@ -2299,7 +2302,7 @@ export function invoiceProofDashboardFields(riskLevel: string, issuesFound: unkn
   };
 }
 
-@ApiTags('Verify API')
+@ApiTags('Agent Gate')
 @Controller()
 @UseGuards(VerifyApiAuthGuard)
 export class VerifyApiController {
@@ -2420,7 +2423,7 @@ export class VerifyApiController {
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Record a proof-product pilot/sales lead (InvoiceProof, AuditProof, or VerifyAPI)',
+    summary: 'Record a proof-product pilot/sales lead (InvoiceProof, AuditProof, or Agent Gate)',
     description:
       'Lead-capture only — persists a ProofPilotIntake row for human ops follow-up. Does NOT ' +
       'run a real audit/verification. A real AuditProof run goes through POST /api/verify with ' +
@@ -2727,7 +2730,7 @@ export class VerifyApiController {
         const sdEvidenceGaps = [
           ...sdReadiness.evidence_gaps,
           ...sdProofReport.missing_evidence.map(
-            (missing) => `Provide ${missing} so deterministic VerifyAPI controls can run.`,
+            (missing) => `Provide ${missing} so deterministic Agent Gate controls can run.`,
           ),
         ];
         for (const gap of sdControlsSkipped) {
@@ -4488,7 +4491,7 @@ export class VerifyApiController {
     }
 
     // When ?product= is specified, prefer ProofProductEntitlement quota
-    if (product && ['verify-api', 'audit-proof', 'invoice-proof'].includes(product)) {
+    if (product && ['verify-api', 'agent-gate', 'audit-proof', 'invoice-proof'].includes(product)) {
       const proofType =
         product === 'invoice-proof'
           ? ProofProductType.INVOICE_PROOF
