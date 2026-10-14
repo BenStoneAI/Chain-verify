@@ -2,20 +2,29 @@
 
 import { FormEvent, useState } from 'react';
 
+import { resolveProofApiBase } from '@/lib/proof-api';
 import type { ProofProductSlug } from '@/lib/stripe-payment-links';
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_CHAINVERIFY_API_URL ?? 'https://chain-verify-api.onrender.com';
+export interface PurchaseActivationFormProps {
+  product: ProofProductSlug;
+  planSlug: string;
+  sessionId: string;
+  /**
+   * When provided, the form hands control back to the caller after a successful
+   * activation instead of showing its own confirmation (Agent Gate resumes
+   * automated provisioning this way).
+   */
+  onActivated?: (activationId: string) => void;
+  submitLabel?: string;
+}
 
 export function PurchaseActivationForm({
   product,
   planSlug,
   sessionId,
-}: {
-  product: ProofProductSlug;
-  planSlug: string;
-  sessionId: string;
-}) {
+  onActivated,
+  submitLabel = 'Verify payment & activate',
+}: PurchaseActivationFormProps) {
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -31,7 +40,7 @@ export function PurchaseActivationForm({
     setMessage('');
 
     try {
-      const response = await fetch(`${API_BASE}/api/billing/proof/activate`, {
+      const response = await fetch(`${resolveProofApiBase()}/api/billing/proof/activate`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -54,6 +63,7 @@ export function PurchaseActivationForm({
 
       setActivationId(payload.activationId || '');
       setState('success');
+      onActivated?.(payload.activationId || '');
       setMessage(
         'Your Stripe payment was verified and your activation request was recorded. We’ll use the checkout email to connect the purchase to your ChainVerify access.',
       );
@@ -122,7 +132,7 @@ export function PurchaseActivationForm({
       </div>
 
       <button className="pm-btn pm-btn-primary pm-activation-submit" type="submit" disabled={state === 'submitting'}>
-        {state === 'submitting' ? 'Verifying purchase…' : 'Verify payment & activate'}
+        {state === 'submitting' ? 'Verifying purchase…' : submitLabel}
       </button>
 
       {state === 'error' ? <p className="pm-activation-error" role="alert">{message}</p> : null}

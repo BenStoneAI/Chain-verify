@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import AgentGateWelcome from '@/components/agent-gate/AgentGateWelcome';
 import ProductFooter from '@/components/proof/ProductFooter';
 import ProductNav from '@/components/proof/ProductNav';
 import PurchaseActivationForm from '@/components/proof/PurchaseActivationForm';
@@ -34,6 +35,27 @@ export function CheckoutWelcome({
   sessionId?: string;
 }) {
   const copy = PRODUCT_COPY[product];
+
+  // Agent Gate is fully automated: payment verification, provisioning and the
+  // one-time API key. AuditProof and InvoiceProof remain managed pilots.
+  if (product === 'verify-api') {
+    return (
+      <>
+        <ProductNav currentProduct={product} pageAnchors={[]} />
+        <main className={'pm-page pm-' + product}>
+          <section className="pm-welcome">
+            <AgentGateWelcome plan={plan} sessionId={sessionId} />
+            <div className="pm-welcome-actions pm-welcome-back">
+              <Link className="pm-btn pm-btn-secondary" href={getProofProductRoute(product)}>
+                Back to {copy.name}
+              </Link>
+            </div>
+          </section>
+        </main>
+        <ProductFooter currentProduct={product} />
+      </>
+    );
+  }
 
   return (
     <>
