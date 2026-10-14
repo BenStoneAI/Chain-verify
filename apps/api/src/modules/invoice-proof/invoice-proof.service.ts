@@ -25,7 +25,7 @@ import {
   ScanApprovalStatus,
   type Prisma,
 } from '@prisma/client';
-import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'crypto';
+import { createHmac, randomBytes, randomUUID } from 'crypto';
 
 import { PrismaService } from '../database/prisma.service.js';
 import { BROWSER_INTAKE, OUTBOUND_EMAIL, type BrowserIntakePort, type OutboundEmailPort } from '../adapters/ports.js';
@@ -43,6 +43,14 @@ import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.se
 import { InvoicePdfService } from './invoice-pdf.service.js';
 import { extractInvoiceFieldsFromText, type ExtractedInvoiceFields } from '@chain-verify/proof-core/invoice-pdf-extract.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
+import {
+  VENDOR_PORTAL_OTP_EXPIRY_MS,
+  VENDOR_PORTAL_OTP_MAX_ATTEMPTS,
+  generateVendorPortalOtpCode,
+  hashVendorPortalOtp,
+  resolveVendorPortalOtpSecret,
+  vendorPortalOtpHashesMatch,
+} from './vendor-portal-otp.js';
 
 import {
   combineUrlHtmlText,
@@ -51,6 +59,8 @@ import {
 } from './invoice-url-intake.js';
 
 const FREE_SCAN_PRODUCT = 'invoice-proof';
+/** One message for every rejected vendor-portal code: no oracle on which factor failed. */
+const INVOICE_PROOF_INVALID_OTP_MESSAGE = 'Invalid or expired verification code.';
 const UPGRADE_URL = process.env.INVOICEPROOF_UPGRADE_URL ?? 'https://chain-verify-api.onrender.com';
 const REGISTER_URL =
   process.env.CHAIN_VERIFY_REGISTER_URL ?? 'https://chain-verify-api.onrender.com';
@@ -1351,16 +1361,21 @@ export class InvoiceProofService {
     });
   }
 
-  // -- OTP constants --
-  private static readonly OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
-  private static readonly OTP_MAX_ATTEMPTS = 5;
-
-  private hashOtpCode(code: string): string {
-    return createHash('sha256').update(code).digest('hex');
-  }
-
+  /**
+   * Vendor-portal audit trail. The Chain Verify schema has no general AuditLog
+   * model (AdminAuditLog requires an admin identity FK), so the durable record of
+   * an OTP challenge is its `vendor_portal_otps` row: created (issue), `attempts`,
+   * `lockedAt` (lock) and `consumedAt` (verify-success) are never deleted. Every
+   * event is also emitted as a structured log line. Callers must never put the
+   * code, its hash, or the portal token itself in `metadata`.
+   */
   private async logVendorPortalAudit(event: string, organizationId: string, metadata: Record<string, unknown>): Promise<void> {
-    this.logger.log(`vendor-portal audit event=${event} organization=${organizationId} metadata=${JSON.stringify(metadata)}`);
+    const line = `vendor-portal audit event=${event} organization=${organizationId} metadata=${JSON.stringify(metadata)}`;
+    if (event === 'VENDOR_PORTAL_OTP_FAILED' || event === 'VENDOR_PORTAL_OTP_LOCKED' || event.includes('BLOCKED') || event.includes('REFUSED')) {
+      this.logger.warn(line);
+    } else {
+      this.logger.log(line);
+    }
   }
 
   private async resolvePortalToken(orgSlug: string, token: string) {
@@ -1374,6 +1389,8 @@ export class InvoiceProofService {
   }
 
   async requestVendorPortalOtp(orgSlug: string, token: string) {
+    // Fail closed before touching the database when the HMAC key is missing.
+    const otpSecret = resolveVendorPortalOtpSecret();
     const { org, portal } = await this.resolvePortalToken(orgSlug, token);
 
     // Look up the vendor's TRUSTED contact email on the vendor record
@@ -1394,27 +1411,90 @@ export class InvoiceProofService {
       );
     }
 
-    // Generate a 6-digit numeric OTP using cryptographic randomness
-    const code = String(randomInt(100_000, 1_000_000));
-    const codeHash = this.hashOtpCode(code);
+    // Cooldown: failed guesses are counted across EVERY unconsumed code issued to
+    // this token inside the expiry window, and a locked code keeps the token
+    // locked for the same window. Without this, requesting a fresh code would
+    // reset the attempt counter and make the 5-attempt cap meaningless.
+    const issuedAt = new Date();
+    const windowStart = new Date(issuedAt.getTime() - VENDOR_PORTAL_OTP_EXPIRY_MS);
+    const recent = await this.prisma.vendorPortalOtp.findMany({
+      where: {
+        vendorPortalTokenId: portal.id,
+        organizationId: org.id,
+        consumedAt: null,
+        OR: [{ createdAt: { gt: windowStart } }, { lockedAt: { gt: windowStart } }],
+      },
+      select: { attempts: true, lockedAt: true },
+    });
+    const recentFailures = recent.reduce((sum, row) => sum + row.attempts, 0);
+    if (recent.some((row) => row.lockedAt) || recentFailures >= VENDOR_PORTAL_OTP_MAX_ATTEMPTS) {
+      await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_ISSUE_REFUSED', org.id, {
+        vendorName: portal.vendorName,
+        tokenId: portal.id,
+        reason: 'RECENT_FAILED_ATTEMPTS',
+      });
+      throw new ForbiddenException(
+        'Verification is temporarily unavailable for this link. Please try again later.',
+      );
+    }
 
-    // Store the OTP hash on the standalone vendor portal token. This keeps OTP state
-    // inside the Chain Verify-owned schema without restoring the old SwarmSync OTP table.
-    await this.prisma.vendorPortalToken.update({
-      where: { id: portal.id },
-      data: { verifiedEmail: `otp:${codeHash}:${Date.now() + InvoiceProofService.OTP_EXPIRY_MS}:0` },
+    // Generate a 6-digit numeric OTP using cryptographic randomness. Only the
+    // HMAC of the code is persisted.
+    const code = generateVendorPortalOtpCode();
+    const challenge = await this.prisma.vendorPortalOtp.create({
+      data: {
+        vendorPortalTokenId: portal.id,
+        vendorName: portal.vendorName,
+        organizationId: org.id,
+        codeHash: hashVendorPortalOtp(otpSecret, portal.id, code),
+        expiresAt: new Date(issuedAt.getTime() + VENDOR_PORTAL_OTP_EXPIRY_MS),
+      },
     });
 
-    // Send OTP email — FAIL CLOSED: if send throws, the caller gets an error
-    // and cannot proceed without the code.
-    await this.email.sendVendorPortalOtp({
-      to: trustedEmail,
-      vendorName: portal.vendorName,
-      orgName: org.name ?? orgSlug,
-      code,
+    // Invalidate every earlier unconsumed code for this token + vendor. A code
+    // is invalidated by expiring it now (`consumedAt` stays reserved for a
+    // successful verification). Verification only ever considers the newest
+    // active row, so concurrent issues still leave exactly one usable code.
+    await this.prisma.vendorPortalOtp.updateMany({
+      where: {
+        vendorPortalTokenId: portal.id,
+        vendorName: portal.vendorName,
+        organizationId: org.id,
+        id: { not: challenge.id },
+        consumedAt: null,
+        expiresAt: { gt: issuedAt },
+        createdAt: { lte: challenge.createdAt },
+      },
+      data: { expiresAt: issuedAt },
     });
+
+    // Deliver through the OutboundEmailPort (SMTP adapter, a real transport that
+    // throws when SMTP_HOST is unset). FAIL CLOSED: if delivery throws, the new
+    // code is invalidated so a code nobody received can never be guessed.
+    try {
+      await this.email.sendVendorPortalOtp({
+        to: trustedEmail,
+        vendorName: portal.vendorName,
+        orgName: org.name ?? orgSlug,
+        code,
+      });
+    } catch {
+      await this.prisma.vendorPortalOtp.updateMany({
+        where: { id: challenge.id, consumedAt: null },
+        data: { expiresAt: new Date() },
+      });
+      await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_DELIVERY_FAILED', org.id, {
+        vendorName: portal.vendorName,
+        tokenId: portal.id,
+        otpId: challenge.id,
+      });
+      throw new ServiceUnavailableException(
+        'We could not send a verification code right now. Please try again later.',
+      );
+    }
 
     await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_REQUESTED', org.id, {
+      otpId: challenge.id,
       vendorName: portal.vendorName,
       tokenId: portal.id,
       sentTo: trustedEmail.replace(/(.{2}).*(@.*)/, '$1***$2'), // mask for audit
@@ -1435,10 +1515,12 @@ export class InvoiceProofService {
       otpCode?: string;
     },
   ) {
+    const otpSecret = resolveVendorPortalOtpSecret();
     const { org, portal } = await this.resolvePortalToken(orgSlug, token);
 
     // OTP is REQUIRED — no code means no bank change
-    if (!payload.otpCode?.trim()) {
+    const suppliedCode = typeof payload.otpCode === 'string' ? payload.otpCode.trim() : '';
+    if (!suppliedCode) {
       await this.logVendorPortalAudit('VENDOR_PORTAL_BANK_CHANGE_BLOCKED', org.id, {
         vendorName: portal.vendorName,
         reason: 'MISSING_OTP',
@@ -1448,19 +1530,88 @@ export class InvoiceProofService {
       );
     }
 
-    const otpState = portal.verifiedEmail?.startsWith('otp:') ? portal.verifiedEmail.split(':') : null;
-    if (!otpState || otpState.length !== 4 || Number(otpState[2]) <= Date.now()) {
-      throw new ForbiddenException('No valid verification code found. Request a new code.');
+    // Every failure past this point throws the same message so the response never
+    // reveals whether the code was wrong, expired, consumed, superseded or locked.
+    const rejectCode = async (reason: string, otpId?: string): Promise<never> => {
+      await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_FAILED', org.id, {
+        vendorName: portal.vendorName,
+        tokenId: portal.id,
+        otpId,
+        reason,
+      });
+      throw new ForbiddenException(INVOICE_PROOF_INVALID_OTP_MESSAGE);
+    };
+
+    // Only the newest active, unlocked, unconsumed, unexpired code can verify.
+    const verifyAt = new Date();
+    const otp = await this.prisma.vendorPortalOtp.findFirst({
+      where: {
+        vendorPortalTokenId: portal.id,
+        organizationId: org.id,
+        consumedAt: null,
+        lockedAt: null,
+        expiresAt: { gt: verifyAt },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!otp) return rejectCode('NO_ACTIVE_CODE');
+
+    // Claim one attempt ATOMICALLY: the guard lives in the UPDATE's WHERE clause,
+    // so N concurrent guesses can win at most (MAX_ATTEMPTS - attempts) claims
+    // and nobody gets to compare once the cap is reached.
+    const claim = await this.prisma.vendorPortalOtp.updateMany({
+      where: {
+        id: otp.id,
+        consumedAt: null,
+        lockedAt: null,
+        expiresAt: { gt: verifyAt },
+        attempts: { lt: VENDOR_PORTAL_OTP_MAX_ATTEMPTS },
+      },
+      data: { attempts: { increment: 1 } },
+    });
+    if (claim.count !== 1) return rejectCode('ATTEMPT_NOT_PERMITTED', otp.id);
+
+    const suppliedHash = hashVendorPortalOtp(otpSecret, portal.id, suppliedCode);
+    if (!vendorPortalOtpHashesMatch(suppliedHash, otp.codeHash)) {
+      // Lock once the counter has reached the cap. Conditional + idempotent:
+      // exactly one failing request observes count === 1 and writes the audit.
+      const lock = await this.prisma.vendorPortalOtp.updateMany({
+        where: {
+          id: otp.id,
+          consumedAt: null,
+          lockedAt: null,
+          attempts: { gte: VENDOR_PORTAL_OTP_MAX_ATTEMPTS },
+        },
+        data: { lockedAt: new Date() },
+      });
+      if (lock.count === 1) {
+        await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_LOCKED', org.id, {
+          vendorName: portal.vendorName,
+          tokenId: portal.id,
+          otpId: otp.id,
+        });
+      }
+      return rejectCode('CODE_MISMATCH', otp.id);
     }
-    const [, codeHash, , attemptsRaw] = otpState;
-    const suppliedHash = this.hashOtpCode(payload.otpCode.trim());
-    const hashesMatch = Buffer.from(suppliedHash).length === Buffer.from(codeHash).length && timingSafeEqual(Buffer.from(suppliedHash), Buffer.from(codeHash));
-    if (!hashesMatch) {
-      const attempts = Number(attemptsRaw || 0) + 1;
-      await this.prisma.vendorPortalToken.update({ where: { id: portal.id }, data: { verifiedEmail: attempts >= InvoiceProofService.OTP_MAX_ATTEMPTS ? null : `otp:${codeHash}:${otpState[2]}:${attempts}` } });
-      throw new ForbiddenException(attempts >= InvoiceProofService.OTP_MAX_ATTEMPTS ? 'Too many failed attempts. Request a new code.' : 'Invalid verification code.');
-    }
-    await this.prisma.vendorPortalToken.update({ where: { id: portal.id }, data: { verifiedEmail: null } });
+
+    // Single use: consume atomically. If two correct submissions race, exactly
+    // one UPDATE matches and the other is rejected.
+    const consumed = await this.prisma.vendorPortalOtp.updateMany({
+      where: {
+        id: otp.id,
+        consumedAt: null,
+        lockedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { consumedAt: new Date() },
+    });
+    if (consumed.count !== 1) return rejectCode('ALREADY_CONSUMED_OR_EXPIRED', otp.id);
+
+    await this.logVendorPortalAudit('VENDOR_PORTAL_OTP_VERIFIED', org.id, {
+      vendorName: portal.vendorName,
+      tokenId: portal.id,
+      otpId: otp.id,
+    });
 
     // Apply the bank change
     const existing = await this.prisma.orgVendorMaster.findFirst({

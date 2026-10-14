@@ -327,8 +327,13 @@ export class InvoiceProofController {
     };
   }
 
+  // OTP request and verify are the brute-force surface of the bank-change
+  // control, so each carries a tight per-IP limit (5/min) ON TOP of the global
+  // default limiter (it is not skipped). The per-code attempt cap and the
+  // per-token cooldown live in the service and apply regardless of IP.
   @Post('vendor-portal/:orgSlug/:token/request-otp')
   @Public()
+  @Throttle({ public: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a one-time verification code for bank-detail change' })
   async vendorPortalRequestOtp(
@@ -340,6 +345,7 @@ export class InvoiceProofController {
 
   @Post('vendor-portal/:orgSlug/:token')
   @Public()
+  @Throttle({ public: { limit: 5, ttl: 60000 } })
   async vendorPortalSubmit(
     @Param('orgSlug') orgSlug: string,
     @Param('token') token: string,
