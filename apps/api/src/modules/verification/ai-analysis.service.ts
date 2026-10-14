@@ -318,6 +318,22 @@ interface ProviderCallResult {
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 
+/**
+ * Request headers for the Messages API. An API key that is not tied to a single
+ * workspace must say which workspace a (non-Admin API) request belongs to via
+ * `anthropic-workspace-id`; it is sent only when ANTHROPIC_WORKSPACE_ID is set.
+ */
+export function buildAnthropicHeaders(apiKey: string, workspaceId?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': ANTHROPIC_VERSION,
+  };
+  const workspace = workspaceId?.trim();
+  if (workspace) headers['anthropic-workspace-id'] = workspace;
+  return headers;
+}
+
 // Claude sometimes wraps JSON in a ```json ... ``` fence despite the system prompt's
 // "respond ONLY with valid JSON" instruction — strip any surrounding fence before parsing.
 function stripJsonFence(text: string): string {
@@ -368,7 +384,8 @@ export class AiAnalysisService {
   private readonly logger = new Logger(AiAnalysisService.name);
   // First-party Anthropic key (direct to api.anthropic.com) — bypasses SwarmSync's
   // Router V2, which was failing direct-provider dispatch in production.
-  private readonly apiKey = process.env['ANTHROPIC_API_KEY'] ?? '';
+  private readonly apiKey = process.env['ANTHROPIC_API_KEY']?.trim() ?? '';
+  private readonly workspaceId = process.env['ANTHROPIC_WORKSPACE_ID']?.trim() ?? '';
   private readonly model = process.env['ANTHROPIC_MODEL'] ?? 'claude-sonnet-4-5-20250929';
   private readonly maxTokens = 1200;
 
@@ -399,11 +416,7 @@ export class AiAnalysisService {
     try {
       const res = await fetch(ANTHROPIC_MESSAGES_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': ANTHROPIC_VERSION,
-        },
+        headers: buildAnthropicHeaders(this.apiKey, this.workspaceId),
         body: JSON.stringify({
           model: this.model,
           max_tokens: this.maxTokens,
