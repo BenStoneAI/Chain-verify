@@ -116,7 +116,9 @@ export class ProofActivationService {
     if (metadataPlan && canonicalProofPlanSlug(metadataPlan) !== canonical) {
       throw new BadRequestException('Checkout plan does not match the requested activation');
     }
-    if (metadataProduct && metadataProduct !== product) {
+    // 'agent-gate' is the canonical metadata value; 'verify-api' is the legacy one (same product).
+    const normalizeProduct = (p: string) => (p === 'agent-gate' ? 'verify-api' : p);
+    if (metadataProduct && normalizeProduct(metadataProduct) !== normalizeProduct(product)) {
       throw new BadRequestException('Checkout product does not match the requested activation');
     }
 
