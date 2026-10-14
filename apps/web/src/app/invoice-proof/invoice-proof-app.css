@@ -1,0 +1,185 @@
+/* InvoiceProof product UI (dashboard, review, scan, settings, vendor portal).
+   All selectors are scoped with .ipa- so they cannot collide with site.css,
+   product-marketing.css or invoice-proof.css. Uses the global --cv-* tokens. */
+
+.ipa-page {
+  min-height: 100vh;
+  background: var(--cv-bg);
+  color: var(--cv-text);
+}
+
+.ipa-main {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 104px 0 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.ipa-narrow { width: min(760px, calc(100% - 32px)); }
+
+.ipa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ipa-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cv-amber);
+}
+.ipa-title { margin: 0; font-size: 28px; font-weight: 760; letter-spacing: -0.02em; }
+.ipa-sub { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--cv-muted); }
+.ipa-mono { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 12px; }
+.ipa-muted { color: var(--cv-muted); }
+.ipa-faint { color: var(--cv-faint); font-size: 12px; line-height: 1.6; }
+.ipa-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+.ipa-card {
+  background: var(--cv-surface-solid);
+  border: 1px solid var(--cv-line);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.ipa-card h2 { margin: 0 0 10px; font-size: 16px; }
+
+/* Buttons */
+.ipa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--cv-line);
+  background: var(--cv-surface-2);
+  color: var(--cv-text);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.ipa-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.ipa-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ipa-btn-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, #00e5ff 0%, #14b8a6 55%, #0d9488 100%);
+  color: #04141a;
+}
+.ipa-btn-sm { min-height: 30px; padding: 0 10px; font-size: 12px; border-radius: 8px; }
+.ipa-btn-ok { border-color: var(--cv-ok); color: var(--cv-ok); }
+.ipa-btn-danger { border-color: var(--cv-danger); color: var(--cv-danger); }
+
+/* Forms */
+.ipa-field { display: flex; flex-direction: column; gap: 6px; }
+.ipa-label { font-size: 12px; font-weight: 650; color: var(--cv-muted); }
+.ipa-input,
+.ipa-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--cv-line);
+  background: var(--cv-surface-2);
+  color: var(--cv-text);
+  font-size: 14px;
+}
+.ipa-textarea { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 13px; resize: vertical; }
+.ipa-input::placeholder,
+.ipa-textarea::placeholder { color: var(--cv-faint); }
+.ipa-input-otp { text-align: center; letter-spacing: 0.4em; font-size: 18px; }
+
+/* Alerts */
+.ipa-alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--cv-line);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ipa-alert-error { border-color: var(--cv-danger); color: var(--cv-danger); }
+.ipa-alert-ok { border-color: var(--cv-ok); color: var(--cv-ok); }
+.ipa-alert-warn { border-color: var(--cv-amber); color: var(--cv-amber); }
+.ipa-alert a { text-decoration: underline; }
+
+/* Stats and meter */
+.ipa-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.ipa-stat-value { font-size: 28px; font-weight: 760; letter-spacing: -0.02em; }
+.ipa-stat-label { margin-top: 4px; font-size: 12px; color: var(--cv-muted); }
+.ipa-meter { height: 8px; border-radius: 99px; overflow: hidden; background: var(--cv-surface-2); }
+.ipa-meter-fill { height: 100%; border-radius: 99px; background: var(--cv-cyan); transition: width 0.4s; }
+.ipa-meter-fill.is-warn { background: var(--cv-amber); }
+.ipa-meter-fill.is-crit { background: var(--cv-danger); }
+.ipa-meter-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 13px; }
+
+/* Tables */
+.ipa-table-wrap { overflow-x: auto; }
+.ipa-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; }
+.ipa-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cv-faint);
+  border-bottom: 1px solid var(--cv-line);
+}
+.ipa-table td { padding: 11px 14px; border-bottom: 1px solid var(--cv-line); }
+.ipa-table tr:last-child td { border-bottom: 0; }
+.ipa-empty { padding: 44px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+/* Risk badges */
+.ipa-badge {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--cv-line);
+  font-size: 11px;
+  font-weight: 700;
+}
+.ipa-badge-low { border-color: var(--cv-ok); color: var(--cv-ok); }
+.ipa-badge-medium { border-color: var(--cv-amber); color: var(--cv-amber); }
+.ipa-badge-high,
+.ipa-badge-critical { border-color: var(--cv-danger); color: var(--cv-danger); }
+
+/* Tabs and lists */
+.ipa-tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; border: 1px solid var(--cv-line); }
+.ipa-tab { padding: 7px 14px; border-radius: 8px; border: 0; background: transparent; color: var(--cv-muted); font-size: 13px; font-weight: 650; cursor: pointer; }
+.ipa-tab[aria-selected='true'] { background: var(--cv-surface-2); color: var(--cv-text); }
+.ipa-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ipa-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.ipa-finding-pattern { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cv-danger); }
+.ipa-dl { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin: 0; font-size: 13px; }
+.ipa-dl div { display: flex; justify-content: space-between; gap: 8px; }
+.ipa-dl dt { color: var(--cv-faint); }
+.ipa-dl dd { margin: 0; }
+.ipa-link { color: var(--cv-cyan); text-decoration: underline; }
+
+/* Key gate / vendor portal */
+.ipa-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.ipa-gate-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+.ipa-gate-card h1 { margin: 0; font-size: 20px; }
+
+@media (max-width: 720px) {
+  .ipa-stats { grid-template-columns: repeat(2, 1fr); }
+  .ipa-main { padding-top: 92px; }
+  .ipa-dl { grid-template-columns: 1fr; }
+}
+
+.ipa-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
