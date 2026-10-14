@@ -709,7 +709,7 @@ export function SpatialProofHorizon() {
             >
               Reset View
             </button>
-            <a href="/ChainVerify.html" className="cv-dock-cta" target="_blank" rel="noopener noreferrer">
+            <a href="/ChainVerify-3D.html" className="cv-dock-cta" target="_blank" rel="noopener noreferrer">
               Immersive 3D View ↗
             </a>
           </div>
