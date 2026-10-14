@@ -2857,6 +2857,8 @@ export class VerifyApiController {
             },
           ] as unknown as Prisma.InputJsonValue,
           sdDocFinalDecision,
+          undefined,
+          auditProofCreateOptions(sdProofReport),
         );
         const sdDocChainHash = sdDocProof.chain_hash ?? null;
 
@@ -2867,6 +2869,8 @@ export class VerifyApiController {
           risk_level: sdDocRisk,
           proof_id: sdDocProof.id,
           chain_hash: sdDocChainHash,
+          // Signing never fails silently: SIGNED | UNSIGNED | SIGNING_FAILED.
+          signing_status: presentProofSigning(sdDocProof).signing_status,
           tier_run: 'DOCUMENT',
           job_type: 'DOCUMENT_DELIVERY',
           escalated: false,
