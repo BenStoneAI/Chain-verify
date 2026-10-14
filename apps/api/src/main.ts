@@ -16,7 +16,7 @@ function trustProxyHops(): number {
 }
 
 async function bootstrap(){
- const app=await NestFactory.create<NestExpressApplication>(AppModule,{cors:true});
+ const app=await NestFactory.create<NestExpressApplication>(AppModule,{cors:true,rawBody:true});
  app.set('trust proxy',trustProxyHops());
  app.setGlobalPrefix('api');
  app.enableShutdownHooks();

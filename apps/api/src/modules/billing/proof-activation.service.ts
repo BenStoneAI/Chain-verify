@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { getProofBillingPlan } from '@chain-verify/config';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { canonicalProofPlanSlug, getProofBillingPlan } from '@chain-verify/config';
 import Stripe from 'stripe';
 
 import { PrismaService } from '../database/prisma.service.js';
+import { StripeProvisioningService } from './stripe-provisioning.service.js';
 
 type ActivationInput = {
   product: 'verify-api' | 'audit-proof' | 'invoice-proof';
@@ -16,8 +17,12 @@ type ActivationInput = {
 @Injectable()
 export class ProofActivationService {
   private readonly stripe: Stripe | null;
+  private readonly logger = new Logger(ProofActivationService.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly provisioning: StripeProvisioningService,
+  ) {
     this.stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
   }
 
@@ -43,9 +48,29 @@ export class ProofActivationService {
       throw new BadRequestException('A valid Stripe Checkout Session is required');
     }
 
-    const plan = getProofBillingPlan(planSlug);
+    // Use canonical slug to handle both old verify-api-* and new agent-gate-* slugs
+    const canonical = canonicalProofPlanSlug(planSlug);
+    const plan = getProofBillingPlan(canonical);
     if (!plan || plan.product !== product) {
       throw new BadRequestException('The requested product/plan combination is not valid');
+    }
+
+    // For Agent Gate, route to the automated provisioning path
+    const isAgentGate = product === 'verify-api';
+    if (isAgentGate) {
+      try {
+        const result = await this.provisioning.provisionFromCheckoutSession(sessionId, this.stripe);
+        return {
+          ok: true,
+          activationId: result.entitlementId,
+          status: result.status,
+          alreadySubmitted: false,
+          provisioned: true,
+        };
+      } catch (err) {
+        this.logger.warn(`Agent Gate auto-provision failed for ${sessionId.slice(0, 20)}: ${(err as Error).message}`);
+        // Fall through to the intake path as fallback
+      }
     }
 
     const existing = await this.prisma.proofPilotIntake.findFirst({
@@ -70,7 +95,8 @@ export class ProofActivationService {
       throw new BadRequestException('Stripe could not verify this checkout session');
     }
 
-    if (!session.livemode) {
+    const expectLive = process.env.STRIPE_EXPECT_LIVEMODE !== 'false';
+    if (expectLive && !session.livemode) {
       throw new BadRequestException('This activation requires a live Stripe checkout');
     }
     if (session.status !== 'complete') {
@@ -87,7 +113,7 @@ export class ProofActivationService {
 
     const metadataPlan = session.metadata?.chainverify_plan;
     const metadataProduct = session.metadata?.chainverify_product;
-    if (metadataPlan && metadataPlan !== planSlug) {
+    if (metadataPlan && canonicalProofPlanSlug(metadataPlan) !== canonical) {
       throw new BadRequestException('Checkout plan does not match the requested activation');
     }
     if (metadataProduct && metadataProduct !== product) {
@@ -102,13 +128,13 @@ export class ProofActivationService {
     const intake = await this.prisma.proofPilotIntake.create({
       data: {
         product,
-        planSlug,
+        planSlug: canonical,
         companyName,
         contactName,
         contactEmail,
         stripeSessionId: sessionId,
         status: 'PAID_PENDING_PROVISIONING',
-        sourcePath: '/' + product + '/welcome',
+        sourcePath: '/' + (isAgentGate ? 'agent-gate' : product) + '/welcome',
         rawPayload: {
           stripePaymentStatus: session.payment_status,
           stripeMode: session.mode,

@@ -9,8 +9,45 @@ import { Injectable } from '@nestjs/common';import { ProofEntitlementStatus,Proo
 // registration step in between. Those methods were removed rather than kept
 // as unreachable code.
 @Injectable() export class ProofBillingService {private readonly stripe:Stripe|null;constructor(private readonly prisma:PrismaService){this.stripe=process.env.STRIPE_SECRET_KEY?new Stripe(process.env.STRIPE_SECRET_KEY):null;}
- async getActiveProofEntitlement(organizationId:string,product:ProofProductType){return this.prisma.proofProductEntitlement.findFirst({where:{organizationId,product,status:ProofEntitlementStatus.ACTIVE,OR:[{periodEnd:null},{periodEnd:{gte:new Date()}}]},orderBy:{createdAt:'desc'}});}
- async resolveProofQuota(organizationId:string,product:ProofProductType){const entitlement=await this.getActiveProofEntitlement(organizationId,product);const monthlyLimit=entitlement?.monthlyLimit??null;return {limit:monthlyLimit,monthlyLimit,used:0,remaining:monthlyLimit,planSlug:entitlement?.planSlug??'free',source:entitlement?'entitlement' as const:'free' as const};}
+ /**
+  * Returns the active entitlement for an org/product. Accepts ACTIVE status,
+  * and also PAST_DUE within grace period (graceUntil not expired), and CANCELLED
+  * if periodEnd hasn't passed yet (cancel_at_period_end scenario).
+  */
+ async getActiveProofEntitlement(organizationId:string,product:ProofProductType){
+  const now = new Date();
+  // Also accept AGENT_GATE when querying VERIFY_API (compat)
+  const products = product === ProofProductType.VERIFY_API
+    ? [ProofProductType.VERIFY_API, ProofProductType.AGENT_GATE]
+    : [product];
+  return this.prisma.proofProductEntitlement.findFirst({where:{organizationId,product:{in:products},OR:[
+    // Active with no expiry or future expiry
+    {status:ProofEntitlementStatus.ACTIVE,OR:[{periodEnd:null},{periodEnd:{gte:now}}]},
+    // Past due but within grace period
+    {status:ProofEntitlementStatus.PAST_DUE,graceUntil:{gte:now}},
+    // Cancelled but period hasn't ended yet (cancel_at_period_end)
+    {status:ProofEntitlementStatus.CANCELLED,periodEnd:{gte:now}},
+  ]},orderBy:{createdAt:'desc'}});}
+ async resolveProofQuota(organizationId:string,product:ProofProductType){
+  const entitlement=await this.getActiveProofEntitlement(organizationId,product);
+  const monthlyLimit=entitlement?.monthlyLimit??null;
+  // Real usage count from VerifyApiUsage (monthly counter keyed YYYY-MM)
+  let used = 0;
+  try {
+    const now = new Date();
+    const periodKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}`;
+    const usageProduct = product === ProofProductType.VERIFY_API || product === ProofProductType.AGENT_GATE
+      ? 'software_delivery' : product.toLowerCase().replace(/_/g, '-');
+    const row = await this.prisma.verifyApiUsage.findFirst({
+      where: { orgId: organizationId, product: usageProduct, periodKey },
+    });
+    used = row?.count ?? 0;
+  } catch {
+    // Usage table query failed — fall back to 0 rather than blocking access
+    used = 0;
+  }
+  const remaining = monthlyLimit !== null ? Math.max(0, monthlyLimit - used) : monthlyLimit;
+  return {limit:monthlyLimit,monthlyLimit,used,remaining,planSlug:entitlement?.planSlug??'free',source:entitlement?'entitlement' as const:'free' as const};}
  isVerifyApiMeteredOverageReady(){return false;}
  async createVerifyApiOverageEvent(p:any){return this.prisma.proofUsageEvent.create({data:{organizationId:p.organizationId,product:'verify-api',planSlug:p.planSlug||'free',verificationRunId:p.verificationRunId,proofId:p.proofId,isOverage:true,overageCents:p.overageCents??null}});}
  async reportUsageEventToStripeBestEffort(_id:string){return false;}

@@ -35,7 +35,11 @@ export class ApiKeyIdentityAdapter implements IdentityContextPort {
 @Injectable()
 export class PrismaProofBillingAdapter implements ProofBillingPort {
  constructor(private readonly prisma:PrismaService){}
- async getActiveEntitlement(organizationId:string,product:string){ const enumProduct=({invoice_proof:ProofProductType.INVOICE_PROOF,'invoice-proof':ProofProductType.INVOICE_PROOF,audit_proof:ProofProductType.AUDIT_PROOF,'audit-proof':ProofProductType.AUDIT_PROOF,verify_api:ProofProductType.VERIFY_API,'verify-api':ProofProductType.VERIFY_API} as Record<string,ProofProductType>)[product.toLowerCase()]; if(!enumProduct)return null; return this.prisma.proofProductEntitlement.findFirst({where:{organizationId,product:enumProduct,status:ProofEntitlementStatus.ACTIVE,OR:[{periodEnd:null},{periodEnd:{gte:new Date()}}]},orderBy:{createdAt:'desc'}}); }
+ async getActiveEntitlement(organizationId:string,product:string){ const enumProduct=({invoice_proof:ProofProductType.INVOICE_PROOF,'invoice-proof':ProofProductType.INVOICE_PROOF,audit_proof:ProofProductType.AUDIT_PROOF,'audit-proof':ProofProductType.AUDIT_PROOF,verify_api:ProofProductType.VERIFY_API,'verify-api':ProofProductType.VERIFY_API,agent_gate:ProofProductType.AGENT_GATE,'agent-gate':ProofProductType.AGENT_GATE} as Record<string,ProofProductType>)[product.toLowerCase()]; if(!enumProduct)return null;
+  // For Agent Gate / VerifyAPI, accept both enum values
+  const products = (enumProduct === ProofProductType.VERIFY_API || enumProduct === ProofProductType.AGENT_GATE) ? [ProofProductType.VERIFY_API,ProofProductType.AGENT_GATE] : [enumProduct];
+  const now = new Date();
+  return this.prisma.proofProductEntitlement.findFirst({where:{organizationId,product:{in:products},OR:[{status:ProofEntitlementStatus.ACTIVE,OR:[{periodEnd:null},{periodEnd:{gte:now}}]},{status:'PAST_DUE' as ProofEntitlementStatus,graceUntil:{gte:now}},{status:ProofEntitlementStatus.CANCELLED,periodEnd:{gte:now}}]},orderBy:{createdAt:'desc'}}); }
 }
 
 @Module({imports:[DatabaseModule],providers:[{provide:OUTBOUND_EMAIL,useClass:SmtpOutboundEmailAdapter},ConduitBrowserAdapter,HttpBrowserIntakeAdapter,{provide:BROWSER_INTAKE,useFactory:(conduit:ConduitBrowserAdapter,http:HttpBrowserIntakeAdapter)=>process.env.CONDUIT_MCP_URL?conduit:http,inject:[ConduitBrowserAdapter,HttpBrowserIntakeAdapter]},{provide:IDENTITY_CONTEXT,useClass:ApiKeyIdentityAdapter},{provide:PROOF_BILLING,useClass:PrismaProofBillingAdapter}],exports:[OUTBOUND_EMAIL,BROWSER_INTAKE,IDENTITY_CONTEXT,PROOF_BILLING]})
