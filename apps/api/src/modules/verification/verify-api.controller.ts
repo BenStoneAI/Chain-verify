@@ -46,7 +46,7 @@ import { validate } from 'class-validator';
 
 import { Public } from '../auth/decorators/public.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { AdminAuthGuard } from '../admin/admin-auth.guard.js';
 
 import { VerifyApiAuthGuard } from './verify-api-auth.guard.js';
 import type { AuthenticatedUser } from '../auth/types.js';
@@ -2506,11 +2506,15 @@ export class VerifyApiController {
   // ---------------------------------------------------------------------------
   // GET /api/proof/pilot-intakes
   // Operator endpoint — list pilot intakes with optional filters.
-  // Restricted to authenticated API operators via JwtAuthGuard.
+  // Platform-admin only (x-admin-key). Customer API keys must NOT reach this:
+  // intakes hold every organisation's contact details and Stripe identifiers.
+  // @Public() only opts out of the class-level customer-key guard; access is
+  // still enforced by AdminAuthGuard.
   // ---------------------------------------------------------------------------
 
   @Get('proof/pilot-intakes')
-  @UseGuards(JwtAuthGuard)
+  @Public()
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '[Admin] List pilot intakes' })
   async listPilotIntakes(
     @Query('product') product?: string,
@@ -2541,11 +2545,12 @@ export class VerifyApiController {
   // ---------------------------------------------------------------------------
   // PATCH /api/proof/pilot-intakes/:id/status
   // Operator endpoint — update intake status.
-  // Restricted to authenticated API operators via JwtAuthGuard.
+  // Platform-admin only (x-admin-key); see GET proof/pilot-intakes above.
   // ---------------------------------------------------------------------------
 
   @Patch('proof/pilot-intakes/:id/status')
-  @UseGuards(JwtAuthGuard)
+  @Public()
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '[Admin] Update pilot intake status' })
   async updatePilotIntakeStatus(@Param('id') id: string, @Body() body: { status: string }) {
     const newStatus = body?.status?.trim() as PilotIntakeStatus | undefined;
