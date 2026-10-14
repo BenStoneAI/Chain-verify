@@ -3,12 +3,60 @@ import axios from 'axios';
 import { assertSsrfSafeWithDns } from '../../../../common/utils/ssrf-guard.js';
 import type { CheckResult } from '../software-delivery.types.js';
 import { CHECK_NAMES } from '../software-delivery.types.js';
+import { shasMatch } from '../trust/sha.js';
 
 interface DeployCheckInput {
   expectedSha: string;
   token: string | undefined;
   jobStartedAt: Date;
   deployUrl?: string;
+}
+
+// Uniform deployment evidence shared by DEP3 and S10 for every provider. The
+// SHA comparison is `shasMatch` (equal, or prefix-compatible with a 7-char
+// floor) so a deployment of a different commit can never pass on a short
+// shared prefix, and the exact SHAs are recorded either way.
+function shaEvidence(
+  provider: string,
+  deployedSha: string | undefined | null,
+  expectedSha: string,
+  extra: { deploymentId?: string; deploymentUrl?: string; state?: string },
+): Record<string, unknown> {
+  return {
+    provider,
+    deployedSha: deployedSha ?? '',
+    expectedSha,
+    shaMatch: shasMatch(deployedSha, expectedSha),
+    deploymentId: extra.deploymentId ?? null,
+    deploymentUrl: extra.deploymentUrl ?? null,
+    state: extra.state ?? null,
+  };
+}
+
+function mismatchDetail(provider: string, deployedSha: string | undefined | null, expectedSha: string): string {
+  return `${provider} deploy SHA (${deployedSha || 'unknown'}) does not match expected SHA (${expectedSha}).`;
+}
+
+const REPORTED_SHA_KEYS = ['commit', 'sha', 'git_sha', 'gitSha', 'commit_sha', 'commitSha', 'version', 'build'];
+
+// Port of AgentGate evidence._extract_sha for JSON bodies: a recognized key
+// holding a 7-40 char hex string. Plain text / HTML bodies are not parsed.
+function extractReportedSha(body: unknown): string | null {
+  let data: unknown = body;
+  if (typeof body === 'string') {
+    try {
+      data = JSON.parse(body);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) return null;
+  const record = data as Record<string, unknown>;
+  for (const key of REPORTED_SHA_KEYS) {
+    const value = record[key];
+    if (typeof value === 'string' && /^[0-9a-f]{7,40}$/i.test(value)) return value;
+  }
+  return null;
 }
 
 @Injectable()
@@ -71,17 +119,21 @@ export class DeploymentChecksService {
       });
 
       // DEP3 — Commit SHA matches
-      const shaMatch = relevantDeploy.commit_ref === expectedSha ||
-        relevantDeploy.commit_ref?.startsWith(expectedSha.slice(0, 8));
+      const shaMatch = shasMatch(relevantDeploy.commit_ref, expectedSha);
+      const netlifyEvidence = shaEvidence('NETLIFY', relevantDeploy.commit_ref, expectedSha, {
+        deploymentId: relevantDeploy.id,
+        deploymentUrl: relevantDeploy.deploy_ssl_url,
+        state: relevantDeploy.state,
+      });
       results.push({
         checkId: 'DEP3',
         checkName: CHECK_NAMES['DEP3'],
         tier: 'BASIC',
         status: shaMatch ? 'PASS' : 'FAIL',
         detail: !shaMatch
-          ? `Netlify deploy SHA (${relevantDeploy.commit_ref}) does not match expected SHA (${expectedSha}).`
+          ? mismatchDetail('Netlify', relevantDeploy.commit_ref, expectedSha)
           : undefined,
-        evidence: { deployedSha: relevantDeploy.commit_ref, expectedSha },
+        evidence: { ...netlifyEvidence },
       });
 
       // S10 — Production is running the new code
@@ -90,8 +142,15 @@ export class DeploymentChecksService {
         checkName: CHECK_NAMES['S10'],
         tier: 'STANDARD',
         status: shaMatch ? 'PASS' : 'FAIL',
-        detail: !shaMatch ? 'Production SHA does not match the delivery commit.' : undefined,
-        evidence: { deployId: relevantDeploy.id, deployUrl: relevantDeploy.deploy_ssl_url, commitRef: relevantDeploy.commit_ref },
+        detail: !shaMatch
+          ? `Production SHA (${relevantDeploy.commit_ref || 'unknown'}) does not match the delivery commit (${expectedSha}).`
+          : undefined,
+        evidence: {
+          ...netlifyEvidence,
+          deployId: relevantDeploy.id,
+          deployUrl: relevantDeploy.deploy_ssl_url,
+          commitRef: relevantDeploy.commit_ref,
+        },
       });
 
       return results;
@@ -152,7 +211,11 @@ export class DeploymentChecksService {
       }
 
       const d = relevantDeploy.deploy;
-      const shaMatch = d.commit?.id === expectedSha || d.commit?.id?.startsWith(expectedSha.slice(0, 8));
+      const shaMatch = shasMatch(d.commit?.id, expectedSha);
+      const renderEvidence = shaEvidence('RENDER', d.commit?.id, expectedSha, {
+        deploymentId: d.id,
+        state: d.status,
+      });
 
       return [
         {
@@ -161,23 +224,25 @@ export class DeploymentChecksService {
           tier: 'BASIC',
           status: d.status === 'live' ? 'PASS' : 'FAIL',
           detail: d.status !== 'live' ? `Render deploy status is "${d.status}", not "live".` : undefined,
-          evidence: { status: d.status, deployId: d.id },
+          evidence: { status: d.status, deployId: d.id, provider: 'RENDER', state: d.status },
         },
         {
           checkId: 'DEP3',
           checkName: CHECK_NAMES['DEP3'],
           tier: 'BASIC',
           status: shaMatch ? 'PASS' : 'FAIL',
-          detail: !shaMatch ? `Render deploy SHA (${d.commit?.id}) does not match expected (${expectedSha}).` : undefined,
-          evidence: { deployedSha: d.commit?.id, expectedSha },
+          detail: !shaMatch ? mismatchDetail('Render', d.commit?.id, expectedSha) : undefined,
+          evidence: { ...renderEvidence },
         },
         {
           checkId: 'S10',
           checkName: CHECK_NAMES['S10'],
           tier: 'STANDARD',
           status: shaMatch ? 'PASS' : 'FAIL',
-          detail: !shaMatch ? 'Production SHA does not match delivery commit.' : undefined,
-          evidence: { deployId: d.id, commitSha: d.commit?.id },
+          detail: !shaMatch
+            ? `Production SHA (${d.commit?.id || 'unknown'}) does not match the delivery commit (${expectedSha}).`
+            : undefined,
+          evidence: { ...renderEvidence, deployId: d.id, commitSha: d.commit?.id },
         },
       ];
     } catch (err: unknown) {
@@ -248,8 +313,12 @@ export class DeploymentChecksService {
 
       const deployedSha =
         relevantDeploy.meta?.githubCommitSha ?? relevantDeploy.meta?.gitlabCommitSha ?? '';
-      const shaMatch =
-        deployedSha === expectedSha || deployedSha.startsWith(expectedSha.slice(0, 8));
+      const shaMatch = shasMatch(deployedSha, expectedSha);
+      const vercelEvidence = shaEvidence('VERCEL', deployedSha, expectedSha, {
+        deploymentId: relevantDeploy.uid,
+        deploymentUrl: relevantDeploy.url,
+        state: relevantDeploy.readyState ?? relevantDeploy.state,
+      });
 
       return [
         {
@@ -265,18 +334,23 @@ export class DeploymentChecksService {
           checkName: CHECK_NAMES['DEP3'],
           tier: 'BASIC',
           status: shaMatch ? 'PASS' : 'FAIL',
-          detail: !shaMatch
-            ? `Vercel deploy SHA (${deployedSha || 'unknown'}) does not match expected (${expectedSha}).`
-            : undefined,
-          evidence: { deployedSha, expectedSha },
+          detail: !shaMatch ? mismatchDetail('Vercel', deployedSha, expectedSha) : undefined,
+          evidence: { ...vercelEvidence },
         },
         {
           checkId: 'S10',
           checkName: CHECK_NAMES['S10'],
           tier: 'STANDARD',
           status: shaMatch ? 'PASS' : 'FAIL',
-          detail: !shaMatch ? 'Production SHA does not match delivery commit.' : undefined,
-          evidence: { deployId: relevantDeploy.uid, deployUrl: relevantDeploy.url, commitSha: deployedSha },
+          detail: !shaMatch
+            ? `Production SHA (${deployedSha || 'unknown'}) does not match the delivery commit (${expectedSha}).`
+            : undefined,
+          evidence: {
+            ...vercelEvidence,
+            deployId: relevantDeploy.uid,
+            deployUrl: relevantDeploy.url,
+            commitSha: deployedSha,
+          },
         },
       ];
     } catch (err: unknown) {
@@ -366,8 +440,11 @@ export class DeploymentChecksService {
       }
 
       const deployedSha = relevantDeploy.meta?.commitHash ?? '';
-      const shaMatch =
-        deployedSha === expectedSha || deployedSha.startsWith(expectedSha.slice(0, 8));
+      const shaMatch = shasMatch(deployedSha, expectedSha);
+      const railwayEvidence = shaEvidence('RAILWAY', deployedSha, expectedSha, {
+        deploymentId: relevantDeploy.id,
+        state: relevantDeploy.status,
+      });
 
       return [
         {
@@ -382,18 +459,18 @@ export class DeploymentChecksService {
           checkName: CHECK_NAMES['DEP3'],
           tier: 'BASIC',
           status: shaMatch ? 'PASS' : 'FAIL',
-          detail: !shaMatch
-            ? `Railway deploy SHA (${deployedSha || 'unknown'}) does not match expected (${expectedSha}).`
-            : undefined,
-          evidence: { deployedSha, expectedSha },
+          detail: !shaMatch ? mismatchDetail('Railway', deployedSha, expectedSha) : undefined,
+          evidence: { ...railwayEvidence },
         },
         {
           checkId: 'S10',
           checkName: CHECK_NAMES['S10'],
           tier: 'STANDARD',
           status: shaMatch ? 'PASS' : 'FAIL',
-          detail: !shaMatch ? 'Production SHA does not match delivery commit.' : undefined,
-          evidence: { deployId: relevantDeploy.id, commitSha: deployedSha },
+          detail: !shaMatch
+            ? `Production SHA (${deployedSha || 'unknown'}) does not match the delivery commit (${expectedSha}).`
+            : undefined,
+          evidence: { ...railwayEvidence, deployId: relevantDeploy.id, commitSha: deployedSha },
         },
       ];
     } catch (err: unknown) {
@@ -427,13 +504,32 @@ export class DeploymentChecksService {
         headers: { 'Cache-Control': 'no-cache, no-store', 'Pragma': 'no-cache' },
       });
       const reachable = response.status < 500;
+      // If the response itself names the running commit (a version endpoint
+      // or JSON root), it must equal the requested SHA. Silent when the body
+      // carries no recognizable commit field.
+      const reportedSha = reachable ? extractReportedSha(response.data) : null;
+      const versionMismatch = reportedSha !== null && !shasMatch(reportedSha, expectedSha);
+      if (versionMismatch) {
+        return {
+          checkId: 'DEP1',
+          checkName: CHECK_NAMES['DEP1'],
+          tier: 'BASIC',
+          status: 'FAIL',
+          detail: `Production reports version ${reportedSha}, which does not match the delivery commit (${expectedSha}).`,
+          evidence: { statusCode: response.status, expectedSha, reportedSha, shaMatch: false },
+          durationMs: Date.now() - start,
+        };
+      }
       return {
         checkId: 'DEP1',
         checkName: CHECK_NAMES['DEP1'],
         tier: 'BASIC',
         status: reachable ? 'PASS' : 'FAIL',
         detail: !reachable ? `Production returned HTTP ${response.status} with cache headers bypassed.` : 'Production responded successfully with no-cache headers. SHA cross-check handled by DEP3.',
-        evidence: { statusCode: response.status, expectedSha },
+        evidence:
+          reportedSha !== null
+            ? { statusCode: response.status, expectedSha, reportedSha, shaMatch: true }
+            : { statusCode: response.status, expectedSha },
         durationMs: Date.now() - start,
       };
     } catch (err: unknown) {

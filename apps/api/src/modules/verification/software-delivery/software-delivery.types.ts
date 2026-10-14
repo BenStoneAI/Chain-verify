@@ -1,3 +1,5 @@
+import type { Provenance } from './trust/provenance.js';
+
 export interface CheckResult {
   checkId: string;
   checkName: string;
@@ -6,6 +8,17 @@ export interface CheckResult {
   detail?: string;
   evidence?: Record<string, unknown>;
   durationMs?: number;
+  /** Who observed the fact this result rests on. Set by the trust layer. */
+  provenance?: Provenance;
+  /** One-line statement of where that observation came from. */
+  provenanceBasis?: string;
+  /** What the caller should do about this result. */
+  recommendedAction?: string;
+  /**
+   * For SKIP results: NOT_EVALUATED = the check was declared but not enabled in
+   * this run; UNABLE = the check ran but lacked the evidence/credentials to decide.
+   */
+  skipKind?: 'NOT_EVALUATED' | 'UNABLE';
 }
 
 export type CheckStatus = 'PASS' | 'FAIL' | 'WARNING' | 'SKIP';
@@ -77,13 +90,15 @@ export const CHECK_NAMES: Record<string, string> = {
   REV2: 'Findings include specific line references',
   REV3: 'Review was not written from the code itself',
   REV4: 'Non-trivial codebase produced at least one finding',
+  AG1: 'Agent Gate receipt is valid and bound to this commit',
+  AG2: 'Test and failure suppression not introduced',
 };
 
 // Which checks belong to each tier (cumulative — STANDARD includes BASIC)
 export const TIER_CHECKS: Record<SoftwareTier, string[]> = {
-  BASIC: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
-  STANDARD: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12'],
-  THOROUGH: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+  BASIC: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'AG1', 'AG2'],
+  STANDARD: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'AG1', 'AG2', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12'],
+  THOROUGH: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'AG1', 'AG2', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
 };
 
 // Job-type specific check IDs

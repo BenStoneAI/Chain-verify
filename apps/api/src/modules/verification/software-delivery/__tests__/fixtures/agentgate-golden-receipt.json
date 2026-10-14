@@ -1,0 +1,132 @@
+{
+  "generated_by": "agentgate/receipt.py via python -I (seed is a throwaway test value)",
+  "public_key_hex": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+  "kid": "kid_65b60673d6ed",
+  "receipt_id": "rcpt_69a54aaa474f8295",
+  "body_sha256": "69a54aaa474f8295b5241e3c37c90f32da5cdb86d484ba9104401020c80c3487",
+  "receipt": {
+    "receipt_version": "0.1",
+    "created_at": "2026-10-14T12:00:00.123456Z",
+    "gate": {
+      "tool": "agentgate",
+      "version": "0.1.0",
+      "host": "bens-laptop-\u00e9",
+      "signing_key_id": "kid_65b60673d6ed"
+    },
+    "task": {
+      "id": "T-42",
+      "title": "Fix rounding \u2014 invoices",
+      "definition_of_done": []
+    },
+    "agent": {
+      "kind": "claude-code",
+      "session_id": null,
+      "model": null
+    },
+    "repo": {
+      "remote": "https://github.com/acme/widgets.git",
+      "root": "C:\\work\\widgets",
+      "branch": "main",
+      "base_sha": "1111111111111111111111111111111111111111",
+      "head_sha": "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432",
+      "tree_sha": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+      "dirty_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tree_clean": true,
+      "pushed": true
+    },
+    "changed_files": [
+      "src/invoice.ts",
+      "src/invoice.test.ts"
+    ],
+    "claims": [
+      {
+        "text": "rounding fixed",
+        "made_at": "2026-10-14T11:58:00.000000Z",
+        "by": "agent"
+      }
+    ],
+    "tests": {
+      "required": [
+        "npm test"
+      ],
+      "runs": [
+        {
+          "run_id": "run_0001",
+          "cmd": "npm test",
+          "started_at": "2026-10-14T11:59:00.000000Z",
+          "finished_at": "2026-10-14T11:59:30.000000Z",
+          "exit_code": 0,
+          "tree_sha": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          "dirty_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "summary": "42 passed",
+          "recorded_by": "gate",
+          "suspicious": false,
+          "suspicion_reasons": []
+        }
+      ]
+    },
+    "build": {
+      "cmd": null,
+      "exit_code": null,
+      "artifact_sha256": null,
+      "recorded_by": "gate"
+    },
+    "ci": null,
+    "deploy": null,
+    "user_visible": [],
+    "blockers": [],
+    "prev_receipt_hash": null,
+    "status": {
+      "computed": "TESTED",
+      "reasons": {}
+    },
+    "receipt_id": "rcpt_69a54aaa474f8295",
+    "signature": {
+      "alg": "ed25519",
+      "kid": "kid_65b60673d6ed",
+      "sig": "2NO6J5Xsuu3cMMBd5hfENjt/xDxXGOcHXfRqPjzgs782wZQycVcVsRCWvXg3/IkJ9WT6Lk0WUHkF4yj7W/hlAA=="
+    }
+  },
+  "canonical_cases": [
+    {
+      "input": {
+        "b": [
+          1,
+          {
+            "z": "\u00e9",
+            "a": null
+          }
+        ],
+        "a": true
+      },
+      "canonical": "{\"a\":true,\"b\":[1,{\"a\":null,\"z\":\"\u00e9\"}]}"
+    },
+    {
+      "input": {
+        "\ue000": 1,
+        "\ud83d\ude00": 2,
+        "a": 3,
+        "Z": 4,
+        "\u00e9": 5
+      },
+      "canonical": "{\"Z\":4,\"a\":3,\"\u00e9\":5,\"\ue000\":1,\"\ud83d\ude00\":2}"
+    },
+    {
+      "input": {
+        "n": [
+          0,
+          -7,
+          9007199254740991,
+          2.0
+        ],
+        "s": "line\nbreak\t\"q\" \\ \u0001 \u2028 end",
+        "e": {},
+        "l": []
+      },
+      "canonical": "{\"e\":{},\"l\":[],\"n\":[0,-7,9007199254740991,2],\"s\":\"line\\nbreak\\t\\\"q\\\" \\\\ \\u0001 \u2028 end\"}"
+    }
+  ],
+  "tree_sha": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+  "head_sha": "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432"
+}

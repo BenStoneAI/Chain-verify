@@ -498,6 +498,7 @@ type EngineResultOverrides = Partial<{
   confidence: number;
   escalated: boolean;
   escalationReason: string | null;
+  receipt: { submitted: boolean };
   results: Array<{
     checkId: string;
     checkName: string;
@@ -537,6 +538,7 @@ function engineResult(overrides: EngineResultOverrides = {}) {
       detail: r.detail,
     })),
     recommendedAction: 'ship',
+    receipt: overrides.receipt,
     results,
   };
 }
@@ -620,6 +622,29 @@ describe('VerifyApiController software_delivery response pass-through (git-based
     expect(result.accepted).toBe(false);
     expect(result.checks_skipped).toBe(1);
     expect(result.evidence_gaps).toEqual(['DEP1 (Production running new code): no deploy url']);
+  });
+
+  it('an optional Agent Gate receipt that was not submitted is not an evidence gap', async () => {
+    const { run } = makeSdController({
+      receipt: { submitted: false },
+      results: [
+        { checkId: 'B1', checkName: 'Commit exists', status: 'PASS', detail: 'ok' },
+        { checkId: 'AG1', checkName: 'Agent Gate receipt', status: 'SKIP', detail: 'no receipt submitted' },
+      ],
+    });
+    const result = await run();
+    expect(result.evidence_gaps).toEqual([]);
+  });
+
+  it('a submitted receipt that could not be evaluated IS reported as an evidence gap', async () => {
+    const { run } = makeSdController({
+      receipt: { submitted: true },
+      results: [
+        { checkId: 'AG1', checkName: 'Agent Gate receipt', status: 'SKIP', detail: 'receipt not evaluable' },
+      ],
+    });
+    const result = await run();
+    expect(result.evidence_gaps).toEqual(['AG1 (Agent Gate receipt): receipt not evaluable']);
   });
 
   it('a failing check surfaces as a critical finding and blocks acceptance', async () => {
@@ -1058,5 +1083,87 @@ describe('VerifyApiController invoice demo regression', () => {
     });
     expect(Array.isArray(result.findings)).toBe(true);
     expect(['passed', 'needs_review', 'blocked', 'failed']).toContain(result.verification_status);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Signing never fails silently: the create-proof response always says whether the
+// proof is SIGNED, UNSIGNED or SIGNING_FAILED, and an unsigned proof carries no
+// signature fields that could be mistaken for one.
+// ---------------------------------------------------------------------------
+describe('VerifyApiController proof signing status in the create response', () => {
+  beforeEach(() => {
+    verifyApiRuleTestHooks.demoIpCounters.clear();
+  });
+
+  async function verifyWithProof(proof: Record<string, unknown>, ip: string) {
+    const verificationService = {
+      queueVerification: vi.fn().mockResolvedValue({ id: 'run_sign_001' }),
+      updateVerificationStatus: vi.fn().mockResolvedValue({ riskLevel: 'LOW', outputSummary: 'ok' }),
+    };
+    const proofService = { createProof: vi.fn().mockResolvedValue(proof) };
+    const prisma = {
+      organizationSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
+      verificationRun: { count: vi.fn().mockResolvedValue(0), update: vi.fn().mockResolvedValue({}) },
+    };
+    const aiAnalysis = {
+      analyze: vi.fn().mockResolvedValue({
+        llm_unavailable: false,
+        issues: [],
+        ai_summary: 'clean',
+        risk_assessment: 'low',
+      }),
+    };
+    const controller = new VerifyApiController(
+      verificationService as never,
+      proofService as never,
+      prisma as never,
+      {} as never,
+      { generateClaimToken: vi.fn().mockReturnValue('claim_sign') } as never,
+      aiAnalysis as never,
+      {} as never,
+    );
+    return (await controller.verifyDemo(
+      {
+        task: 'invoice_extraction',
+        output: { invoice_number: 'INV-SIGN-1', vendor_name: 'Acme', amount_total: 100, due_date: '2026-08-01' },
+      },
+      { headers: {}, ip } as never,
+    )) as Record<string, unknown>;
+  }
+
+  it('an unsigned proof is reported UNSIGNED and exposes no signature fields', async () => {
+    const result = await verifyWithProof(
+      { id: 'proof_u', chain_hash: 'a'.repeat(64), proof_signature: null, signingStatus: 'UNSIGNED' },
+      '203.0.113.71',
+    );
+    expect(result.signing_status).toBe('UNSIGNED');
+    expect(result.proof_signature).toBeUndefined();
+    expect(result.signing_public_key).toBeUndefined();
+  });
+
+  it('a failed signature is reported SIGNING_FAILED and never as signed', async () => {
+    const result = await verifyWithProof(
+      {
+        id: 'proof_f',
+        chain_hash: 'b'.repeat(64),
+        proof_signature: null,
+        signingStatus: 'SIGNING_FAILED',
+        signingError: 'KEY_INVALID',
+      },
+      '203.0.113.72',
+    );
+    expect(result.signing_status).toBe('SIGNING_FAILED');
+    expect(result.proof_signature).toBeUndefined();
+    expect(JSON.stringify(result)).not.toContain('KEY_INVALID'); // error class stays internal here
+  });
+
+  it('a signed proof is reported SIGNED with its signature', async () => {
+    const result = await verifyWithProof(
+      { id: 'proof_s', chain_hash: 'c'.repeat(64), proof_signature: 'c2ln', signingStatus: 'SIGNED' },
+      '203.0.113.73',
+    );
+    expect(result.signing_status).toBe('SIGNED');
+    expect(result.proof_signature).toBe('c2ln');
   });
 });

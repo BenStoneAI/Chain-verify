@@ -20,6 +20,23 @@ import { DeploymentChecksService } from './checks/deployment-checks.service.js';
 import { JobTypeChecksService } from './checks/job-type-checks.service.js';
 import { BuildChecksService } from './checks/build-checks.service.js';
 import { ExternalToolChecksService } from './checks/external-tool-checks.service.js';
+import {
+  EnvReceiptTrustStore,
+  analyzeTrust,
+  buildReceiptCheck,
+  buildSuppressionCheck,
+  evidenceWithProvenance,
+  notSubmittedReceipt,
+  validateAgentGateReceipt,
+  type CoverageSummary,
+  type CriticalEvidenceAssessment,
+  type FreshnessResult,
+  type LifecycleResult,
+  type Provenance,
+  type ReceiptSummary,
+  type ReceiptTrustStore,
+  type ReceiptValidation,
+} from './trust/index.js';
 
 export interface SoftwareDeliveryVerifyResult {
   verificationId: string;
@@ -38,6 +55,22 @@ export interface SoftwareDeliveryVerifyResult {
   checksRun: number;
   issuesFound: Array<{ checkId: string; checkName: string; status: string; detail?: string }>;
   recommendedAction: string;
+  /** Commit the verification is bound to (the requested afterSha). */
+  headSha: string;
+  evidenceFingerprint: string;
+  /** ISO timestamp after which this verification stops being CURRENT. */
+  staleAfter: string;
+  lifecycleStatus: string;
+  lifecycle: Pick<LifecycleResult, 'status' | 'reached' | 'blocked' | 'flags' | 'deploy'>;
+  coverage: CoverageSummary;
+  provenanceSummary: Record<string, unknown>;
+  /** The engine's own confidence before any critical-evidence cap. */
+  engineConfidence: number;
+  confidenceCapped: boolean;
+  confidenceCapReason: string | null;
+  criticalEvidence: CriticalEvidenceAssessment[];
+  freshness: FreshnessResult & { evaluatedAt: string };
+  receipt: ReceiptSummary;
   results: Array<{
     checkId: string;
     checkName: string;
@@ -45,7 +78,18 @@ export interface SoftwareDeliveryVerifyResult {
     detail?: string;
     durationMs?: number;
     evidence?: Record<string, unknown>;
+    provenance?: Provenance;
+    provenanceBasis?: string;
+    recommendedAction?: string;
   }>;
+}
+
+export interface SoftwareDeliveryVerifyOptions {
+  organizationId?: string;
+  /** Source of trusted receipt signing keys. Defaults to AGENT_GATE_TRUSTED_RECEIPT_KEYS. */
+  receiptTrustStore?: ReceiptTrustStore;
+  /** Clock override for deterministic tests. */
+  now?: Date;
 }
 
 @Injectable()
@@ -68,10 +112,11 @@ export class SoftwareDeliveryService {
   async verify(
     dto: SoftwareDeliveryVerifyDto,
     requestedChecks: string[],
-    options?: { organizationId?: string },
+    options?: SoftwareDeliveryVerifyOptions,
   ): Promise<SoftwareDeliveryVerifyResult> {
     const { tier, escalated, escalationReason } = this.escalation.resolve(dto);
     const checkList = this.buildCheckList(tier, dto.jobType, requestedChecks);
+    const now = options?.now ?? new Date();
 
     const record = await this.prisma.softwareDeliveryVerification.create({
       data: {
@@ -102,8 +147,33 @@ export class SoftwareDeliveryService {
       this.github.getDiffText(dto.repoOwner, dto.repoName, dto.beforeSha, dto.afterSha),
     ]);
 
-    const results = await this.runChecks(checkList, dto, diffFiles, diffText, jobStartedAt);
-    const { status, confidence, summary } = this.score(results, escalated);
+    // Agent Gate receipt: validated only when AG1 is part of this run, against
+    // keys the server trusts (never keys supplied in the request).
+    const receipt: ReceiptValidation = checkList.includes('AG1')
+      ? validateAgentGateReceipt(dto.agentGateReceipt, {
+          afterSha: dto.afterSha,
+          repoOwner: dto.repoOwner,
+          repoName: dto.repoName,
+          now,
+          trustStore: options?.receiptTrustStore ?? new EnvReceiptTrustStore(),
+          organizationId: options?.organizationId ?? null,
+        })
+      : notSubmittedReceipt();
+
+    const rawResults = await this.runChecks(checkList, dto, diffFiles, diffText, jobStartedAt, receipt);
+    const engineScore = this.score(rawResults, escalated);
+    const trust = analyzeTrust({
+      dto,
+      checkList,
+      results: rawResults,
+      diffText,
+      diffFiles,
+      receipt,
+      engine: { ...engineScore, escalated },
+      now,
+    });
+    const results = trust.results;
+    const { status, confidence, summary } = trust;
 
     const passed = results.filter(r => r.status === 'PASS').length;
     const failed = results.filter(r => r.status === 'FAIL').length;
@@ -121,6 +191,13 @@ export class SoftwareDeliveryService {
         checksWarning: warning,
         checksSkipped: skipped,
         buyerSummary: summary,
+        headSha: trust.headSha,
+        lifecycleStatus: trust.lifecycle.status,
+        evidenceFingerprint: trust.evidenceFingerprint,
+        provenanceSummary: trust.provenanceSummary as Prisma.InputJsonValue,
+        confidenceCapReason: trust.confidenceCapReason,
+        staleAfter: trust.staleAfter,
+        receiptId: receipt.integrityOk ? receipt.receiptId : null,
       },
     });
 
@@ -132,7 +209,8 @@ export class SoftwareDeliveryService {
         tier: r.tier as SoftwareVerificationTier,
         status: r.status as CheckResultStatus,
         detail: r.detail,
-        evidence: (r.evidence as Prisma.InputJsonValue) ?? undefined,
+        // Evidence carries `_provenance`: who observed the fact behind this result.
+        evidence: evidenceWithProvenance(r) as Prisma.InputJsonValue,
         durationMs: r.durationMs,
       })),
     });
@@ -158,6 +236,25 @@ export class SoftwareDeliveryService {
       checksRun: run,
       issuesFound: issues,
       recommendedAction: this.recommendedAction(status, failed, warning),
+      headSha: trust.headSha,
+      evidenceFingerprint: trust.evidenceFingerprint,
+      staleAfter: trust.staleAfter.toISOString(),
+      lifecycleStatus: trust.lifecycle.status,
+      lifecycle: {
+        status: trust.lifecycle.status,
+        reached: trust.lifecycle.reached,
+        blocked: trust.lifecycle.blocked,
+        flags: trust.lifecycle.flags,
+        deploy: trust.lifecycle.deploy,
+      },
+      coverage: trust.coverage,
+      provenanceSummary: trust.provenanceSummary,
+      engineConfidence: trust.engineConfidence,
+      confidenceCapped: trust.confidenceCapped,
+      confidenceCapReason: trust.confidenceCapReason,
+      criticalEvidence: trust.criticalEvidence,
+      freshness: { ...trust.freshness, evaluatedAt: now.toISOString() },
+      receipt: trust.receipt,
       results: results.map(r => ({
         checkId: r.checkId,
         checkName: r.checkName,
@@ -165,6 +262,9 @@ export class SoftwareDeliveryService {
         detail: r.detail,
         durationMs: r.durationMs,
         evidence: r.evidence,
+        provenance: r.provenance,
+        provenanceBasis: r.provenanceBasis,
+        recommendedAction: r.recommendedAction,
       })),
     };
   }
@@ -183,6 +283,7 @@ export class SoftwareDeliveryService {
     diffFiles: string[],
     diffText: string,
     jobStartedAt: Date,
+    receipt: ReceiptValidation,
   ): Promise<CheckResult[]> {
     const results: CheckResult[] = [];
     const has = (id: string) => checkList.includes(id);
@@ -222,6 +323,20 @@ export class SoftwareDeliveryService {
     if (has('T10')) results.push(this.diffAnalysis.checkSpecRequirementsAddressed(dto.jobDescription, diffFiles));
     if (has('T11')) results.push(await this.externalTools.checkErrorRateStable(dto, jobStartedAt));
     if (has('T12')) results.push(this.diffAnalysis.checkDeliveryDescriptionMatchesDiff(dto.aiReport, diffFiles, diffText));
+
+    // Agent Gate trust checks (pure; no network). AG1 validates the optional
+    // receipt, AG2 detects test / failure suppression in added lines and in
+    // any command strings the receipt carries.
+    if (has('AG1')) results.push(buildReceiptCheck(receipt));
+    if (has('AG2')) {
+      results.push(
+        buildSuppressionCheck({
+          diffText,
+          commands: receipt.submittedCommands,
+          test1Active: has('TEST1'),
+        }),
+      );
+    }
 
     // Group D — Security checks (parallel)
     const groupD = await Promise.all([
@@ -313,6 +428,7 @@ export class SoftwareDeliveryService {
           checkName: CHECK_NAMES[id] ?? id,
           tier: this.tierForCheck(id),
           status: 'SKIP',
+          skipKind: 'NOT_EVALUATED',
           detail: 'This check is defined for the requested tier/job type but is not enabled in this verification run. It was not evaluated.',
         });
       }

@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsInt,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsDateString,
@@ -151,4 +152,15 @@ export class SoftwareDeliveryVerifyDto {
   @IsOptional()
   @IsString()
   sentryEnvironment?: string;
+
+  /**
+   * Optional receipt produced by a local Agent Gate run (agentgate receipt).
+   * It is ADDITIONAL evidence: it is validated (hash, signature against a
+   * server-side trusted key, HEAD, repository, age) and only then counted as
+   * observed. Anything else is recorded as customer-submitted and never
+   * raises confidence.
+   */
+  @IsOptional()
+  @IsObject()
+  agentGateReceipt?: Record<string, unknown>;
 }

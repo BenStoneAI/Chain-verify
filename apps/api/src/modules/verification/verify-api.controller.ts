@@ -49,6 +49,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { AdminAuthGuard } from '../admin/admin-auth.guard.js';
 
 import { VerifyApiAuthGuard } from './verify-api-auth.guard.js';
+import { auditProofCreateOptions } from './audit-proof-freshness.js';
+import { presentProofSigning, type ProofSigningStatus } from './audit-proof-signing.js';
 import type { AuthenticatedUser } from '../auth/types.js';
 import { PrismaService } from '../database/prisma.service.js';
 
@@ -1299,7 +1301,15 @@ function proofReportControls(report: ProofReport) {
     failed: report.controls.failed,
     skipped: report.controls.skipped,
     coverage_summary: report.coverage_summary,
+    coverage: report.coverage,
   };
+}
+
+/** Plain-words signing state for human-facing exports. An unsigned proof never reads as signed. */
+function describeSigningStatus(status: ProofSigningStatus): string {
+  if (status === 'SIGNED') return 'SIGNED';
+  if (status === 'UNSIGNED') return 'UNSIGNED - this proof carries no digital signature';
+  return 'SIGNING FAILED - a signature could not be produced';
 }
 
 // PII detector — fires when the output contains email/phone/SSN patterns
@@ -2037,6 +2047,9 @@ const DEMO_SOFTWARE_DELIVERY_DISALLOWED_FIELDS = [
   'sentryOrgSlug',
   'sentryProjectSlug',
   'sentryEnvironment',
+  // Receipt validation needs server-side trusted keys and is not part of the
+  // fixed read-only demo check set.
+  'agentGateReceipt',
 ] as const;
 
 // The only checks that run for anonymous demo requests: all read-only public
@@ -2935,7 +2948,8 @@ export class VerifyApiController {
       // `evidence_gaps` lists every check the engine could not evaluate (SKIP).
       const sdAccepted = result.verificationStatus === 'passed' && !result.escalated;
       const sdEvidenceGaps = result.results
-        .filter((r) => r.status === 'SKIP')
+        // A receipt is optional additional evidence: not submitting one is not a gap.
+        .filter((r) => r.status === 'SKIP' && !(r.checkId === 'AG1' && result.receipt?.submitted !== true))
         .map((r) => `${r.checkId} (${r.checkName}): ${r.detail ?? 'not evaluated'}`);
       const sdResults = result.results.map((r) => ({
         // snake_case: consumed by the web client (SoftwareDeliveryForm)
@@ -2945,10 +2959,17 @@ export class VerifyApiController {
         detail: r.detail ?? null,
         duration_ms: r.durationMs ?? null,
         evidence: r.evidence ?? null,
+        // Trust layer: who observed this result, and what to do about it.
+        reason: r.detail ?? null,
+        provenance: r.provenance ?? null,
+        provenance_basis: r.provenanceBasis ?? null,
+        recommended_action: r.recommendedAction ?? null,
         // camelCase: engine-native shape
         checkId: r.checkId,
         checkName: r.checkName,
         durationMs: r.durationMs ?? null,
+        provenanceBasis: r.provenanceBasis ?? null,
+        recommendedAction: r.recommendedAction ?? null,
       }));
       const sdIssues = result.issuesFound.map((i) => ({
         check_id: i.checkId,
@@ -2985,6 +3006,27 @@ export class VerifyApiController {
         })),
         recommended_action: result.recommendedAction,
         results: sdResults,
+        // --- Agent Gate trust layer ---
+        overall_decision: {
+          verification_status: result.verificationStatus,
+          recommended_action: result.recommendedAction,
+          accepted: sdAccepted,
+          confidence: result.confidence,
+          lifecycle_status: result.lifecycleStatus ?? null,
+        },
+        lifecycle_status: result.lifecycleStatus ?? null,
+        lifecycle: result.lifecycle ?? null,
+        coverage: result.coverage ?? null,
+        provenance_summary: result.provenanceSummary ?? null,
+        engine_confidence: result.engineConfidence ?? result.confidence,
+        confidence_capped: result.confidenceCapped ?? false,
+        confidence_cap_reason: result.confidenceCapReason ?? null,
+        critical_evidence: result.criticalEvidence ?? null,
+        agent_gate_receipt: result.receipt ?? null,
+        head_sha: result.headSha ?? null,
+        evidence_fingerprint: result.evidenceFingerprint ?? null,
+        stale_after: result.staleAfter ?? null,
+        freshness: result.freshness ?? null,
         // --- rich engine result (engine-native camelCase aliases) ---
         verificationId: result.verificationId,
         proofId: result.proofId,
@@ -3563,6 +3605,7 @@ export class VerifyApiController {
       canonicalProofEvidence as unknown as Prisma.InputJsonValue,
       finalDecision,
       resolvedPlanSlug,
+      auditProofCreateOptions(auditProofReport),
     );
     if (overageUsageEvent) {
       await this.proofBilling.attachProofIdToUsageEvent(overageUsageEvent.id, proof.id);
@@ -3613,9 +3656,16 @@ export class VerifyApiController {
         ? {
             controls: proofReportControls(auditProofReport),
             results: auditProofReport.findings,
+            coverage: auditProofReport.coverage,
+            provenance_summary: auditProofReport.provenance_summary,
+            confidence_cap_reason: auditProofReport.confidence_cap_reason ?? null,
+            evidence_as_of: auditProofReport.evidence_as_of,
+            stale_after: auditProofReport.stale_after,
           }
         : {}),
-      ...(proof.proof_signature
+      // Signing never fails silently: SIGNED | UNSIGNED | SIGNING_FAILED.
+      signing_status: presentProofSigning(proof).signing_status,
+      ...(presentProofSigning(proof).signed && proof.proof_signature
         ? {
             proof_signature: proof.proof_signature,
             signing_public_key: process.env['PROOF_SIGNING_PUBLIC_KEY'] ?? undefined,
@@ -3832,7 +3882,7 @@ export class VerifyApiController {
         ],
         ['Chain Hash', proof.chain_hash ?? 'N/A'],
         ['Prev Chain Hash', proof.prev_chain_hash ?? 'N/A'],
-        ['Signature Present', proof.proof_signature ? 'Yes' : 'No'],
+        ['Signing Status', describeSigningStatus(presentProofSigning(proof).signing_status)],
         ['Created', String(proof.createdAt ?? 'unknown')],
         ['Verified By', 'Chain Verify'],
       ];
@@ -3961,7 +4011,10 @@ export class VerifyApiController {
     doc
       .fontSize(10)
       .font('Helvetica')
-      .text(`Proof signature: ${proof.proof_signature ?? 'N/A'}`);
+      .text(
+        `Signing status: ${describeSigningStatus(presentProofSigning(proof).signing_status)}` +
+          `\nProof signature: ${proof.proof_signature ?? 'N/A'}`,
+      );
     if (proof.proof_signature && process.env['PROOF_SIGNING_PUBLIC_KEY']) {
       doc
         .fontSize(10)
@@ -4044,6 +4097,8 @@ export class VerifyApiController {
         chain_hash: proof.chain_hash ?? null,
         prev_chain_hash: proof.prev_chain_hash ?? null,
         proof_signature: proof.proof_signature ?? null,
+        signing_status: presentProofSigning(proof).signing_status,
+        signed: presentProofSigning(proof).signed,
         signing_public_key: proof.proof_signature
           ? (process.env['PROOF_SIGNING_PUBLIC_KEY'] ?? null)
           : null,
@@ -4092,7 +4147,8 @@ export class VerifyApiController {
       final_decision: proof.finalDecision,
       chain_hash: proof.chain_hash ?? null,
       prev_chain_hash: proof.prev_chain_hash ?? null,
-      signature_present: Boolean(proof.proof_signature),
+      signature_present: presentProofSigning(proof).signed,
+      signing_status: presentProofSigning(proof).signing_status,
       signing_public_key: proof.proof_signature
         ? (process.env['PROOF_SIGNING_PUBLIC_KEY'] ?? null)
         : null,
@@ -4209,6 +4265,8 @@ export class VerifyApiController {
       recomputed_chain_hash: recomputedChainHash,
       chain_hash_matches: chainHashMatches,
       proof_signature: proof.proof_signature ?? null,
+      signing_status: presentProofSigning(proof).signing_status,
+      signed: presentProofSigning(proof).signed,
       signing_public_key: proof.proof_signature
         ? (process.env['PROOF_SIGNING_PUBLIC_KEY'] ?? null)
         : null,
@@ -4274,6 +4332,8 @@ export class VerifyApiController {
         chain_hash: proof.chain_hash ?? null,
         prev_chain_hash: proof.prev_chain_hash ?? null,
         proof_signature: proof.proof_signature ?? null,
+        signing_status: presentProofSigning(proof).signing_status,
+        signed: presentProofSigning(proof).signed,
         signing_public_key: proof.proof_signature
           ? (process.env['PROOF_SIGNING_PUBLIC_KEY'] ?? null)
           : null,
@@ -4316,7 +4376,8 @@ export class VerifyApiController {
       issues_count: issueCount,
       chain_hash: proof.chain_hash ?? null,
       prev_chain_hash: proof.prev_chain_hash ?? null,
-      signature_present: Boolean(proof.proof_signature),
+      signature_present: presentProofSigning(proof).signed,
+      signing_status: presentProofSigning(proof).signing_status,
       signing_public_key: proof.proof_signature
         ? (process.env['PROOF_SIGNING_PUBLIC_KEY'] ?? null)
         : null,
