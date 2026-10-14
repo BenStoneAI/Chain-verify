@@ -24,6 +24,7 @@
     "dev": "tsc -w -p tsconfig.json",
     "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo \"No tests yet\""
+    "test": "vitest run",
+    "fixtures:pdf-intake": "node test/fixtures/invoice-pdf/generate.mjs"
   }
 }

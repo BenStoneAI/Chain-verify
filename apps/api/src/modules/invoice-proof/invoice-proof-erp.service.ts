@@ -5,8 +5,24 @@ import { randomBytes, createHash } from 'crypto';
 import { PrismaService } from '../database/prisma.service.js';
 import { encryptCredentials, decryptCredentials } from './credential-crypto.js';
 
-const ERP_CALLBACK_BASE =
-  process.env.API_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
+const GLOBAL_PREFIX = 'api';
+
+/**
+ * Public URL of the OAuth callback route the ERP provider redirects back to.
+ * Built from `API_BASE_URL` (public API origin, e.g. https://chain-verify-api.onrender.com),
+ * falling back to localhost on the port main.ts listens on. The `/api` global prefix set in
+ * main.ts is part of the real route (`GET /api/invoice-proof/erp/callback/:provider`); a base
+ * that already ends in `/api` is not prefixed twice.
+ */
+export function buildErpCallbackUri(
+  providerRaw: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const port = env.CHAIN_VERIFY_API_PORT || env.PORT || '3001';
+  let base = (env.API_BASE_URL?.trim() || `http://localhost:${port}`).replace(/\/+$/, '');
+  if (!base.endsWith(`/${GLOBAL_PREFIX}`)) base = `${base}/${GLOBAL_PREFIX}`;
+  return `${base}/invoice-proof/erp/callback/${providerRaw.toLowerCase()}`;
+}
 
 @Injectable()
 export class InvoiceProofErpService {
@@ -93,7 +109,7 @@ export class InvoiceProofErpService {
 
     const { verifier, challenge } = this.buildPkce();
     const state = randomBytes(16).toString('hex');
-    const callback = redirectUri ?? `${ERP_CALLBACK_BASE}/invoice-proof/erp/callback/${providerRaw.toLowerCase()}`;
+    const callback = redirectUri ?? buildErpCallbackUri(providerRaw);
 
     await this.prisma.orgErpConnection.upsert({
       where: { organizationId_provider: { organizationId, provider } },
@@ -144,7 +160,7 @@ export class InvoiceProofErpService {
 
     const config = this.getOAuthConfig(provider);
     const pending = decryptCredentials(connection.encryptedTokens) as { pkceVerifier?: string };
-    const callback = `${ERP_CALLBACK_BASE}/invoice-proof/erp/callback/${providerRaw.toLowerCase()}`;
+    const callback = buildErpCallbackUri(providerRaw);
 
     const body = new URLSearchParams({
       grant_type: 'authorization_code',

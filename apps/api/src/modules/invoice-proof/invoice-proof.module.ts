@@ -8,6 +8,7 @@ import { InvoiceProofService } from './invoice-proof.service.js';
 import { InvoiceProofErpService } from './invoice-proof-erp.service.js';
 import { InvoiceProofIntelligenceService } from './invoice-proof-intelligence.service.js';
 import { InvoicePdfService } from './invoice-pdf.service.js';
+import { InvoiceProofBaselineJob } from './invoice-proof-baseline.job.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
 @Module({
@@ -19,6 +20,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
     InvoiceProofErpService,
     InvoiceProofIntelligenceService,
     InvoicePdfService,
+    InvoiceProofBaselineJob,
     JwtAuthGuard,
   ],
   exports: [InvoiceProofService, InvoiceProofIntelligenceService],
