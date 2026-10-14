@@ -1021,6 +1021,28 @@ describe('hardening: replay, event ordering, amount and product scope', () => {
     expect(prisma._tables.webhookEvents.rows[0].status).toBe('IGNORED');
   });
 
+  it('acknowledges (200, REJECTED) a permanently invalid purchase instead of making Stripe retry it', async () => {
+    const { service, prisma } = makeService();
+    // paid and complete, but the pre-tax subtotal does not match the plan price
+    const stripe = fakeStripe({ amount_total: 100, raw: { amount_subtotal: 100 } });
+    const event = makeStripeEvent('checkout.session.completed', makeCheckoutSession(), 'evt_reject_1');
+
+    const result = await service.processWebhookEvent(event, stripe);
+
+    expect(result.status).toBe('REJECTED');
+    expect(prisma._tables.entitlements.rows).toHaveLength(0);
+    const ledger = prisma._tables.webhookEvents.rows.find((r: any) => r.id === 'evt_reject_1');
+    expect(ledger.status).toBe('REJECTED');
+    expect(ledger.lastError).toMatch(/Amount mismatch/);
+  });
+
+  it('still rethrows transient failures so Stripe retries them', async () => {
+    const { service } = makeService();
+    const stripe: any = { checkout: { sessions: { retrieve: vi.fn().mockRejectedValue(new Error('ECONNRESET')) } } };
+    const event = makeStripeEvent('checkout.session.completed', makeCheckoutSession(), 'evt_transient_1');
+    await expect(service.processWebhookEvent(event, stripe)).rejects.toThrow('ECONNRESET');
+  });
+
   it('a stale customer.subscription.updated (active) cannot override the live canceled state', async () => {
     const { service, prisma } = makeService();
     await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());

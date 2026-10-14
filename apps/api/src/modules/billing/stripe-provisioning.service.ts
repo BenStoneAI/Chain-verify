@@ -127,6 +127,14 @@ export class StripeProvisioningService {
       await this.markEventProcessed(event.id, status);
       return { received: true, eventId: event.id, type: event.type, status };
     } catch (err) {
+      if (err instanceof ProvisioningValidationError) {
+        // A permanent answer ("this session is not a valid paid purchase"): retrying
+        // can never succeed, so record it for review and acknowledge the event
+        // instead of making Stripe redeliver it for days.
+        await this.markEventStatus(event.id, 'REJECTED', err.message);
+        this.logger.warn(`Webhook ${event.id} (${event.type}) rejected: ${err.message}`);
+        return { received: true, eventId: event.id, type: event.type, status: 'REJECTED' };
+      }
       await this.markEventFailed(event.id, (err as Error).message?.slice(0, 500));
       throw err;
     }
@@ -171,6 +179,15 @@ export class StripeProvisioningService {
       where: { id: eventId },
       data: { status, processedAt: new Date() },
     });
+  }
+
+  private async markEventStatus(eventId: string, status: string, errorMsg: string) {
+    await this.prisma.stripeWebhookEvent
+      .update({
+        where: { id: eventId },
+        data: { status, lastError: errorMsg?.slice(0, 500), processedAt: new Date() },
+      })
+      .catch(() => {}); // best-effort
   }
 
   private async markEventFailed(eventId: string, errorMsg: string) {
