@@ -106,9 +106,9 @@ x-agent-api-key: <agent_api_key>`}
           </pre>
           <p className="mt-4 text-sm leading-6 text-slate-400">
             Your <code className="rounded bg-white/10 px-1.5 py-0.5 text-cyan-100">ag_live_</code> key is
-            issued automatically on the checkout confirmation page and is shown once. If it is lost, contact{' '}
-            <a href="mailto:proof@chainverify.org" className="text-cyan-200 underline underline-offset-2">
-              proof@chainverify.org
+            issued automatically on the checkout confirmation page and is shown once. If it is lost, use the{' '}
+            <a href="/contact" className="text-cyan-200 underline underline-offset-2">
+              contact form
             </a>{' '}
             to rotate it. Keep production calls on{' '}
             <code className="rounded bg-white/10 px-1.5 py-0.5 text-cyan-100">

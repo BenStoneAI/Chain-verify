@@ -61,7 +61,7 @@ export default function PrivacyPage() {
       <section className="cv-standard-section">
         <h2>Your choices and requests</h2>
         <p>
-          You may contact us to request access, correction, or deletion of personal information, subject to applicable law and legitimate retention requirements. Send privacy requests to <a href="mailto:proof@chainverify.org?subject=ChainVerify%20Privacy%20Request">proof@chainverify.org</a> with “Privacy Request” in the subject line.
+          You may contact us to request access, correction, or deletion of personal information, subject to applicable law and legitimate retention requirements. Send privacy requests through the <a href="/contact">contact form</a> and choose “Privacy or other” as the topic, with “Privacy Request” at the start of your message.
         </p>
       </section>
 
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
       <section className="cv-standard-section">
         <h2>Changes and contact</h2>
         <p>
-          We may update this policy as the service changes. The effective date above will be revised when material updates are published. Questions can be sent to <a href="mailto:proof@chainverify.org?subject=ChainVerify%20Privacy">proof@chainverify.org</a>.
+          We may update this policy as the service changes. The effective date above will be revised when material updates are published. Questions can be sent through the <a href="/contact">contact form</a>.
         </p>
       </section>
     </StandardPageShell>

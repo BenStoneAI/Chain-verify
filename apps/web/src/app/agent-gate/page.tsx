@@ -86,7 +86,7 @@ export default function AgentGatePage() {
           description: 'For custom volume, contracts, deployment, and support.',
           features: ['Custom limits', 'Commercial terms', 'Implementation support'],
           cta: 'Talk to us',
-          href: 'mailto:proof@chainverify.org',
+          href: '/contact',
         },
       ]}
       faqs={[

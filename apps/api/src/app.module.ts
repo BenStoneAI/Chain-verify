@@ -6,6 +6,7 @@ import { InvoiceProofModule } from './modules/invoice-proof/invoice-proof.module
 import { VerificationModule } from './modules/verification/verification.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
+import { ContactModule } from './modules/contact/contact.module.js';
 
-@Module({imports:[RateLimitingModule,DatabaseModule,ChainVerifyAdaptersModule,VerificationModule,InvoiceProofModule,AdminModule,BillingModule]})
+@Module({imports:[RateLimitingModule,DatabaseModule,ChainVerifyAdaptersModule,VerificationModule,InvoiceProofModule,AdminModule,BillingModule,ContactModule]})
 export class AppModule {}

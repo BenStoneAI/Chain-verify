@@ -105,7 +105,7 @@ export default function AuditProofPage() {
       faqs={[
         { q: 'Do I need an account before paying?', a: 'No. The purchase CTA opens Stripe-hosted checkout directly. After purchase, continue setup with the same business email you used at checkout.' },
         { q: 'Does AuditProof certify EU AI Act compliance?', a: 'No. AuditProof is designed to support logging, evidence organization, and review workflows. Regulatory references are orientation and evidence-mapping support, not legal certification.' },
-        { q: 'What if I only need a focused EU AI Act sprint?', a: 'A focused EU AI Act Sprint is available as a one-time engagement for teams that need a concentrated evidence-readiness project. Contact proof@chainverify.org for scoping.' },
+        { q: 'What if I only need a focused EU AI Act sprint?', a: 'A focused EU AI Act Sprint is available as a one-time engagement for teams that need a concentrated evidence-readiness project. Use the contact form at /contact for scoping.' },
         { q: 'Can we start smaller?', a: 'Yes. The managed Pilot is intentionally the first step so you can prove the evidence flow before moving to a recurring governance tier.' },
       ]}
       finalTitle="When someone asks how the AI did the work, have the record ready."

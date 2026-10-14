@@ -22,7 +22,7 @@ const EXPLANATION: Record<FailureReason, string> = {
   rejected: 'We did not recognize this checkout reference.',
 };
 
-/** State 5: could not verify. Retry and in-browser support come first; email is only a fallback. */
+/** State 5: could not verify. Retry and the contact form are the only paths; no email address is shown. */
 export function PaymentNotVerified({ reason, sessionId, detail, onRetry }: PaymentNotVerifiedProps) {
   return (
     <div className="ag-state">
@@ -48,13 +48,6 @@ export function PaymentNotVerified({ reason, sessionId, detail, onRetry }: Payme
         <p className="ag-note">
           Include this checkout reference when you contact us:{' '}
           <code className="ag-ref">{sessionId}</code>
-        </p>
-        <p className="ag-note">
-          Cannot use the contact form? You can also write to{' '}
-          <a className="ag-link" href="mailto:proof@chainverify.org">
-            proof@chainverify.org
-          </a>
-          .
         </p>
       </div>
     </div>

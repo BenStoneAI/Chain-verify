@@ -36,7 +36,7 @@ export default function SecurityPage() {
       <section className="cv-standard-section">
         <h2>Responsible disclosure</h2>
         <p>
-          If you believe you found a security issue, email <a href="mailto:proof@chainverify.org?subject=ChainVerify%20Security%20Report">proof@chainverify.org</a> with “Security Report” in the subject. Include enough detail to reproduce the issue, the affected URL or endpoint, and the potential impact.
+          If you believe you found a security issue, report it through the <a href="/contact">contact form</a> and choose “Security report” as the topic. Include enough detail to reproduce the issue, the affected URL or endpoint, and the potential impact.
         </p>
         <p>
           Please do not access data that is not yours, degrade service availability, run destructive testing, or publicly disclose an unresolved issue before we have had a reasonable opportunity to investigate.

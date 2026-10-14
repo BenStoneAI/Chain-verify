@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import ContactForm from '@/components/contact/ContactForm';
 import StandardPageShell from '@/components/brand/StandardPageShell';
 
 export const metadata: Metadata = {
@@ -13,29 +14,22 @@ export default function ContactPage() {
     <StandardPageShell
       eyebrow="CONTACT"
       title="Talk to ChainVerify."
-      intro="Questions about Agent Gate, AuditProof, InvoiceProof, a pilot, billing, security, or privacy? Use the address below and include the product or workflow you are asking about."
+      intro="Questions about Agent Gate, AuditProof, InvoiceProof, a pilot, billing, security, or privacy? Send us a message with the form below and include the product or workflow you are asking about."
     >
+      <ContactForm />
+
       <div className="cv-standard-grid">
         <article>
           <h2>General & sales</h2>
-          <p>Product questions, pricing, pilots, implementation, and partnership inquiries.</p>
-          <a className="cv-standard-link" href="mailto:proof@chainverify.org?subject=ChainVerify%20inquiry">
-            proof@chainverify.org
-          </a>
+          <p>Product questions, pricing, pilots, implementation, and partnership inquiries. Choose “Sales and pilots”.</p>
         </article>
         <article>
           <h2>Support</h2>
-          <p>Include your product, plan, organization name, and a short description of the issue. Do not email passwords, API keys, or full payment-card information.</p>
-          <a className="cv-standard-link" href="mailto:proof@chainverify.org?subject=ChainVerify%20support">
-            Email support
-          </a>
+          <p>Include your product, plan, organization name, and a short description of the issue. Do not send passwords, API keys, or full payment-card information.</p>
         </article>
         <article>
           <h2>Security & privacy</h2>
-          <p>For a security report or privacy request, put “Security” or “Privacy” in the subject line so it can be triaged appropriately.</p>
-          <a className="cv-standard-link" href="mailto:proof@chainverify.org?subject=ChainVerify%20Security%20or%20Privacy">
-            Send a security or privacy inquiry
-          </a>
+          <p>For a security report choose “Security report”. For a privacy request choose “Privacy or other” and start your message with “Privacy Request”.</p>
         </article>
       </div>
 

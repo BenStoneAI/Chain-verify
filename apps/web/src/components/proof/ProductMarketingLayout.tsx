@@ -162,7 +162,7 @@ export function ProductMarketingLayout(props: ProductMarketingLayoutProps) {
                     {plan.cta || 'Choose ' + plan.name}
                   </ProofCheckoutButton>
                 ) : (
-                  <Link href={plan.href || 'mailto:proof@chainverify.org'} className="pm-btn pm-plan-cta pm-btn-secondary">
+                  <Link href={plan.href || '/contact'} className="pm-btn pm-plan-cta pm-btn-secondary">
                     {plan.cta || 'Contact us'}
                   </Link>
                 )}

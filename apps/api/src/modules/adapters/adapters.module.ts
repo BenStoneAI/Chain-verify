@@ -7,6 +7,7 @@ import { ConduitBrowserAdapter } from './conduit-browser.adapter.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
 import { sha256Hex } from '../../common/utils/api-key-hash.js';
 import { renderPurchaseWelcomeEmail } from '../billing/purchase-welcome-email.js';
+import { renderContactEmail, stripHeaderChars } from '../contact/contact-email.js';
 import { BROWSER_INTAKE, IDENTITY_CONTEXT, OUTBOUND_EMAIL, PROOF_BILLING, type BrowserActionResult, type BrowserIntakePort, type IdentityContextPort, type OutboundEmailPort, type ProofBillingPort } from './ports.js';
 
 @Injectable()
@@ -27,6 +28,19 @@ export class SmtpOutboundEmailAdapter implements OutboundEmailPort {
    return;
   }
   await this.transport().sendMail({from:this.from(),to:i.to,replyTo,subject:m.subject,text:m.text,html:m.html});
+ }
+ async sendContactMessage(i:Parameters<OutboundEmailPort['sendContactMessage']>[0]){
+  const brevoKey=process.env.BREVO_API_KEY;
+  if(!brevoKey && !process.env.SMTP_HOST){ this.logger.warn('No email transport configured (set BREVO_API_KEY or SMTP_HOST); contact message not sent'); throw new Error('Email transport not configured'); }
+  const inbox=process.env.CONTACT_INBOX || process.env.EMAIL_REPLY_TO;
+  if(!inbox){ this.logger.warn('No contact recipient configured (set CONTACT_INBOX or EMAIL_REPLY_TO); contact message not sent'); throw new Error('Contact recipient not configured'); }
+  const m=renderContactEmail(i);
+  if(brevoKey){
+   const res=await fetch('https://api.brevo.com/v3/smtp/email',{method:'POST',headers:{'api-key':brevoKey,'content-type':'application/json','accept':'application/json'},body:JSON.stringify({sender:{email:process.env.EMAIL_FROM_ADDRESS||'welcome@chainverify.org',name:process.env.EMAIL_FROM_NAME||'ChainVerify'},to:[{email:inbox}],replyTo:{email:stripHeaderChars(i.email),name:stripHeaderChars(i.name).slice(0,100)},subject:m.subject,htmlContent:m.html,textContent:m.text})});
+   if(!res.ok){ throw new Error(`Brevo send failed: HTTP ${res.status}`); }
+   return;
+  }
+  await this.transport().sendMail({from:this.from(),to:inbox,replyTo:stripHeaderChars(i.email),subject:m.subject,text:m.text,html:m.html});
  }
 }
 
