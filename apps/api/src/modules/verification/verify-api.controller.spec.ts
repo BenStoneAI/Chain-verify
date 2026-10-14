@@ -486,16 +486,63 @@ describe('VerifyApiController rule detectors', () => {
 // table and code path that don't exist.
 
 // Git-based software_delivery requests (repoOwner/repoName/beforeSha/afterSha)
-// route through SoftwareDeliveryService.verify(orgId, dto), which is a
-// documented stub in the standalone build — "External software-delivery
-// inspection provider is not configured" (see software-delivery.service.ts).
-// The controller passes that result straight through as
-// { verification_status, confidence, accepted, evidence_gaps, input_received,
-// checks_requested } — it does NOT mint a chain-hashed ProofRecord or a
-// risk_level for this path (that only happens for invoice/document-based
-// verification). These tests assert the real pass-through contract instead
-// of the richer chain_hash/proof_id shape an earlier, non-standalone
-// implementation produced.
+// route through the real SoftwareDeliveryService engine:
+//   verify(dto, requestedChecks, { organizationId })
+// The controller reserves a monthly usage unit, calls the engine, and returns the
+// engine's rich result (snake_case + camelCase aliases) together with the legacy
+// keys { verification_status, confidence, accepted, evidence_gaps, input_received,
+// checks_requested } so existing consumers keep working.
+
+type EngineResultOverrides = Partial<{
+  verificationStatus: string;
+  confidence: number;
+  escalated: boolean;
+  escalationReason: string | null;
+  results: Array<{
+    checkId: string;
+    checkName: string;
+    status: 'PASS' | 'FAIL' | 'WARNING' | 'SKIP';
+    detail?: string;
+    durationMs?: number;
+    evidence?: Record<string, unknown>;
+  }>;
+}>;
+
+function engineResult(overrides: EngineResultOverrides = {}) {
+  const results = overrides.results ?? [
+    { checkId: 'B1', checkName: 'Commit exists', status: 'PASS' as const, detail: 'ok', durationMs: 12 },
+    { checkId: 'S12', checkName: 'No unconditional success', status: 'PASS' as const, detail: 'ok', durationMs: 3 },
+  ];
+  const count = (s: string) => results.filter((r) => r.status === s).length;
+  const issues = results.filter((r) => r.status === 'FAIL' || r.status === 'WARNING');
+  return {
+    verificationId: 'sdv_001',
+    proofId: 'proof_sd_001',
+    verificationStatus: overrides.verificationStatus ?? 'passed',
+    confidence: overrides.confidence ?? 0.9,
+    tierRun: 'BASIC',
+    jobType: 'DEPLOY_UPDATE',
+    escalated: overrides.escalated ?? false,
+    escalationReason: overrides.escalationReason ?? null,
+    summary: 'engine summary',
+    checksPassed: count('PASS'),
+    checksFailed: count('FAIL'),
+    checksWarning: count('WARNING'),
+    checksSkipped: count('SKIP'),
+    checksRun: results.length - count('SKIP'),
+    issuesFound: issues.map((r) => ({
+      checkId: r.checkId,
+      checkName: r.checkName,
+      status: r.status,
+      detail: r.detail,
+    })),
+    recommendedAction: 'ship',
+    results,
+  };
+}
+
+const usageMock = () => ({ reserve: vi.fn().mockResolvedValue(undefined) });
+
 describe('VerifyApiController software_delivery response pass-through (git-based path)', () => {
   const validSdOutput = {
     repoOwner: 'acme',
@@ -507,23 +554,14 @@ describe('VerifyApiController software_delivery response pass-through (git-based
     jobType: 'DEPLOY_UPDATE',
   };
 
-  const defaultSdResult = {
-    status: 'passed',
-    confidence: 0.9,
-    accepted: true,
-    evidence_gaps: [] as string[],
-    input_received: true,
-  };
-
-  function makeSdController(overrides: Partial<typeof defaultSdResult> = {}) {
-    const sdResult = { ...defaultSdResult, ...overrides };
-    const softwareDelivery = { verify: vi.fn().mockResolvedValue(sdResult) };
+  function makeSdController(overrides: EngineResultOverrides = {}, rules?: string[]) {
+    const softwareDelivery = { verify: vi.fn().mockResolvedValue(engineResult(overrides)) };
+    const verifyApiUsage = usageMock();
     const proofBilling = {
       resolveProofQuota: vi.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
       getActiveProofEntitlement: vi.fn().mockResolvedValue(null),
     };
     const prisma = {
-      softwareDeliveryVerification: { findUnique: vi.fn() },
       organizationMembership: { findMany: vi.fn().mockResolvedValue([]) },
       organizationSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
     };
@@ -535,46 +573,99 @@ describe('VerifyApiController software_delivery response pass-through (git-based
       {} as never, // proofClaim
       {} as never, // aiAnalysis
       softwareDelivery as never,
+      verifyApiUsage as never,
     );
     const user = { id: 'user_001', organizationId: 'org_001' } as never;
     return {
+      softwareDelivery,
+      verifyApiUsage,
       run: () =>
         controller.verify(
-          { source_type: 'software_delivery', output: validSdOutput },
+          { source_type: 'software_delivery', output: validSdOutput, ...(rules ? { rules } : {}) },
           user,
         ) as Promise<Record<string, unknown>>,
     };
   }
 
-  it('passes the configured status/confidence/accepted through as verification_status/confidence/accepted', async () => {
+  it('maps the engine result to rich keys and the legacy accepted/verification_status keys', async () => {
     const { run } = makeSdController();
     const result = await run();
     expect(result.verification_status).toBe('passed');
+    expect(result.verificationStatus).toBe('passed');
     expect(result.confidence).toBe(0.9);
     expect(result.accepted).toBe(true);
     expect(result.evidence_gaps).toEqual([]);
     expect(result.input_received).toBe(true);
+    expect(result.proof_id).toBe('proof_sd_001');
+    expect(result.checks_run).toBe(2);
+    expect(result.recommended_action).toBe('ship');
+    expect(Array.isArray(result.results)).toBe(true);
+    expect((result.results as Array<Record<string, unknown>>)[0]).toMatchObject({
+      check_id: 'B1',
+      checkId: 'B1',
+      status: 'PASS',
+    });
   });
 
-  it('reports needs_more_evidence with an explanatory gap when the provider is not configured', async () => {
+  it('is not accepted and lists SKIP checks as evidence gaps when the engine could not evaluate them', async () => {
     const { run } = makeSdController({
-      status: 'needs_more_evidence',
-      accepted: false,
-      confidence: 0,
-      evidence_gaps: ['External software-delivery inspection provider is not configured.'],
+      verificationStatus: 'needs-review',
+      confidence: 0.4,
+      results: [
+        { checkId: 'B1', checkName: 'Commit exists', status: 'PASS', detail: 'ok' },
+        { checkId: 'DEP1', checkName: 'Production running new code', status: 'SKIP', detail: 'no deploy url' },
+      ],
     });
     const result = await run();
-    expect(result.verification_status).toBe('needs_more_evidence');
     expect(result.accepted).toBe(false);
-    expect(result.evidence_gaps).toEqual([
-      'External software-delivery inspection provider is not configured.',
+    expect(result.checks_skipped).toBe(1);
+    expect(result.evidence_gaps).toEqual(['DEP1 (Production running new code): no deploy url']);
+  });
+
+  it('a failing check surfaces as a critical finding and blocks acceptance', async () => {
+    const { run } = makeSdController({
+      verificationStatus: 'failed',
+      confidence: 0.2,
+      results: [
+        { checkId: 'S3', checkName: 'No hardcoded secrets', status: 'FAIL', detail: 'secret in diff' },
+      ],
+    });
+    const result = await run();
+    expect(result.accepted).toBe(false);
+    expect(result.risk_level).toBe('high');
+    expect(result.findings).toEqual([
+      { rule: 'S3', severity: 'critical', message: 'secret in diff' },
     ]);
   });
 
-  it('echoes the caller-requested rule set back as checks_requested for an authenticated caller', async () => {
-    const { run } = makeSdController();
+  it('an escalated PASS is not accepted', async () => {
+    const { run } = makeSdController({ escalated: true, escalationReason: 'job value over threshold' });
     const result = await run();
-    expect(Array.isArray(result.checks_requested)).toBe(true);
+    expect(result.verification_status).toBe('passed');
+    expect(result.accepted).toBe(false);
+    expect(result.escalation_reason).toBe('job value over threshold');
+  });
+
+  it('reserves one usage unit, then calls the engine with dto, requested checks and organizationId', async () => {
+    const { run, softwareDelivery, verifyApiUsage } = makeSdController({}, ['S3', 'S12']);
+    const result = await run();
+    expect(result.checks_requested).toEqual(['S3', 'S12']);
+    expect(verifyApiUsage.reserve).toHaveBeenCalledTimes(1);
+    expect(softwareDelivery.verify).toHaveBeenCalledWith(
+      expect.objectContaining({ repoOwner: 'acme', repoName: 'api' }),
+      ['S3', 'S12'],
+      { organizationId: 'org_001' },
+    );
+    const reserveOrder = verifyApiUsage.reserve.mock.invocationCallOrder[0]!;
+    const verifyOrder = softwareDelivery.verify.mock.invocationCallOrder[0]!;
+    expect(reserveOrder).toBeLessThan(verifyOrder);
+  });
+
+  it('does not call the engine when the usage reservation is refused (quota exhausted)', async () => {
+    const { run, softwareDelivery, verifyApiUsage } = makeSdController();
+    verifyApiUsage.reserve.mockRejectedValueOnce(Object.assign(new Error('quota'), { status: 429 }));
+    await expect(run()).rejects.toMatchObject({ status: 429 });
+    expect(softwareDelivery.verify).not.toHaveBeenCalled();
   });
 });
 
@@ -723,24 +814,11 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
     jobType: 'NEW_FEATURE',
   };
 
-  // SoftwareDeliveryService.verify(orgId, dto) is a documented stub in the
-  // standalone build (see the "software_delivery response pass-through"
-  // describe block above) — the mock here can return any shape since it's
-  // fully dependency-injected, but the fields must match what the controller
-  // actually reads back off the result (status/confidence/accepted/
-  // evidence_gaps/input_received), not the richer pre-standalone shape.
-  const demoSdResult = {
-    status: 'passed',
-    confidence: 0.92,
-    accepted: true,
-    evidence_gaps: [] as string[],
-    input_received: true,
-  };
-
-  function makeDemoSdController(sdOverrides: Partial<typeof demoSdResult> = {}) {
+  function makeDemoSdController(sdOverrides: EngineResultOverrides = {}) {
     const softwareDelivery = {
-      verify: vi.fn().mockResolvedValue({ ...demoSdResult, ...sdOverrides }),
+      verify: vi.fn().mockResolvedValue(engineResult({ confidence: 0.92, ...sdOverrides })),
     };
+    const verifyApiUsage = usageMock();
     const proofBilling = {
       resolveProofQuota: vi.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
     };
@@ -755,10 +833,12 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
       {} as never, // proofClaim
       {} as never, // aiAnalysis
       softwareDelivery as never,
+      verifyApiUsage as never,
     );
     const req = { headers: {}, ip: '203.0.113.50' } as never;
     return {
       softwareDelivery,
+      verifyApiUsage,
       run: (output: unknown, rules?: unknown[]) =>
         controller.verifyDemo(
           { source_type: 'software_delivery', output, ...(rules ? { rules } : {}) },
@@ -785,8 +865,9 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
     // false failure.
     expect(result.checks_requested).toEqual(['B1', 'B3', 'B4', 'B7', 'S12']);
     expect(softwareDelivery.verify).toHaveBeenCalledWith(
-      'anonymous',
       expect.objectContaining({ repoOwner: 'benstoneai', repoName: 'chainverify-investor-demo' }),
+      ['B1', 'B3', 'B4', 'B7', 'S12'],
+      { organizationId: 'anonymous' },
     );
   });
 
@@ -865,7 +946,8 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
   });
 
   it('the authenticated software_delivery path is unaffected — arbitrary repos still work with a user', async () => {
-    const softwareDelivery = { verify: vi.fn().mockResolvedValue(demoSdResult) };
+    const softwareDelivery = { verify: vi.fn().mockResolvedValue(engineResult()) };
+    const verifyApiUsage = usageMock();
     const proofBilling = {
       resolveProofQuota: vi.fn().mockResolvedValue({ source: 'free', monthlyLimit: null }),
     };
@@ -878,6 +960,7 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
       {} as never,
       {} as never,
       softwareDelivery as never,
+      verifyApiUsage as never,
     );
     const user = { id: 'user_demo_001', organizationId: 'org_demo_001' } as never;
 
@@ -891,8 +974,9 @@ describe('VerifyApiController public investor-demo software_delivery scope', () 
     );
 
     expect(softwareDelivery.verify).toHaveBeenCalledWith(
-      'org_demo_001',
       expect.objectContaining({ repoOwner: 'acme', repoName: 'private-prod-repo' }),
+      ['S9'],
+      { organizationId: 'org_demo_001' },
     );
   });
 

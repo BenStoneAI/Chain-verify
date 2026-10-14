@@ -460,3 +460,95 @@ model AdminAuditLog {
   @@index([action, createdAt(sort: Desc)])
   @@map("admin_audit_logs")
 }
+
+// ---------------------------------------------------------------------------
+// Software-delivery verification engine (Agent Gate). Restored from the
+// canonical engine; models/enums are field-for-field with the source.
+// ---------------------------------------------------------------------------
+model SoftwareDeliveryVerification {
+  id               String                        @id @default(cuid())
+  proofId          String                        @unique @default(cuid())
+  organizationId   String?
+  tier             SoftwareVerificationTier
+  jobType          SoftwareJobType
+  repoOwner        String
+  repoName         String
+  beforeSha        String
+  afterSha         String
+  jobStartedAt     DateTime
+  jobDescription   String?                       @db.Text
+  aiReport         String?                       @db.Text
+  deployUrl        String?
+  deployPlatform   DeployPlatform?
+  prNumber         Int?
+  diffSize         Int?
+  jobValueUsd      Float?
+  checksRun        Int                           @default(0)
+  checksPassed     Int                           @default(0)
+  checksFailed     Int                           @default(0)
+  checksWarning    Int                           @default(0)
+  checksSkipped    Int                           @default(0)
+  overallStatus    SoftwareVerificationStatus
+  escalated        Boolean                       @default(false)
+  escalationReason String?
+  buyerSummary     String?
+  results          SoftwareDeliveryCheckResult[]
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+
+  @@index([organizationId, createdAt])
+}
+
+model SoftwareDeliveryCheckResult {
+  id             String                       @id @default(cuid())
+  verificationId String
+  checkId        String
+  checkName      String
+  tier           SoftwareVerificationTier
+  status         CheckResultStatus
+  detail         String?                      @db.Text
+  evidence       Json?
+  durationMs     Int?
+  verification   SoftwareDeliveryVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+
+  @@index([verificationId])
+}
+
+enum SoftwareVerificationTier {
+  BASIC
+  STANDARD
+  THOROUGH
+}
+
+enum SoftwareJobType {
+  BUG_FIX
+  DEPLOY_UPDATE
+  WRITE_TESTS
+  MIGRATE_DATA
+  BUILD_INTEGRATION
+  NEW_FEATURE
+  CODE_REVIEW
+}
+
+enum DeployPlatform {
+  NETLIFY
+  RENDER
+  VERCEL
+  RAILWAY
+  OTHER
+}
+
+enum CheckResultStatus {
+  PASS
+  FAIL
+  WARNING
+  SKIP
+}
+
+enum SoftwareVerificationStatus {
+  PASSED
+  FAILED
+  NEEDS_REVIEW
+  ESCALATED
+}
+

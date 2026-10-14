@@ -71,6 +71,7 @@ import {
 } from './evidence-readiness.js';
 import { SoftwareDeliveryService } from './software-delivery/software-delivery.service.js';
 import { SoftwareDeliveryVerifyDto } from './software-delivery/dto/software-delivery-verify.dto.js';
+import { VerifyApiUsageService } from './software-delivery/verify-api-usage.service.js';
 const SOFTWARE_DELIVERY_USAGE_PRODUCT = 'software-delivery';
 
 // Allowed status values for pilot intake status updates.
@@ -2313,7 +2314,7 @@ export class VerifyApiController {
     private readonly proofClaim: ProofClaimService,
     private readonly aiAnalysis: AiAnalysisService,
     private readonly softwareDelivery: SoftwareDeliveryService,
-    
+    private readonly verifyApiUsage: VerifyApiUsageService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -2904,7 +2905,7 @@ export class VerifyApiController {
       // Atomically claim quota + enforce the 429 in one step (no check-then-act
       // race). A claimed unit is consumed even if verification later throws —
       // consistent with the per-IP demo quota which also increments up front.
-      
+      await this.verifyApiUsage.reserve(orgId, SOFTWARE_DELIVERY_USAGE_PRODUCT, sdLimit);
 
       // Anonymous demo callers always run the fixed read-only GitHub check set,
       // regardless of what `rules`/`tier` they submitted — auto-expansion by tier
@@ -2912,13 +2913,93 @@ export class VerifyApiController {
       const requestedChecks = user
         ? ((body.rules as string[]) ?? ['auto'])
         : [...DEMO_SOFTWARE_DELIVERY_ALLOWED_CHECKS];
-      const result = await this.softwareDelivery.verify(orgId, dto);
+      const result = await this.softwareDelivery.verify(dto, requestedChecks, {
+        organizationId: orgId,
+      });
+
+      const sdRiskLevel =
+        result.confidence < 0.5 ? 'high' : result.confidence < 0.75 ? 'medium' : 'low';
+      // chain_hash binds to the delivered content + evidence (tamper-evident), not
+      // merely to the proof id. SD proofs are not chained to the org ledger, so
+      // prevChainHash is an empty-string sentinel.
+      const sdChainHash = computeContentHash({
+        proofId: result.proofId,
+        deliveryPayload: body.output,
+        evidence: body.evidence ?? null,
+        prevChainHash: '',
+      });
+      // Legacy contract: `accepted` is true only for a clean, un-escalated PASS;
+      // `evidence_gaps` lists every check the engine could not evaluate (SKIP).
+      const sdAccepted = result.verificationStatus === 'passed' && !result.escalated;
+      const sdEvidenceGaps = result.results
+        .filter((r) => r.status === 'SKIP')
+        .map((r) => `${r.checkId} (${r.checkName}): ${r.detail ?? 'not evaluated'}`);
+      const sdResults = result.results.map((r) => ({
+        // snake_case: consumed by the web client (SoftwareDeliveryForm)
+        check_id: r.checkId,
+        check_name: r.checkName,
+        status: r.status,
+        detail: r.detail ?? null,
+        duration_ms: r.durationMs ?? null,
+        evidence: r.evidence ?? null,
+        // camelCase: engine-native shape
+        checkId: r.checkId,
+        checkName: r.checkName,
+        durationMs: r.durationMs ?? null,
+      }));
+      const sdIssues = result.issuesFound.map((i) => ({
+        check_id: i.checkId,
+        check_name: i.checkName,
+        status: i.status,
+        detail: i.detail ?? null,
+        checkId: i.checkId,
+        checkName: i.checkName,
+      }));
+
       const sdResponse = {
-        verification_status: result.status,
+        // --- rich engine result (snake_case) ---
+        verification_status: result.verificationStatus,
+        verification_id: result.verificationId,
         confidence: result.confidence,
-        accepted: result.accepted,
-        evidence_gaps: result.evidence_gaps,
-        input_received: result.input_received,
+        risk_level: sdRiskLevel,
+        proof_id: result.proofId,
+        chain_hash: sdChainHash,
+        tier_run: result.tierRun,
+        job_type: result.jobType,
+        escalated: result.escalated,
+        escalation_reason: result.escalationReason ?? null,
+        summary: result.summary,
+        checks_passed: result.checksPassed,
+        checks_failed: result.checksFailed,
+        checks_warning: result.checksWarning,
+        checks_skipped: result.checksSkipped,
+        checks_run: result.checksRun,
+        issues_found: sdIssues,
+        findings: result.issuesFound.map((i) => ({
+          rule: i.checkId,
+          severity: i.status === 'FAIL' ? 'critical' : i.status === 'WARNING' ? 'warning' : 'info',
+          message: i.detail ?? i.checkName,
+        })),
+        recommended_action: result.recommendedAction,
+        results: sdResults,
+        // --- rich engine result (engine-native camelCase aliases) ---
+        verificationId: result.verificationId,
+        proofId: result.proofId,
+        verificationStatus: result.verificationStatus,
+        tierRun: result.tierRun,
+        jobType: result.jobType,
+        escalationReason: result.escalationReason ?? null,
+        checksPassed: result.checksPassed,
+        checksFailed: result.checksFailed,
+        checksWarning: result.checksWarning,
+        checksSkipped: result.checksSkipped,
+        checksRun: result.checksRun,
+        issuesFound: sdIssues,
+        recommendedAction: result.recommendedAction,
+        // --- legacy keys kept so existing consumers do not break ---
+        accepted: sdAccepted,
+        evidence_gaps: sdEvidenceGaps,
+        input_received: true,
         checks_requested: requestedChecks,
       };
       if (demoCacheKey) setDemoSoftwareDeliveryCache(demoCacheKey, sdResponse);
