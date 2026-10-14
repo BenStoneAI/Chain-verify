@@ -1008,6 +1008,77 @@ describe('hardening: replay, event ordering, amount and product scope', () => {
     );
   });
 
+  describe('zero-dollar (no_payment_required) checkout', () => {
+    const freeSession = (over: Record<string, any> = {}) => ({
+      payment_status: 'no_payment_required',
+      amount_total: 0,
+      raw: {
+        amount_subtotal: 9900,
+        total_details: { amount_discount: 9900 },
+        subscription: { id: 'sub_test_456', status: 'active', items: { data: [] } },
+        ...(over.raw ?? {}),
+      },
+      ...Object.fromEntries(Object.entries(over).filter(([k]) => k !== 'raw')),
+    });
+
+    it('provisions an ACTIVE Agent Gate entitlement for a 100%-off promo checkout', async () => {
+      const { service, prisma } = makeService();
+      const stripe = fakeStripe(freeSession());
+
+      const result = await service.provisionFromCheckoutSession('cs_test_abc123', stripe);
+
+      expect(result.status).toBe('ACTIVE');
+      expect(result.monthlyLimit).toBe(5000);
+      expect(result.planSlug).toBe('agent-gate-build');
+      expect(prisma._tables.entitlements.rows).toHaveLength(1);
+      expect(prisma._tables.entitlements.rows[0].status).toBe('ACTIVE');
+      expect(prisma._tables.entitlements.rows[0].monthlyLimit).toBe(5000);
+    });
+
+    it('rejects a $0 session with no discount', async () => {
+      const { service, prisma } = makeService();
+      const stripe = fakeStripe(freeSession({ raw: { total_details: { amount_discount: 0 } } }));
+      await expect(service.provisionFromCheckoutSession('cs_test_abc123', stripe)).rejects.toBeInstanceOf(
+        ProvisioningValidationError,
+      );
+      expect(prisma._tables.entitlements.rows).toHaveLength(0);
+    });
+
+    it('rejects a $0 session whose discount is only partial', async () => {
+      const { service, prisma } = makeService();
+      const stripe = fakeStripe(freeSession({ raw: { total_details: { amount_discount: 5000 } } }));
+      await expect(service.provisionFromCheckoutSession('cs_test_abc123', stripe)).rejects.toThrow(
+        /100% of the subtotal/,
+      );
+      expect(prisma._tables.entitlements.rows).toHaveLength(0);
+    });
+
+    it('rejects a $0 session whose subscription is trialing (a trial is not an authorized discount)', async () => {
+      const { service, prisma } = makeService();
+      const stripe = fakeStripe(
+        freeSession({ raw: { subscription: { id: 'sub_test_456', status: 'trialing', items: { data: [] } } } }),
+      );
+      await expect(service.provisionFromCheckoutSession('cs_test_abc123', stripe)).rejects.toThrow(/trialing/);
+      expect(prisma._tables.entitlements.rows).toHaveLength(0);
+    });
+
+    it('rejects a no_payment_required session with a non-zero total', async () => {
+      const { service } = makeService();
+      const stripe = fakeStripe(freeSession({ amount_total: 100 }));
+      await expect(service.provisionFromCheckoutSession('cs_test_abc123', stripe)).rejects.toBeInstanceOf(
+        ProvisioningValidationError,
+      );
+    });
+
+    it('still rejects any other payment_status', async () => {
+      const { service } = makeService();
+      const stripe = fakeStripe({ payment_status: 'unpaid' });
+      await expect(service.provisionFromCheckoutSession('cs_test_abc123', stripe)).rejects.toBeInstanceOf(
+        ProvisioningValidationError,
+      );
+    });
+  });
+
   it('ignores (200) a checkout session that is not a ChainVerify product instead of failing and being retried', async () => {
     const { service, prisma } = makeService();
     const stripe = fakeStripe({ metadata: {} });

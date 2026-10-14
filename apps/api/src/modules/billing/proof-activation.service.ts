@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 
 import { PrismaService } from '../database/prisma.service.js';
 import { StripeProvisioningService } from './stripe-provisioning.service.js';
+import { checkoutSubtotal, evaluateCheckoutPayment } from './zero-dollar-checkout.js';
 
 type ActivationInput = {
   product: 'verify-api' | 'audit-proof' | 'invoice-proof';
@@ -89,7 +90,7 @@ export class ProofActivationService {
     let session: Stripe.Checkout.Session;
     try {
       session = await this.stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['line_items.data.price'],
+        expand: ['line_items.data.price', 'subscription'],
       });
     } catch {
       throw new BadRequestException('Stripe could not verify this checkout session');
@@ -102,8 +103,13 @@ export class ProofActivationService {
     if (session.status !== 'complete') {
       throw new BadRequestException('Stripe checkout is not complete');
     }
-    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
-      throw new BadRequestException('Stripe does not show this checkout as paid');
+    const payment = evaluateCheckoutPayment(session);
+    if (payment.ok === false) {
+      throw new BadRequestException(
+        session.payment_status === 'no_payment_required'
+          ? payment.reason
+          : 'Stripe does not show this checkout as paid',
+      );
     }
 
     const stripeEmail = session.customer_details?.email?.trim().toLowerCase();
@@ -122,7 +128,9 @@ export class ProofActivationService {
       throw new BadRequestException('Checkout product does not match the requested activation');
     }
 
-    const lineAmount = session.amount_total ?? session.line_items?.data?.[0]?.amount_total ?? null;
+    // Compare the pre-tax, pre-discount subtotal: amount_total is 0 for a 100%-off checkout.
+    const lineAmount =
+      checkoutSubtotal(session) ?? session.amount_total ?? session.line_items?.data?.[0]?.amount_total ?? null;
     if (lineAmount !== null && lineAmount !== plan.priceCents) {
       throw new BadRequestException('Checkout amount does not match the requested plan');
     }

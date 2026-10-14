@@ -80,6 +80,63 @@ describe('ProofActivationService', () => {
     expect(intakes[0].planSlug).toBe('agent-gate-build');
   });
 
+  it('fallback accepts a 100%-off checkout (subtotal 9900, total 0, full discount)', async () => {
+    const provisioning = { provisionFromCheckoutSession: vi.fn().mockRejectedValue(new Error('db down')) };
+    const { service, intakes } = build(
+      session({
+        payment_status: 'no_payment_required',
+        amount_total: 0,
+        amount_subtotal: 9900,
+        total_details: { amount_discount: 9900 },
+        subscription: { id: 'sub_1', status: 'active' },
+      }),
+      provisioning,
+    );
+
+    const result: any = await service.activate({ ...baseInput, product: 'verify-api', planSlug: 'agent-gate-build' });
+
+    expect(result.ok).toBe(true);
+    expect(intakes).toHaveLength(1);
+    expect(intakes[0].planSlug).toBe('agent-gate-build');
+  });
+
+  it('fallback rejects a $0 checkout with no discount', async () => {
+    const provisioning = { provisionFromCheckoutSession: vi.fn().mockRejectedValue(new Error('db down')) };
+    const { service, intakes } = build(
+      session({
+        payment_status: 'no_payment_required',
+        amount_total: 0,
+        amount_subtotal: 9900,
+        total_details: { amount_discount: 0 },
+      }),
+      provisioning,
+    );
+
+    await expect(
+      service.activate({ ...baseInput, product: 'verify-api', planSlug: 'agent-gate-build' }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(intakes).toHaveLength(0);
+  });
+
+  it('fallback rejects a 100%-off checkout whose subscription is trialing', async () => {
+    const provisioning = { provisionFromCheckoutSession: vi.fn().mockRejectedValue(new Error('db down')) };
+    const { service, intakes } = build(
+      session({
+        payment_status: 'no_payment_required',
+        amount_total: 0,
+        amount_subtotal: 9900,
+        total_details: { amount_discount: 9900 },
+        subscription: { id: 'sub_1', status: 'trialing' },
+      }),
+      provisioning,
+    );
+
+    await expect(
+      service.activate({ ...baseInput, product: 'verify-api', planSlug: 'agent-gate-build' }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(intakes).toHaveLength(0);
+  });
+
   it('managed AuditProof pilot still creates an intake (no automatic key)', async () => {
     const provisioning = { provisionFromCheckoutSession: vi.fn() };
     const { service, intakes } = build(

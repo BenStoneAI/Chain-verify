@@ -11,6 +11,7 @@ import {
 } from '@chain-verify/config';
 import { PrismaService } from '../database/prisma.service.js';
 import { sha256Hex } from '../../common/utils/api-key-hash.js';
+import { checkoutSubtotal, evaluateCheckoutPayment } from './zero-dollar-checkout.js';
 
 /**
  * Thrown when a Checkout Session is not a valid, paid ChainVerify purchase.
@@ -398,10 +399,9 @@ export class StripeProvisioningService {
     if (session.status !== 'complete') {
       throw new ProvisioningValidationError(`Session status is ${session.status}, expected complete`);
     }
-    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
-      throw new ProvisioningValidationError(
-        `Session payment_status is ${session.payment_status}, expected paid or no_payment_required`,
-      );
+    const payment = evaluateCheckoutPayment(session);
+    if (payment.ok === false) {
+      throw new ProvisioningValidationError(payment.reason);
     }
     if (!session.customer_details?.email) {
       throw new ProvisioningValidationError('Session has no customer email');
@@ -448,7 +448,7 @@ export class StripeProvisioningService {
 
     // Verify amount against the PRE-tax, PRE-discount subtotal: amount_total
     // legitimately differs from the list price when tax or a promo code applies.
-    const amount = session.amount_subtotal ?? session.amount_total;
+    const amount = checkoutSubtotal(session) ?? session.amount_total;
     if (amount !== null && amount !== undefined && amount !== plan.priceCents) {
       throw new ProvisioningValidationError(`Amount mismatch: session ${amount} vs plan ${plan.priceCents}`);
     }
