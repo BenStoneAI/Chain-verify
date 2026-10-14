@@ -8,7 +8,7 @@ export interface ProductFooterProps {
 
 const columns = [
   { heading: 'Products', links: [['Agent Gate','/agent-gate'],['AuditProof','/audit-proof'],['InvoiceProof','/invoice-proof']] },
-  { heading: 'Explore', links: [['How it works','/#how-it-works'],['Proof model','/#proof'],['Agent Gate demo','/agent-gate#proof']] },
+  { heading: 'Explore', links: [['How it works','/#how-it-works'],['Proof model','/#proof-model'],['Agent Gate demo','/agent-gate#proof']] },
   { heading: 'Company', links: [['Contact','/contact'],['Security','/security'],['Privacy','/privacy']] },
 ];
 

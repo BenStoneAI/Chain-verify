@@ -22,9 +22,15 @@ export const metadata: Metadata = {
     description: 'Verify AI output, software delivery, agent activity, and invoice risk before people rely on it.',
     url: 'https://chainverify.org',
     siteName: 'ChainVerify',
-    type: 'website'
+    type: 'website',
+    images: [{ url: '/assets/og-social-banner.png', width: 1024, height: 576, alt: 'ChainVerify — Independent Proof for AI Work' }]
   },
-  twitter: { card: 'summary_large_image', title: 'ChainVerify', description: 'Independent proof for AI work.' },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ChainVerify — Independent Proof for AI Work',
+    description: 'Independent proof for AI work.',
+    images: ['/assets/og-social-banner.png']
+  },
   robots: { index: true, follow: true }
 };
 
