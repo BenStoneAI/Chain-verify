@@ -1,4 +1,4 @@
-import { createHash, sign as cryptoSign, createPrivateKey } from 'crypto';
+import { createHash } from 'crypto';
 
 import {
   BadRequestException,
@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import {
   Prisma,
@@ -23,6 +24,14 @@ import { auditProofPlanConfigs, verifyApiPlanConfigs } from '@chain-verify/confi
 import { PrismaService } from '../database/prisma.service.js';
 import { VerificationProduct } from './verification.service.js';
 import { redactCredentialsFromEvidence, redactionNotice } from './evidence-secret-guard.js';
+import {
+  hasProofSigningKey,
+  isProofSigningRequired,
+  presentProofSigning,
+  signProofChainHash,
+  type ProofSigningStatus,
+} from './audit-proof-signing.js';
+import { evaluateProofFreshness } from './audit-proof-freshness.js';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DAYS_PER_MONTH = 30;
@@ -92,6 +101,8 @@ export interface PublicProofSummary {
   final_decision: ProofFinalDecision;
   proof_status: ProofStatus;
   chain_hash: string | null;
+  /** SIGNED | UNSIGNED | SIGNING_FAILED - an unsigned record must never read as signed. */
+  signing_status: ProofSigningStatus;
   created_at: Date;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   issuesFound: number;
@@ -254,6 +265,17 @@ export interface ChainWalkResult {
   checkedAt: string;
 }
 
+/**
+ * Optional trailing options for {@link ProofService.createProof}. Both values come
+ * from the AuditProof report (see audit-proof-freshness.ts#auditProofCreateOptions).
+ */
+export interface CreateProofOptions {
+  /** sha256 of the canonical classified evidence (report.evidence_fingerprint). */
+  evidenceFingerprint?: string;
+  /** Deadline after which the proof is STALE (report.stale_after). */
+  staleAfter?: Date;
+}
+
 // ---------------------------------------------------------------------------
 // ProofService
 // ---------------------------------------------------------------------------
@@ -283,9 +305,13 @@ export class ProofService {
    * @param planSlug          - Optional plan slug the proof was created under, used to
    *                            resolve the retention window. When omitted (e.g. anonymous
    *                            proofs) the free/anonymous VerifyAPI retention window applies.
-   * @returns The newly created ProofRecord.
+   * @param options           - Optional evidence fingerprint / stale-after deadline to persist.
+   * @returns The newly created ProofRecord. Its `signingStatus` is always one of
+   *          SIGNED | UNSIGNED | SIGNING_FAILED (never silently unsigned).
    * @throws NotFoundException   if the VerificationRun is not found or belongs to a different org.
    * @throws BadRequestException if the run is still in a non-terminal state.
+   * @throws ServiceUnavailableException when PROOF_SIGNING_REQUIRED=true and the proof
+   *         cannot be signed (fail closed: no record is created).
    */
   async createProof(
     orgId: string,
@@ -296,6 +322,7 @@ export class ProofService {
     evidence: Prisma.InputJsonValue,
     finalDecision: ProofFinalDecision,
     planSlug?: string,
+    options?: CreateProofOptions,
   ): Promise<ProofRecord> {
     // Scope check: fetch run with orgId to prevent cross-org access.
     const run = await this.prisma.verificationRun.findUnique({
@@ -312,6 +339,15 @@ export class ProofService {
       throw new BadRequestException(
         `Cannot create a proof for a VerificationRun in status ${run.status}. ` +
           `Run must be in one of: ${terminalStatuses.join(', ')}`,
+      );
+    }
+
+    // Fail closed up front: if signing is mandatory and no key exists at all there
+    // is no point opening a transaction. (An INVALID key is caught below, inside
+    // the transaction, where the throw rolls the new row back.)
+    if (isProofSigningRequired() && !hasProofSigningKey()) {
+      throw new ServiceUnavailableException(
+        'Proof signing is required but no signing key is configured; no proof was created.',
       );
     }
 
@@ -387,22 +423,14 @@ export class ProofService {
             ? null
             : new Date(created.createdAt.getTime() + retentionPolicyDays * MS_PER_DAY);
 
-        let proofSignature: string | null = null;
-        const privKeyB64 = process.env['PROOF_SIGNING_PRIVATE_KEY'];
-        if (privKeyB64) {
-          try {
-            const privKey = createPrivateKey({
-              key: Buffer.from(privKeyB64, 'base64'),
-              format: 'der',
-              type: 'pkcs8',
-            });
-            proofSignature = cryptoSign(null, Buffer.from(chainHash, 'hex'), privKey).toString(
-              'base64',
-            );
-          } catch (e: unknown) {
-            // key misconfigured — skip signature, don't break proof creation
-            console.warn('[ProofService] Ed25519 signing skipped — key misconfigured:', String(e));
-          }
+        // Signing never fails silently: the outcome (SIGNED / UNSIGNED /
+        // SIGNING_FAILED + a short error class) is persisted on the record.
+        const signing = signProofChainHash(chainHash, process.env, created.id);
+        if (signing.status !== 'SIGNED' && isProofSigningRequired()) {
+          // Throwing inside the transaction rolls back the row created above.
+          throw new ServiceUnavailableException(
+            `Proof signing is required but unavailable (${signing.status}); no proof was created.`,
+          );
         }
 
         return tx.proofRecord.update({
@@ -410,7 +438,13 @@ export class ProofService {
           data: {
             chain_hash: chainHash,
             prev_chain_hash: prevChainHash || null,
-            proof_signature: proofSignature,
+            proof_signature: signing.signature,
+            signingStatus: signing.status,
+            signingError: signing.error,
+            ...(options?.evidenceFingerprint !== undefined
+              ? { evidenceFingerprint: options.evidenceFingerprint }
+              : {}),
+            ...(options?.staleAfter !== undefined ? { staleAfter: options.staleAfter } : {}),
             retentionPolicyDays,
             retentionExpiresAt,
             retentionStatus: RETENTION_STATUS_ACTIVE,
@@ -547,6 +581,25 @@ export class ProofService {
   }
 
   // -------------------------------------------------------------------------
+  // getProofFreshness
+  // -------------------------------------------------------------------------
+
+  /**
+   * CURRENT / STALE for a stored proof, scoped to the requesting org. Pass
+   * `currentFingerprint` (recomputed from the live evidence) to also detect
+   * evidence drift; without it only the stale_after deadline is evaluated.
+   */
+  async getProofFreshness(
+    orgId: string,
+    proofId: string,
+    currentFingerprint?: string | null,
+    now: Date = new Date(),
+  ) {
+    const proof = await this.getProof(orgId, proofId);
+    return evaluateProofFreshness(proof, currentFingerprint, now);
+  }
+
+  // -------------------------------------------------------------------------
   // listProofs
   // -------------------------------------------------------------------------
 
@@ -629,6 +682,8 @@ export class ProofService {
           finalDecision: true,
           proofStatus: true,
           chain_hash: true,
+          proof_signature: true,
+          signingStatus: true,
           createdAt: true,
           verificationRun: {
             select: {
@@ -656,6 +711,7 @@ export class ProofService {
         final_decision: proof.finalDecision,
         proof_status: proof.proofStatus,
         chain_hash: proof.chain_hash ?? null,
+        signing_status: presentProofSigning(proof).signing_status,
         created_at: proof.createdAt,
         riskLevel: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(proof.verificationRun.riskLevel)
           ? (proof.verificationRun.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL')

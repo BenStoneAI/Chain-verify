@@ -10,12 +10,77 @@
 import { parseInput } from '../normalizers/invoice-normalizer.js';
 import { classifyEvidence, type DocumentType } from './classifier.js';
 
+/**
+ * How much independent weight a piece of evidence carries.
+ *
+ *   customer_submitted     - the customer's own say-so (the default; self-reported).
+ *   independently_observed - collected by the platform / a system the customer
+ *                            does not control.
+ *   externally_verified    - confirmed against a third-party source of record.
+ *   derived                - computed or generated from other evidence.
+ *   human_approved         - reviewed and approved by a named human reviewer.
+ *
+ * SECURITY: provenance must only ever be set from a trusted server-side source.
+ * A value copied straight out of a customer request body is itself customer
+ * input and must NOT be forwarded here.
+ */
+export type EvidenceProvenance =
+  | 'customer_submitted'
+  | 'independently_observed'
+  | 'externally_verified'
+  | 'derived'
+  | 'human_approved';
+
+/** Declared order is also the "weakest first" order used to resolve collisions. */
+export const EVIDENCE_PROVENANCE_VALUES: readonly EvidenceProvenance[] = [
+  'customer_submitted',
+  'derived',
+  'independently_observed',
+  'externally_verified',
+  'human_approved',
+];
+
+export const DEFAULT_EVIDENCE_PROVENANCE: EvidenceProvenance = 'customer_submitted';
+
+/**
+ * Normalise an untrusted provenance value. Anything that is not an exact (trimmed)
+ * member of the closed set - unknown strings, other types, undefined - becomes
+ * `customer_submitted`. This function can only ever return the default or the
+ * value the caller explicitly named; it never upgrades an unrecognised input.
+ */
+export function normaliseProvenance(value: unknown): EvidenceProvenance {
+  if (typeof value !== 'string') return DEFAULT_EVIDENCE_PROVENANCE;
+  const candidate = value.trim();
+  return (EVIDENCE_PROVENANCE_VALUES as readonly string[]).includes(candidate)
+    ? (candidate as EvidenceProvenance)
+    : DEFAULT_EVIDENCE_PROVENANCE;
+}
+
+/** Rank used to pick the weakest provenance when two items share a fingerprint. */
+export function provenanceRank(p: EvidenceProvenance): number {
+  return EVIDENCE_PROVENANCE_VALUES.indexOf(p);
+}
+
+/** Normalise an evidence timestamp to ISO-8601, or undefined when unreadable. */
+export function normaliseObservedAt(value: unknown): string | undefined {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? undefined : value.toISOString();
+  }
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const ms = Date.parse(value.trim());
+  return Number.isNaN(ms) ? undefined : new Date(ms).toISOString();
+}
+
 export type EvidenceInput = {
   filename?: string;
   mimeType?: string;
   text?: string;
   json?: unknown;
   sourceProduct: 'invoiceproof' | 'auditproof' | 'verifyapi';
+  /** Optional provenance class. Defaults to `customer_submitted`; unknown strings normalise to it. */
+  provenance?: EvidenceProvenance | string;
+  /** Optional time the evidence was captured / observed (ISO string or Date). */
+  observedAt?: string | Date;
 };
 
 export type ClassifiedEvidence = {
@@ -31,6 +96,10 @@ export type ClassifiedEvidence = {
   sourceProduct: 'invoiceproof' | 'auditproof' | 'verifyapi';
   /** Parser warnings surfaced from parseInput (e.g. positional-fallback notice). */
   normalizationWarnings: string[];
+  /** Provenance class (always set by ingestEvidence; absent means customer_submitted). */
+  provenance?: EvidenceProvenance;
+  /** ISO-8601 capture time supplied with the evidence, when valid. */
+  observedAt?: string;
 };
 
 export type { DocumentType };
@@ -124,5 +193,7 @@ export function ingestEvidence(input: EvidenceInput): ClassifiedEvidence {
     mimeType: input.mimeType,
     sourceProduct: input.sourceProduct,
     normalizationWarnings,
+    provenance: normaliseProvenance(input.provenance),
+    observedAt: normaliseObservedAt(input.observedAt),
   };
 }

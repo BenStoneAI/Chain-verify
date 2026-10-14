@@ -28,6 +28,12 @@ import { VERIFYAPI_CONTROLS, buildDeliveryContext } from '../registries/verifyap
 import { runControls } from './registry.js';
 import { buildProofReport, type ProofReport } from './report.js';
 import { computeFinalConfidence } from './final-confidence.js';
+import { resolveEvidenceMaxAgeDays } from './freshness.js';
+import {
+  applyConfidenceCap,
+  stampFindingProvenance,
+  stampResultProvenance,
+} from './provenance.js';
 import { runLlmResidual, type LlmResidualInput, type ResidualOptions } from './llm-residual.js';
 import type {
   ControlDefinition,
@@ -44,6 +50,10 @@ export type RunProofProductArgs = {
   residual?: ResidualOptions;
   /** Explicit deterministic proof id override (still must be stable at call site). */
   proofId?: string;
+  /** Verification time; only feeds evidence_as_of / stale_after. Default: now. */
+  now?: Date;
+  /** Evidence max age in days. Default: env AUDIT_PROOF_EVIDENCE_MAX_AGE_DAYS, else 30. */
+  maxAgeDays?: number;
 };
 
 // Per-product wiring: which controls + which context builder.
@@ -152,7 +162,8 @@ export async function runProofProduct(args: RunProofProductArgs): Promise<ProofR
 
   // 2. Build context + run deterministic controls.
   const ctx = wiring.buildContext(documents);
-  const results = runControls(wiring.controls, ctx);
+  // Carry provenance onto every EvidenceRef (copies; status/severity untouched).
+  const results = stampResultProvenance(runControls(wiring.controls, ctx), documents);
 
   const mustCheckIds = new Set(wiring.controls.filter((c) => c.mustCheck).map((c) => c.id));
 
@@ -171,7 +182,10 @@ export async function runProofProduct(args: RunProofProductArgs): Promise<ProofR
   };
   const residual = await runLlmResidual(residualInput, args.residual);
 
-  const allFindings = [...controlFindings, ...residual.findings];
+  const allFindings = stampFindingProvenance(
+    [...controlFindings, ...residual.findings],
+    documents,
+  );
 
   // 5. FINAL confidence — deterministic ceiling; residual lowers only. We pass NO
   //    modelConfidence: the residual layer already capped LLM influence by dropping/
@@ -194,11 +208,20 @@ export async function runProofProduct(args: RunProofProductArgs): Promise<ProofR
     contentFingerprint: fingerprintDocuments(documents),
     proofId: args.proofId,
     confidenceInputs: { mustCheckIds },
+    documents,
+    controlDefinitions: wiring.controls,
+    now: args.now,
+    maxAgeDays: args.maxAgeDays ?? resolveEvidenceMaxAgeDays(),
+    // The self-reported-evidence cap is an AuditProof concept; other products are
+    // untouched so InvoiceProof / Agent Gate scoring does not shift under them.
+    applyProvenanceCap: product === 'auditproof',
   });
 
   return {
     ...report,
-    confidence: finalConfidence.confidence,
+    // Final confidence folds in residual findings; the provenance cap (a pure
+    // min()) is re-applied on top so it can never be undone.
+    confidence: applyConfidenceCap(finalConfidence.confidence, report.confidence_cap),
     evidence_sufficiency_score: finalConfidence.evidenceSufficiency,
   };
 }

@@ -8,7 +8,7 @@
 // status-to-status translation it will use).
 
 import type { FieldValue } from '../field-value.js';
-import type { ClassifiedEvidence } from '../ingestion/evidence-input.js';
+import type { ClassifiedEvidence, EvidenceProvenance } from '../ingestion/evidence-input.js';
 
 export type { FieldValue };
 
@@ -31,6 +31,8 @@ export type EvidenceRef = {
   lineNumber?: number;
   sectionHeading?: string;
   sourcePassage?: string;
+  /** Provenance class of the evidence this ref points at (absent = customer_submitted). */
+  provenance?: EvidenceProvenance;
 };
 
 /**
@@ -85,6 +87,32 @@ export type CoverageSummary = {
   passed: number;
   failed: number;
   skipped: number;
+};
+
+/** Per-control outcome used by the report's coverage section. */
+export type CoverageOutcome = 'passed' | 'failed' | 'warned' | 'skipped' | 'unable_to_run';
+
+export type ControlCoverageDetail = {
+  control_id: string;
+  outcome: CoverageOutcome;
+  /** Plain-English reason (always set; for skipped / unable_to_run it says why). */
+  reason: string;
+};
+
+/**
+ * Full control-coverage accounting for one proof run. Invariant:
+ * passed + failed + warned + skipped + unable_to_run === controls_expected, and
+ * controls_executed === passed + failed + warned.
+ */
+export type ControlCoverageReport = {
+  controls_expected: number;
+  controls_executed: number;
+  passed: number;
+  failed: number;
+  warned: number;
+  skipped: number;
+  unable_to_run: number;
+  details: ControlCoverageDetail[];
 };
 
 /**

@@ -6,13 +6,34 @@
 //   - proof_id is derived from a content fingerprint (no Date.now / random),
 //   - missing_evidence and recommended_next_actions are aggregated + deduped.
 
-import { fnv1a } from '../ingestion/evidence-input.js';
+import { fnv1a, type ClassifiedEvidence } from '../ingestion/evidence-input.js';
+import { buildControlCoverage } from './coverage.js';
+import {
+  DEFAULT_EVIDENCE_MAX_AGE_DAYS,
+  computeEvidenceFingerprint,
+  computeStaleAfter,
+  resolveEvidenceAsOf,
+} from './freshness.js';
+import {
+  PROVENANCE_CONFIDENCE_CAP,
+  applyConfidenceCap,
+  evaluateProvenanceCap,
+  summariseProvenance,
+  type ProvenanceSummary,
+} from './provenance.js';
 import {
   buildCoverageSummary,
   computeDeterministicConfidence,
   type ConfidenceInputs,
 } from './registry.js';
-import type { ControlResult, CoverageSummary, ProofFinding, ProofProduct } from './types.js';
+import type {
+  ControlCoverageReport,
+  ControlDefinition,
+  ControlResult,
+  CoverageSummary,
+  ProofFinding,
+  ProofProduct,
+} from './types.js';
 
 export type ProofReport = {
   product: ProofProduct;
@@ -34,6 +55,22 @@ export type ProofReport = {
   coverage_summary: CoverageSummary;
   /** Deterministic confidence breakdown (sufficiency + citation coverage). */
   confidence: number;
+  /** Evidence items counted by provenance class (every class present). */
+  provenance_summary: ProvenanceSummary;
+  /** Cap applied because critical controls passed only on self-reported evidence; null = none. */
+  confidence_cap: number | null;
+  /** Plain-English reason for the cap; null when no cap applies. */
+  confidence_cap_reason: string | null;
+  /** sha256 of the canonical classified evidence content. */
+  evidence_fingerprint: string;
+  /** ISO time the evidence is as-of (latest evidence timestamp, else verification time). */
+  evidence_as_of: string;
+  /** ISO deadline after which this proof is STALE (evidence_as_of + max age). */
+  stale_after: string;
+  /** Max evidence age, in days, that produced stale_after. */
+  evidence_max_age_days: number;
+  /** Full per-control coverage accounting (skipped / unable-to-run carry reasons). */
+  coverage: ControlCoverageReport;
 };
 
 export type BuildProofReportArgs = {
@@ -49,6 +86,21 @@ export type BuildProofReportArgs = {
   exportUrls?: string[];
   /** Forwarded to computeDeterministicConfidence (mustCheck ids, model nudge). */
   confidenceInputs?: ConfidenceInputs;
+  /** Ingested evidence: drives provenance_summary, fingerprint and as-of time. */
+  documents?: ClassifiedEvidence[];
+  /** The product's control definitions: drives coverage "expected" and the cap's critical set. */
+  controlDefinitions?: ControlDefinition[];
+  /** Verification time (default: now). Only feeds evidence_as_of / stale_after. */
+  now?: Date;
+  /** Evidence max age in days (default 30). */
+  maxAgeDays?: number;
+  /**
+   * Apply the self-reported-evidence confidence cap. Off unless the caller opts in
+   * (runProofProduct opts in for AuditProof only).
+   */
+  applyProvenanceCap?: boolean;
+  /** Override the cap value (default PROVENANCE_CONFIDENCE_CAP). */
+  provenanceCap?: number;
 };
 
 const SEVERITY_RANK: Record<string, number> = { critical: 3, high: 2, medium: 1, low: 0 };
@@ -135,6 +187,30 @@ export function buildProofReport(args: BuildProofReportArgs): ProofReport {
 
   const missing_evidence = aggregateMissingEvidence(args.results);
 
+  // --- provenance / cap -----------------------------------------------------
+  const documents = args.documents ?? [];
+  const capDecision = args.applyProvenanceCap
+    ? evaluateProvenanceCap(
+        args.results,
+        args.controlDefinitions ?? [],
+        args.provenanceCap ?? PROVENANCE_CONFIDENCE_CAP,
+      )
+    : { cap: null, reason: null, controlIds: [] as string[] };
+  const cappedConfidence = applyConfidenceCap(conf.confidence, capDecision.cap);
+
+  // --- freshness ------------------------------------------------------------
+  const verifiedAt = args.now ?? new Date();
+  const maxAgeDays = args.maxAgeDays ?? DEFAULT_EVIDENCE_MAX_AGE_DAYS;
+  const asOf = resolveEvidenceAsOf(documents, verifiedAt);
+  const staleAfter = computeStaleAfter(asOf, maxAgeDays);
+
+  // --- coverage -------------------------------------------------------------
+  const coverage = buildControlCoverage({
+    results: args.results,
+    expectedControlIds: args.controlDefinitions?.map((d) => d.id),
+    findings,
+  });
+
   // Recommended next actions: gather missing-evidence prompts, the remediation on
   // each failed ControlResult, and the remediation on each failed finding (deduped,
   // stable order — missing-evidence first, then result remediations, then findings).
@@ -183,6 +259,14 @@ export function buildProofReport(args: BuildProofReportArgs): ProofReport {
     proof_id,
     export_urls: args.exportUrls ?? [],
     coverage_summary,
-    confidence: conf.confidence,
+    confidence: cappedConfidence,
+    provenance_summary: summariseProvenance(documents),
+    confidence_cap: capDecision.cap,
+    confidence_cap_reason: capDecision.reason,
+    evidence_fingerprint: computeEvidenceFingerprint(documents),
+    evidence_as_of: asOf.toISOString(),
+    stale_after: staleAfter.toISOString(),
+    evidence_max_age_days: maxAgeDays,
+    coverage,
   };
 }
