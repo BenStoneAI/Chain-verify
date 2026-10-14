@@ -16,7 +16,18 @@ export class SmtpOutboundEmailAdapter implements OutboundEmailPort {
  private from(){ return process.env.SMTP_FROM || 'Chain Verify <no-reply@localhost>'; }
  async sendInvoiceProofReviewAlert(i:Parameters<OutboundEmailPort['sendInvoiceProofReviewAlert']>[0]){ await this.transport().sendMail({from:this.from(),to:i.to,subject:`InvoiceProof review required — ${i.riskLevel}`,text:`Organization: ${i.orgName}\nScan: ${i.scanId}\nRisk: ${i.riskLevel}\nFindings: ${i.findingCount}\n${i.topFindings.map(x=>`- ${x.severity}: ${x.pattern}`).join('\n')}`}); }
  async sendVendorPortalOtp(i:Parameters<OutboundEmailPort['sendVendorPortalOtp']>[0]){ await this.transport().sendMail({from:this.from(),to:i.to,subject:'Your InvoiceProof verification code',text:`${i.orgName} requested verification for ${i.vendorName}. Code: ${i.code}. Do not share this code.`}); }
- async sendPurchaseWelcome(i:Parameters<OutboundEmailPort['sendPurchaseWelcome']>[0]){ if(!process.env.SMTP_HOST){ this.logger.warn('SMTP_HOST is not configured; purchase welcome email not sent'); return; } const m=renderPurchaseWelcomeEmail(i); await this.transport().sendMail({from:this.from(),to:i.to,replyTo:i.supportEmail,subject:m.subject,text:m.text,html:m.html}); }
+ async sendPurchaseWelcome(i:Parameters<OutboundEmailPort['sendPurchaseWelcome']>[0]){
+  const brevoKey=process.env.BREVO_API_KEY;
+  if(!brevoKey && !process.env.SMTP_HOST){ this.logger.warn('No email transport configured (set BREVO_API_KEY or SMTP_HOST); purchase welcome email not sent'); throw new Error('Email transport not configured'); }
+  const m=renderPurchaseWelcomeEmail(i);
+  const replyTo=process.env.EMAIL_REPLY_TO || i.supportEmail;
+  if(brevoKey){
+   const res=await fetch('https://api.brevo.com/v3/smtp/email',{method:'POST',headers:{'api-key':brevoKey,'content-type':'application/json','accept':'application/json'},body:JSON.stringify({sender:{email:process.env.EMAIL_FROM_ADDRESS||'welcome@chainverify.org',name:process.env.EMAIL_FROM_NAME||'ChainVerify'},to:[{email:i.to}],replyTo:{email:replyTo},subject:m.subject,htmlContent:m.html,textContent:m.text})});
+   if(!res.ok){ let detail=''; try{ const body:any=await res.json(); detail=String(body?.message??''); }catch{ /* non-JSON error body */ } throw new Error(`Brevo send failed: HTTP ${res.status}${detail?` ${detail.slice(0,200)}`:''}`); }
+   return;
+  }
+  await this.transport().sendMail({from:this.from(),to:i.to,replyTo,subject:m.subject,text:m.text,html:m.html});
+ }
 }
 
 @Injectable()

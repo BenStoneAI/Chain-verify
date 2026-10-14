@@ -13,6 +13,7 @@ import {
   subscriptionPeriod,
 } from './stripe-provisioning.service.js';
 import { ProofCredentialController } from './proof-credential.controller.js';
+import { SmtpOutboundEmailAdapter } from '../adapters/adapters.module.js';
 
 /* ================================================================ */
 /*  In-memory Prisma fake with unique constraint enforcement         */
@@ -1381,6 +1382,24 @@ describe('purchase welcome email', () => {
     expect(result.entitlementId).toBeTruthy();
     expect(prisma._tables.entitlements.rows).toHaveLength(1);
     expect(prisma._tables.intakes.rows[0].welcomeEmailSentAt).toBeNull();
+  });
+
+  it('with no email transport configured the claim is released, never recorded as sent', async () => {
+    const saved = { b: process.env.BREVO_API_KEY, s: process.env.SMTP_HOST };
+    delete process.env.BREVO_API_KEY;
+    delete process.env.SMTP_HOST;
+    try {
+      const adapter = new SmtpOutboundEmailAdapter();
+      const { service, prisma } = makeService(undefined, {
+        sendPurchaseWelcome: (i: any) => adapter.sendPurchaseWelcome(i),
+      });
+      const result = await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+      expect(result.entitlementId).toBeTruthy();
+      expect(prisma._tables.intakes.rows[0].welcomeEmailSentAt).toBeNull();
+    } finally {
+      if (saved.b !== undefined) process.env.BREVO_API_KEY = saved.b;
+      if (saved.s !== undefined) process.env.SMTP_HOST = saved.s;
+    }
   });
 
   it('a failure while claiming does not fail provisioning', async () => {
