@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Prisma, ProofEntitlementStatus, ProofProductType } from '@prisma/client';
 import Stripe from 'stripe';
 import { randomBytes } from 'node:crypto';
@@ -12,6 +12,7 @@ import {
 import { PrismaService } from '../database/prisma.service.js';
 import { sha256Hex } from '../../common/utils/api-key-hash.js';
 import { checkoutSubtotal, evaluateCheckoutPayment } from './zero-dollar-checkout.js';
+import { OUTBOUND_EMAIL, type OutboundEmailPort } from '../adapters/ports.js';
 
 /**
  * Thrown when a Checkout Session is not a valid, paid ChainVerify purchase.
@@ -26,6 +27,23 @@ export class ProvisioningValidationError extends Error {
 }
 
 const GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+
+const WELCOME_WEB_BASE = 'https://www.chainverify.org';
+const WELCOME_DOCS_URL = `${WELCOME_WEB_BASE}/agent-gate/docs`;
+const DEFAULT_SUPPORT_EMAIL = 'proof@chainverify.org';
+
+/** Public web route and customer-facing name per internal product key (mirrors the Stripe payment link paths). */
+const WELCOME_PRODUCTS: Record<string, { route: string; name: string }> = {
+  'verify-api': { route: '/agent-gate', name: 'Agent Gate' },
+  'audit-proof': { route: '/audit-proof', name: 'AuditProof' },
+  'invoice-proof': { route: '/invoice-proof', name: 'InvoiceProof' },
+};
+
+/** Welcome page URL a buyer lands on after checkout (same path and canonical slug as the Stripe success URL). */
+export function buildWelcomeUrl(product: string, canonicalSlug: string, sessionId: string): string {
+  const route = WELCOME_PRODUCTS[product]?.route ?? `/${product}`;
+  return `${WELCOME_WEB_BASE}${route}/welcome?plan=${encodeURIComponent(canonicalSlug)}&session_id=${encodeURIComponent(sessionId)}`;
+}
 
 /** Map a Stripe subscription status onto the entitlement status it implies. */
 export function entitlementStatusFromSubscription(status: string | undefined): ProofEntitlementStatus {
@@ -109,7 +127,10 @@ interface WebhookProcessResult {
 export class StripeProvisioningService {
   private readonly logger = new Logger(StripeProvisioningService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OUTBOUND_EMAIL) private readonly email: OutboundEmailPort,
+  ) {}
 
   /* ================================================================ */
   /*  Webhook event orchestration                                      */
@@ -303,8 +324,9 @@ export class StripeProvisioningService {
     const orgName = this.resolveOrgName(session, customerEmail);
 
     // --- Atomic transaction: org + entitlement + intake ---
+    let outcome: { result: ProvisioningResult; intakeCreated: boolean };
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      outcome = await this.prisma.$transaction(async (tx) => {
         // 1. Find or create organization keyed by stripeCustomerId
         const org = await this.findOrCreateOrg(tx, customerId, orgName, customerEmail);
 
@@ -353,6 +375,12 @@ export class StripeProvisioningService {
 
         // 4. Upsert ProofPilotIntake for Agent Gate = ACTIVE; others = PAID
         const isAgentGate = plan.product === 'verify-api';
+        // The intake is keyed by session: if it does not exist yet, this call is the
+        // first provisioning of the purchase (replays find it and never re-send).
+        const priorIntake = await tx.proofPilotIntake.findUnique({
+          where: { stripeSessionId: sessionId },
+          select: { id: true },
+        });
         await this.upsertIntake(tx, {
           product: plan.product,
           planSlug: canonicalSlug,
@@ -366,21 +394,90 @@ export class StripeProvisioningService {
         });
 
         return {
-          organizationId: org.id,
-          entitlementId: entitlement.id,
-          product: plan.product,
-          planSlug: canonicalSlug,
-          status: entitlement.status,
-          monthlyLimit: plan.monthlyLimit,
-          keyIssued: false,
+          result: {
+            organizationId: org.id,
+            entitlementId: entitlement.id,
+            product: plan.product,
+            planSlug: canonicalSlug,
+            status: entitlement.status,
+            monthlyLimit: plan.monthlyLimit,
+            keyIssued: false,
+          },
+          intakeCreated: !priorIntake,
         };
       });
     } catch (err) {
       // P2002 = unique constraint violation (race). Re-read and return existing.
+      // The racing call that won the insert owns the welcome email.
       if ((err as any)?.code === 'P2002') {
         return this.recoverFromRace(sessionId, plan);
       }
       throw err;
+    }
+
+    // The transaction has committed. The welcome email is best effort and can
+    // never fail provisioning (or the webhook that triggered it).
+    if (outcome.intakeCreated) {
+      await this.sendWelcomeEmailOnce({
+        sessionId,
+        to: session.customer_details?.email ?? customerEmail,
+        orgName,
+        plan,
+        canonicalSlug: outcome.result.planSlug,
+      });
+    }
+    return outcome.result;
+  }
+
+  /**
+   * Sends the one-time purchase welcome email. The send is claimed atomically on
+   * the intake row (welcomeEmailSentAt null -> now) so concurrent or repeated
+   * provisioning of the same session sends at most once. A failed send releases
+   * the claim. Never throws.
+   */
+  private async sendWelcomeEmailOnce(args: {
+    sessionId: string;
+    to: string;
+    orgName: string;
+    plan: ProofBillingPlanConfig;
+    canonicalSlug: string;
+  }): Promise<void> {
+    const { sessionId, plan } = args;
+    let claimed = false;
+    try {
+      const claim = await this.prisma.proofPilotIntake.updateMany({
+        where: { stripeSessionId: sessionId, welcomeEmailSentAt: null },
+        data: { welcomeEmailSentAt: new Date() },
+      });
+      if (claim.count !== 1) return;
+      claimed = true;
+
+      await this.email.sendPurchaseWelcome({
+        to: args.to,
+        orgName: args.orgName,
+        productName: WELCOME_PRODUCTS[plan.product]?.name ?? plan.name,
+        planName: plan.name,
+        monthlyLimit: plan.monthlyLimit,
+        welcomeUrl: buildWelcomeUrl(plan.product, args.canonicalSlug, sessionId),
+        docsUrl: WELCOME_DOCS_URL,
+        supportEmail: process.env.SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL,
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Purchase welcome email failed for session ${sessionId}: ${(err as Error)?.message ?? 'unknown error'}`,
+      );
+      if (claimed) {
+        try {
+          await this.prisma.proofPilotIntake.updateMany({
+            where: { stripeSessionId: sessionId },
+            data: { welcomeEmailSentAt: null },
+          });
+        } catch (releaseErr) {
+          this.logger.warn(
+            `Could not release welcome email claim for session ${sessionId}: ${(releaseErr as Error)?.message ?? 'unknown error'}`,
+          );
+        }
+      }
     }
   }
 

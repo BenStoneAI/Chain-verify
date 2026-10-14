@@ -6,14 +6,17 @@ import { DatabaseModule } from '../database/database.module.js';
 import { ConduitBrowserAdapter } from './conduit-browser.adapter.js';
 import { assertSsrfSafeWithDns } from '../../common/utils/ssrf-guard.js';
 import { sha256Hex } from '../../common/utils/api-key-hash.js';
+import { renderPurchaseWelcomeEmail } from '../billing/purchase-welcome-email.js';
 import { BROWSER_INTAKE, IDENTITY_CONTEXT, OUTBOUND_EMAIL, PROOF_BILLING, type BrowserActionResult, type BrowserIntakePort, type IdentityContextPort, type OutboundEmailPort, type ProofBillingPort } from './ports.js';
 
 @Injectable()
 export class SmtpOutboundEmailAdapter implements OutboundEmailPort {
  private transport(){ const host=process.env.SMTP_HOST; if(!host) throw new Error('SMTP_HOST is not configured'); return nodemailer.createTransport({host,port:Number(process.env.SMTP_PORT||587),secure:process.env.SMTP_SECURE==='true',auth:process.env.SMTP_USER?{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS}:undefined}); }
+ private readonly logger=new Logger(SmtpOutboundEmailAdapter.name);
  private from(){ return process.env.SMTP_FROM || 'Chain Verify <no-reply@localhost>'; }
  async sendInvoiceProofReviewAlert(i:Parameters<OutboundEmailPort['sendInvoiceProofReviewAlert']>[0]){ await this.transport().sendMail({from:this.from(),to:i.to,subject:`InvoiceProof review required — ${i.riskLevel}`,text:`Organization: ${i.orgName}\nScan: ${i.scanId}\nRisk: ${i.riskLevel}\nFindings: ${i.findingCount}\n${i.topFindings.map(x=>`- ${x.severity}: ${x.pattern}`).join('\n')}`}); }
  async sendVendorPortalOtp(i:Parameters<OutboundEmailPort['sendVendorPortalOtp']>[0]){ await this.transport().sendMail({from:this.from(),to:i.to,subject:'Your InvoiceProof verification code',text:`${i.orgName} requested verification for ${i.vendorName}. Code: ${i.code}. Do not share this code.`}); }
+ async sendPurchaseWelcome(i:Parameters<OutboundEmailPort['sendPurchaseWelcome']>[0]){ if(!process.env.SMTP_HOST){ this.logger.warn('SMTP_HOST is not configured; purchase welcome email not sent'); return; } const m=renderPurchaseWelcomeEmail(i); await this.transport().sendMail({from:this.from(),to:i.to,replyTo:i.supportEmail,subject:m.subject,text:m.text,html:m.html}); }
 }
 
 @Injectable()

@@ -84,6 +84,17 @@ class FakeTable {
     return { ...row };
   }
 
+  updateMany(where: Record<string, any>, data: Row): { count: number } {
+    const matches = this.rows.filter((r) =>
+      Object.entries(where).every(([k, v]) => (v === null ? (r[k] ?? null) === null : r[k] === v)),
+    );
+    for (const row of matches) {
+      Object.assign(row, data);
+      row.updatedAt = new Date();
+    }
+    return { count: matches.length };
+  }
+
   upsert(where: Record<string, any>, create: Row, update: Row): Row {
     const existing = this.findUnique(where);
     if (existing) {
@@ -122,6 +133,7 @@ function buildFakePrisma() {
       return Promise.resolve(row);
     },
     update: ({ where, data }: any) => Promise.resolve(table.update(where, data)),
+    updateMany: ({ where, data }: any) => Promise.resolve(table.updateMany(where, data)),
     upsert: ({ where, create, update }: any) =>
       Promise.resolve(table.upsert(where, create, update)),
   });
@@ -191,10 +203,21 @@ function fakeStripe(sessionOverrides: Record<string, any> = {}): Stripe {
 
 const WEBHOOK_SECRET = 'whsec_test_secret_1234567890abcdef';
 
-function makeService(prisma?: any): { service: StripeProvisioningService; prisma: any } {
+function makeService(prisma?: any, emailOverrides: Record<string, any> = {}): {
+  service: StripeProvisioningService;
+  prisma: any;
+  email: { sendPurchaseWelcome: ReturnType<typeof vi.fn> };
+} {
   const p = prisma ?? buildFakePrisma();
-  const service = new StripeProvisioningService(p);
-  return { service, prisma: p };
+  // Outbound email is an external port (SMTP): faked here, never the database.
+  const email = {
+    sendPurchaseWelcome: vi.fn().mockResolvedValue(undefined),
+    sendInvoiceProofReviewAlert: vi.fn().mockResolvedValue(undefined),
+    sendVendorPortalOtp: vi.fn().mockResolvedValue(undefined),
+    ...emailOverrides,
+  };
+  const service = new StripeProvisioningService(p, email as any);
+  return { service, prisma: p, email };
 }
 
 function setEnv(overrides: Record<string, string> = {}) {
@@ -1253,5 +1276,148 @@ describe('ProofCredentialController', () => {
       issueKeyForSession: vi.fn(),
     });
     await expect(controller.claimKey({ session_id: 'cs_test_old' })).rejects.toMatchObject({ status: 410 });
+  });
+});
+
+describe('purchase welcome email', () => {
+  it('sends exactly one welcome email on first provisioning, with the expected content', async () => {
+    const { service, prisma, email } = makeService();
+    await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+
+    expect(email.sendPurchaseWelcome).toHaveBeenCalledTimes(1);
+    const arg = email.sendPurchaseWelcome.mock.calls[0][0];
+    expect(arg).toMatchObject({
+      to: 'buyer@example.com',
+      orgName: 'Test Buyer',
+      productName: 'Agent Gate',
+      planName: 'Agent Gate Build',
+      monthlyLimit: 5000,
+      welcomeUrl: 'https://www.chainverify.org/agent-gate/welcome?plan=agent-gate-build&session_id=cs_test_abc123',
+      docsUrl: 'https://www.chainverify.org/agent-gate/docs',
+      supportEmail: 'proof@chainverify.org',
+    });
+    expect(prisma._tables.intakes.rows[0].welcomeEmailSentAt).toBeInstanceOf(Date);
+  });
+
+  it('uses SUPPORT_EMAIL when set', async () => {
+    process.env.SUPPORT_EMAIL = 'help@example.org';
+    try {
+      const { service, email } = makeService();
+      await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+      expect(email.sendPurchaseWelcome.mock.calls[0][0].supportEmail).toBe('help@example.org');
+    } finally {
+      delete process.env.SUPPORT_EMAIL;
+    }
+  });
+
+  it('uses the product path and canonical slug for non-Agent-Gate purchases', async () => {
+    const { service, email } = makeService();
+    await service.provisionFromCheckoutSession(
+      'cs_test_inv1',
+      fakeStripe({
+        id: 'cs_test_inv1',
+        metaProduct: 'invoice-proof',
+        metaPlan: 'invoiceproof-verify',
+        amount_total: 150000,
+      }),
+    );
+    const arg = email.sendPurchaseWelcome.mock.calls[0][0];
+    expect(arg.productName).toBe('InvoiceProof');
+    expect(arg.welcomeUrl).toBe(
+      'https://www.chainverify.org/invoice-proof/welcome?plan=invoiceproof-verify&session_id=cs_test_inv1',
+    );
+  });
+
+  it('sends zero more emails when the same session is provisioned again (replay / reconcile)', async () => {
+    const { service, email } = makeService();
+    const stripe = fakeStripe();
+    await service.provisionFromCheckoutSession('cs_test_abc123', stripe);
+    await service.provisionFromCheckoutSession('cs_test_abc123', stripe);
+    await service.provisionFromCheckoutSession('cs_test_abc123', stripe);
+    expect(email.sendPurchaseWelcome).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends zero more emails when a webhook redelivery replays an already-provisioned session', async () => {
+    const { service, email } = makeService();
+    const stripe = fakeStripe();
+    await service.provisionFromCheckoutSession('cs_test_abc123', stripe);
+    const event = makeStripeEvent('checkout.session.completed', makeCheckoutSession());
+    await service.processWebhookEvent(event, stripe);
+    expect(email.sendPurchaseWelcome).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-send for a pre-existing intake that has no send marker (older purchase replayed)', async () => {
+    const { service, prisma, email } = makeService();
+    prisma._tables.intakes.create({
+      stripeSessionId: 'cs_test_abc123',
+      product: 'verify-api',
+      companyName: 'Old Co',
+      contactEmail: 'buyer@example.com',
+      status: 'ACTIVE',
+    });
+    await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+    expect(email.sendPurchaseWelcome).not.toHaveBeenCalled();
+  });
+
+  it('claims the send atomically: a lost claim means no send', async () => {
+    const { service, prisma, email } = makeService();
+    // Another worker claims first: our claim matches zero rows.
+    prisma.proofPilotIntake.updateMany = vi.fn().mockResolvedValue({ count: 0 });
+    await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+    expect(email.sendPurchaseWelcome).not.toHaveBeenCalled();
+    expect(prisma.proofPilotIntake.updateMany).toHaveBeenCalledWith({
+      where: { stripeSessionId: 'cs_test_abc123', welcomeEmailSentAt: null },
+      data: { welcomeEmailSentAt: expect.any(Date) },
+    });
+  });
+
+  it('a send failure does not fail provisioning and releases the claim', async () => {
+    const { service, prisma, email } = makeService(undefined, {
+      sendPurchaseWelcome: vi.fn().mockRejectedValue(new Error('SMTP down')),
+    });
+    const result = await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+
+    expect(email.sendPurchaseWelcome).toHaveBeenCalledTimes(1);
+    expect(result.entitlementId).toBeTruthy();
+    expect(prisma._tables.entitlements.rows).toHaveLength(1);
+    expect(prisma._tables.intakes.rows[0].welcomeEmailSentAt).toBeNull();
+  });
+
+  it('a failure while claiming does not fail provisioning', async () => {
+    const { service, prisma, email } = makeService();
+    prisma.proofPilotIntake.updateMany = vi.fn().mockRejectedValue(new Error('db blip'));
+    const result = await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+    expect(result.entitlementId).toBeTruthy();
+    expect(email.sendPurchaseWelcome).not.toHaveBeenCalled();
+  });
+
+  it('a failed email never fails the webhook', async () => {
+    const { service } = makeService(undefined, {
+      sendPurchaseWelcome: vi.fn().mockRejectedValue(new Error('SMTP down')),
+    });
+    const event = makeStripeEvent('checkout.session.completed', makeCheckoutSession());
+    const result = await service.processWebhookEvent(event, fakeStripe());
+    expect(result.status).toBe('PROCESSED');
+  });
+
+  it('does not send on subscription lifecycle events', async () => {
+    const { service, email } = makeService();
+    await service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe());
+    email.sendPurchaseWelcome.mockClear();
+    await service.syncSubscriptionLifecycle({
+      id: 'sub_test_456',
+      status: 'active',
+      items: { data: [] },
+    } as any);
+    await service.handleInvoicePaid({ id: 'in_1', subscription: 'sub_test_456', lines: { data: [] } } as any);
+    expect(email.sendPurchaseWelcome).not.toHaveBeenCalled();
+  });
+
+  it('does not send when the session is rejected', async () => {
+    const { service, email } = makeService();
+    await expect(
+      service.provisionFromCheckoutSession('cs_test_abc123', fakeStripe({ payment_status: 'unpaid' })),
+    ).rejects.toThrow();
+    expect(email.sendPurchaseWelcome).not.toHaveBeenCalled();
   });
 });

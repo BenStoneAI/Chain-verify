@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../database/database.module.js';
+import { ChainVerifyAdaptersModule } from '../adapters/adapters.module.js';
 import { ProofActivationController } from './proof-activation.controller.js';
 import { ProofActivationService } from './proof-activation.service.js';
 import { ProofBillingService } from './proof-billing.service.js';
@@ -9,7 +10,7 @@ import { StripeProvisioningService } from './stripe-provisioning.service.js';
 import { ProofCredentialController } from './proof-credential.controller.js';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ChainVerifyAdaptersModule],
   controllers: [ProofActivationController, StripeWebhookController, ProofCredentialController],
   providers: [ProofActivationService, ProofBillingService, StripeProvisioningService],
   exports: [ProofBillingService, ProofActivationService, StripeProvisioningService],
