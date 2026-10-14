@@ -10,12 +10,14 @@ datasource db {
 enum ProofProductType {
   INVOICE_PROOF
   AUDIT_PROOF
-  VERIFY_API
+  VERIFY_API // legacy name; kept forever (read both, write AGENT_GATE)
+  AGENT_GATE
 }
 enum ProofEntitlementStatus {
   ACTIVE
   EXPIRED
-  CANCELLED
+  CANCELLED // canonical canceled state (no second "CANCELED" spelling)
+  PAST_DUE
 }
 enum ProofProduct {
   INVOICE_AUDIT
@@ -103,7 +105,7 @@ model Organization {
   id String @id @default(uuid())
   name String
   slug String @unique
-  stripeCustomerId String?
+  stripeCustomerId String? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   proofProductEntitlements ProofProductEntitlement[]
@@ -128,14 +130,16 @@ model ProofProductEntitlement {
   monthlyLimit Int?
   periodStart DateTime @default(now())
   periodEnd DateTime?
-  stripeSubscriptionId String?
-  stripeSessionId String?
+  stripeSubscriptionId String? @unique
+  stripeSessionId String? @unique
   stripeSubscriptionItemId String?
   meteredBillingEnabled Boolean @default(false)
+  canceledAt DateTime?
+  graceUntil DateTime?
+  lastPaymentAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([organizationId, product, status])
-  @@index([stripeSessionId])
 }
 
 model ProofPilotIntake {
@@ -149,7 +153,7 @@ model ProofPilotIntake {
   agentCount Int?
   invoiceCount Int?
   notes String?
-  stripeSessionId String?
+  stripeSessionId String? @unique
   organizationId String?
   status String @default("NEW")
   sourcePath String?
@@ -159,7 +163,6 @@ model ProofPilotIntake {
   @@index([product])
   @@index([contactEmail])
   @@index([organizationId])
-  @@index([stripeSessionId])
   @@index([status])
   @@map("proof_pilot_intakes")
 }
@@ -222,6 +225,12 @@ model ProofRecord {
   archivedAt DateTime? @map("archived_at")
   retentionPolicyDays Int? @map("retention_policy_days")
   retentionStatus String @default("ACTIVE") @map("retention_status")
+  // SIGNED | UNSIGNED | SIGNING_FAILED. Unsigned must never masquerade as signed.
+  signingStatus String @default("UNSIGNED") @map("signing_status")
+  // Error class / short message only. Never key material.
+  signingError String? @map("signing_error")
+  evidenceFingerprint String? @map("evidence_fingerprint")
+  staleAfter DateTime? @map("stale_after")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   verificationRun VerificationRun @relation(fields: [verificationRunId], references: [id], onDelete: Restrict)
@@ -415,12 +424,54 @@ model VendorPortalToken {
   @@map("vendor_portal_tokens")
 }
 
+// Restored field-for-field from SwarmSync b776039f. Like the source, no FK:
+// rows are short-lived OTP challenges keyed by token id + org id.
+model VendorPortalOtp {
+  id                   String    @id @default(cuid())
+  vendorPortalTokenId  String
+  vendorName           String
+  organizationId       String
+  codeHash             String
+  expiresAt            DateTime
+  attempts             Int       @default(0)
+  consumedAt           DateTime?
+  lockedAt             DateTime?
+  createdAt            DateTime  @default(now())
+
+  @@index([vendorPortalTokenId])
+  @@index([organizationId])
+  @@map("vendor_portal_otps")
+}
+
+// Stripe webhook dedupe ledger. id = Stripe event id (evt_...).
+// Never store raw payloads or customer emails here.
+model StripeWebhookEvent {
+  id          String    @id
+  type        String
+  livemode    Boolean
+  objectId    String?
+  // RECEIVED | PROCESSED | FAILED | IGNORED
+  status      String    @default("RECEIVED")
+  attempts    Int       @default(1)
+  // Short error message only.
+  lastError   String?
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([type, receivedAt])
+  @@map("stripe_webhook_events")
+}
+
 model ApiIdentity {
   id String @id @default(cuid())
   organizationId String
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   label String?
   apiKeyHash String @unique
+  // Non-secret display prefix, e.g. ag_live_ab12.
+  keyPrefix String?
+  // One key per checkout session (idempotent issuance).
+  issuedForSessionId String? @unique
   active Boolean @default(true)
   lastUsedAt DateTime?
   createdAt DateTime @default(now())
@@ -492,6 +543,14 @@ model SoftwareDeliveryVerification {
   escalated        Boolean                       @default(false)
   escalationReason String?
   buyerSummary     String?
+  headSha             String?
+  // CLAIMED | IMPLEMENTED | TESTED | INTEGRATED | DEPLOYED | VERIFIED
+  lifecycleStatus     String?
+  evidenceFingerprint String?
+  provenanceSummary   Json?
+  confidenceCapReason String?
+  staleAfter          DateTime?
+  receiptId           String?
   results          SoftwareDeliveryCheckResult[]
   createdAt        DateTime                      @default(now())
   updatedAt        DateTime                      @updatedAt
