@@ -22,6 +22,7 @@ import { auditProofPlanConfigs, verifyApiPlanConfigs } from '@chain-verify/confi
 
 import { PrismaService } from '../database/prisma.service.js';
 import { VerificationProduct } from './verification.service.js';
+import { redactCredentialsFromEvidence, redactionNotice } from './evidence-secret-guard.js';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DAYS_PER_MONTH = 30;
@@ -314,6 +315,30 @@ export class ProofService {
       );
     }
 
+    // Secret-safety boundary: evidence is hashed into an append-only chain, so a
+    // credential that enters it can never be removed. Strip credentials BEFORE the
+    // record is created or hashed, and say so in the (hashed) evidence itself.
+    // Only paths/key names are logged — never values.
+    const guarded = redactCredentialsFromEvidence(evidence);
+    let safeEvidence = guarded.evidence as Prisma.InputJsonValue;
+    if (guarded.redactions.length > 0) {
+      console.warn(
+        `[ProofService] ${guarded.redactions.length} credential(s) removed from proof evidence before hashing:`,
+        guarded.redactions.map((r) => r.path).join(', '),
+      );
+      const notice = redactionNotice(guarded.redactions) as Prisma.InputJsonObject;
+      if (Array.isArray(safeEvidence)) {
+        safeEvidence = [...safeEvidence, notice] as Prisma.InputJsonValue;
+      } else if (safeEvidence !== null && typeof safeEvidence === 'object') {
+        safeEvidence = {
+          ...(safeEvidence as Prisma.InputJsonObject),
+          _secret_safety_boundary: notice,
+        } as Prisma.InputJsonValue;
+      } else {
+        safeEvidence = [safeEvidence, notice] as Prisma.InputJsonValue;
+      }
+    }
+
     try {
       return await this.prisma.$transaction(async (tx) => {
         // Serialize per-org proof creation to prevent concurrent chain fork.
@@ -340,7 +365,7 @@ export class ProofService {
             product,
             subject,
             summary,
-            evidence: evidence as Prisma.InputJsonValue,
+            evidence: safeEvidence,
             finalDecision,
             proofStatus: ProofStatus.CREATED,
           },
@@ -351,7 +376,7 @@ export class ProofService {
           id: created.id,
           orgId,
           summary,
-          evidence,
+          evidence: safeEvidence,
           prevChainHash,
         });
 
